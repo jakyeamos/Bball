@@ -20,6 +20,7 @@ import {
   handleExecuteTrade,
   handleStartRegularSeason,
   handleStartPlayoffs,
+  handleRejoinDraft,
 } from '../services/handlers';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
 console.log('Server WS_EVENTS.CREATE_LOBBY:', WS_EVENTS.CREATE_LOBBY);
@@ -146,6 +147,11 @@ export function initializeSocketServer(
     // START_PLAYOFFS
     socket.on(WS_EVENTS.START_PLAYOFFS, () => {
       handleStartPlayoffs(io, socket, userId, allPlayers);
+    });
+
+    // REJOIN_DRAFT
+    socket.on('rejoin:draft', (payload: any) => {
+      handleRejoinDraft(io, socket, payload, allPlayers);
     });
 
     // DISCONNECT

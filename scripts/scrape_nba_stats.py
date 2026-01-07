@@ -10,7 +10,7 @@ import argparse
 from typing import List, Dict, Any
 
 try:
-    from nba_api.stats.endpoints import leaguedashplayerstats
+    from nba_api.stats.endpoints import leaguedashplayerstats, commonplayerinfo
     from nba_api.stats.static import players as nba_players
 except ImportError:
     print("Error: nba_api not installed. Install with: pip install nba-api", file=sys.stderr)
@@ -75,13 +75,20 @@ def fetch_player_stats(season: str = "2025-26") -> List[Dict[str, Any]]:
 
 def get_position(player_id: int) -> str:
     """
-    Get player position (simplified - returns best guess)
-    NBA API doesn't provide position in stats endpoint easily
+    Get player position from commonplayerinfo endpoint
     """
-    # For v1, we'll use a simple heuristic based on stats
-    # In production, you'd want to use commonplayerinfo endpoint
-    # or maintain a position mapping
-    return "G"  # Default to guard for v1
+    try:
+        player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
+        df = player_info.get_data_frames()[0]
+        if not df.empty and 'POSITION' in df.columns:
+            position = df['POSITION'].iloc[0]
+            print(f"Player ID: {player_id}, Position: {position}", file=sys.stderr)
+            return position
+        print(f"Player ID: {player_id}, Position: UNK (no data)", file=sys.stderr)
+        return "UNK"
+    except Exception as e:
+        print(f"Player ID: {player_id}, Position: UNK (error: {e})", file=sys.stderr)
+        return "UNK"
 
 
 def main():

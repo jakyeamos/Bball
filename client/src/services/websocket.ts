@@ -14,7 +14,7 @@ import { WS_EVENTS } from '@nba-draft-sim/shared';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 class WebSocketService {
-  private socket: Socket | null = null;
+  socket: Socket | null = null;
   private eventHandlers: Map<string, Set<(data: any) => void>> = new Map();
 
   /**
@@ -192,6 +192,13 @@ class WebSocketService {
    */
   startPlayoffs() {
     this.emit(WS_EVENTS.START_PLAYOFFS);
+  }
+
+  /**
+   * Rejoin a draft
+   */
+  rejoinDraft(token: string) {
+    this.emit('rejoin:draft', { token });
   }
 
   /**
