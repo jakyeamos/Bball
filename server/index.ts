@@ -33,7 +33,25 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+
+    // Allowed origins
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://bball-client.vercel.app',
+    ];
+
+    // Also allow any Vercel preview deployment
+    const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
+
+    if (allowedOrigins.includes(origin) || isVercelPreview) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
