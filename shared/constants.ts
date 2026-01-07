@@ -4,6 +4,7 @@
  */
 
 import { ArchetypeName } from './types';
+import { RoleCategory } from './types';
 
 // ============================================================================
 // RELIABILITY SHRINKAGE PARAMETERS
@@ -14,6 +15,8 @@ export const RELIABILITY_PARAMS = {
   MP_SCALE: 300,
   GP_MIDPOINT: 50,
   GP_SCALE: 15,
+  MP_WEIGHT: 0.75,  
+  GP_WEIGHT: 0.25, 
 } as const;
 
 // ============================================================================
@@ -169,8 +172,8 @@ export const SIM_PARAMS = {
 } as const;
 
 export const PLAYOFF_PARAMS = {
-  TOP_TEAMS: 4,
-  WINS_NEEDED: 2, // best-of-3
+  TOP_TEAMS: 1,
+  WINS_NEEDED: 3, // best-of-5
 } as const;
 
 // Series visual mapping thresholds (UI-only)
@@ -185,6 +188,8 @@ export const SERIES_PATH_PARAMS = {
   MIN_EARLY_P: 0.35,
   MAX_EARLY_P: 0.65,
   BIAS_STRENGTH: 0.15,
+  MIN_PROB: 0.35,      
+  MAX_PROB: 0.65,
 } as const;
 
 // Feature names (used for standardization / debugging)
@@ -204,12 +209,12 @@ export const FEATURE_NAMES = [
 ] as const;
 
 // Position → broad role bucket (for role averages)
-export const POSITION_TO_ROLE = {
+export const POSITION_TO_ROLE: Record<string, RoleCategory> = {
   PG: 'G',
   SG: 'G',
   SF: 'W',
   PF: 'B',
   C: 'B',
-} as const;
+};
 
 export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000; // 10 minutes

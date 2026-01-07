@@ -1,6 +1,6 @@
 /**
- * Playoffs Simulation
- * Implements Sections 9 and 10 from pseudocode: playoffs + suspense presentation
+ * Playoffs Simulation - FIXED
+ * Key fixes: Use 'wins' instead of 'seriesLength', use MIN_PROB/MAX_PROB, use WINS_NEEDED
  */
 
 import { TeamAggregation, PlayoffResults, PlayoffSeries, SeriesGame } from '@nba-draft-sim/shared';
@@ -11,16 +11,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Map win percentage to displayed series length (for UI)
- *
- * 80%+ -> 4-0
- * 70%+ -> 4-1
- * 60%+ -> 4-2
- * else -> 4-3
  */
 function mapWinPctToSeriesLength(winPctFavorite: number): [number, number] {
   for (const threshold of SERIES_LENGTH_THRESHOLDS) {
     if (winPctFavorite >= threshold.minWinPct) {
-      return threshold.seriesLength;
+      return threshold.wins as [number, number]; // ← FIXED: Use 'wins' not 'seriesLength'
     }
   }
   return [4, 3]; // Default
@@ -28,16 +23,13 @@ function mapWinPctToSeriesLength(winPctFavorite: number): [number, number] {
 
 /**
  * Generate randomized series path that ends at correct result
- * Returns array like ['A', 'A', 'B', 'A', 'B', 'A'] for a 4-2 series
- *
- * Path is biased by probability but includes variety
  */
 function generateSeriesPath(
   winsA: number,
   winsB: number,
   winPctA: number
 ): ('A' | 'B')[] {
-  const { BIAS_STRENGTH, MIN_PROB, MAX_PROB } = SERIES_PATH_PARAMS;
+  const { BIAS_STRENGTH, MIN_EARLY_P, MAX_EARLY_P } = SERIES_PATH_PARAMS; // ← FIXED: These exist now
 
   // Determine who wins last game
   const lastWinner = winsA > winsB ? 'A' : 'B';
@@ -53,7 +45,7 @@ function generateSeriesPath(
   for (let i = 0; i < totalGames - 1; i++) {
     // Calculate bias based on win percentage
     const bias = clamp(-1, 1, (winPctA - 0.5) * 2);
-    const probA = clamp(MIN_PROB, MAX_PROB, 0.5 + BIAS_STRENGTH * bias);
+    const probA = clamp(MIN_EARLY_P, MAX_EARLY_P, 0.5 + BIAS_STRENGTH * bias);
 
     // Decide winner of this game
     const wantA = Math.random() < probA;
@@ -88,7 +80,7 @@ function simulatePlayoffSeries(
   teamB: TeamAggregation
 ): PlayoffSeries {
   // Run the actual simulation (best of 3)
-  const result = simulateSeries(teamA, teamB, PLAYOFF_PARAMS.SERIES_WINS_NEEDED);
+  const result = simulateSeries(teamA, teamB, PLAYOFF_PARAMS.WINS_NEEDED); // ← FIXED: Use WINS_NEEDED not SERIES_WINS_NEEDED
 
   // Convert games to SeriesGame format
   const games: SeriesGame[] = result.games.map((game, index) => ({
@@ -122,11 +114,6 @@ function simulatePlayoffSeries(
 
 /**
  * Run complete playoffs bracket (top 4 teams, best-of-3)
- *
- * Bracket:
- * Semi 1: Seed 1 vs Seed 4
- * Semi 2: Seed 2 vs Seed 3
- * Finals: Winners of Semi 1 vs Semi 2
  */
 export function runPlayoffs(
   topFourSeeds: string[],

@@ -1,5 +1,5 @@
 /**
- * Archetype Service
+ * Archetype Service - FIXED
  * Handles archetype profile computation and aggregation
  */
 
@@ -9,14 +9,18 @@ import { ARCHETYPE_WEIGHTS } from '@nba-draft-sim/shared';
 /**
  * Compute archetype profile for a player
  */
-export function computeArchetypeProfile(features: PlayerFeatures): ArchetypeProfile {
-  const profile: ArchetypeProfile = {} as ArchetypeProfile;
+export function computeArchetypeProfile(features: PlayerFeatures | Record<string, number>): ArchetypeProfile {
+  const profile: Partial<Record<string, number>> = {};
   let totalScore = 0;
 
   for (const archetype in ARCHETYPE_WEIGHTS) {
     let score = 0;
     for (const feature in ARCHETYPE_WEIGHTS[archetype]) {
-      score += features[feature] * ARCHETYPE_WEIGHTS[archetype][feature];
+      const featureValue = (features as any)[feature];
+      const weight = ARCHETYPE_WEIGHTS[archetype][feature];
+      if (featureValue !== undefined && weight !== undefined) {
+        score += featureValue * weight;
+      }
     }
     profile[archetype] = score;
     totalScore += score;
@@ -25,11 +29,11 @@ export function computeArchetypeProfile(features: PlayerFeatures): ArchetypeProf
   // Normalize scores
   if (totalScore > 0) {
     for (const archetype in profile) {
-      profile[archetype] /= totalScore;
+      profile[archetype] = (profile[archetype] || 0) / totalScore;
     }
   }
 
-  return profile;
+  return profile as ArchetypeProfile;
 }
 
 /**
@@ -39,16 +43,19 @@ export function aggregateArchetypeProfiles(
   profiles: ArchetypeProfile[],
   weights: number[]
 ): ArchetypeProfile {
-  const teamProfile: ArchetypeProfile = {} as ArchetypeProfile;
+  const teamProfile: Partial<Record<string, number>> = {};
 
   profiles.forEach((profile, i) => {
     for (const archetype in profile) {
       if (!teamProfile[archetype]) {
         teamProfile[archetype] = 0;
       }
-      teamProfile[archetype] += profile[archetype] * weights[i];
+      const profileValue = (profile as any)[archetype];
+      if (profileValue !== undefined) {
+        teamProfile[archetype] = (teamProfile[archetype] || 0) + profileValue * weights[i];
+      }
     }
   });
 
-  return teamProfile;
+  return teamProfile as ArchetypeProfile;
 }

@@ -12,9 +12,11 @@ import {
   PlayerRawStats,
   Player,
   LeagueSnapshot,
-  PlayerFeatures
+  PlayerFeatures,
+  RoleSummary,
+  RoleCategory,
+  POSITION_TO_ROLE
 } from '@nba-draft-sim/shared';
-import { POSITION_TO_ROLE, RoleCategory } from '@nba-draft-sim/shared';
 import { buildPlayerFeatures, standardizeFeatures } from './features';
 import { computeArchetypeProfile } from './archetypes';
 import { calculateImpactRating } from './aggregation';
@@ -98,6 +100,8 @@ function calculateRoleAverages(
       avg_STL: calculateMean(features.map(f => f.STL)),
       avg_REB: calculateMean(features.map(f => f.REB)),
       avg_usage_proxy: calculateMean(features.map(f => f.USG)),
+      avg_PAR: calculateMean(features.map(f => f.PAR || 0)),  // ← ADD
+      avg_VI: calculateMean(features.map(f => f.VI || 0)),
     };
   }
 
@@ -211,6 +215,8 @@ function bootstrapRoleAverages(rawStats: PlayerRawStats[]): Record<RoleCategory,
     avg_STL: calculateMean(allSTL),
     avg_REB: calculateMean(allREB),
     avg_usage_proxy: calculateMean(allUSG),
+    avg_PAR: 0.6,   // ← ADD
+    avg_VI: 0.5,
   };
 
   // Use same bootstrap for all roles initially

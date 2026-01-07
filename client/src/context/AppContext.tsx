@@ -64,105 +64,113 @@ export function AppProvider({ children }: AppProviderProps) {
   });
 
   useEffect(() => {
-    // Connect to WebSocket
-    wsService.connect().catch((error) => {
-      setState((prev) => ({ ...prev, error: error.message }));
-    });
+    // Connect to WebSocket - use promise resolution instead of event
+    wsService.connect()
+      .then(() => {
+        setState((prev) => ({ ...prev, isConnected: true }));
+      })
+      .catch((error) => {
+        setState((prev) => ({ ...prev, error: error.message }));
+      });
 
     // Subscribe to events
     const unsubscribers: Array<() => void> = [];
 
-    // Connection events
-    unsubscribers.push(
-      wsService.on(WS_EVENTS.CONNECT, () => {
-        setState((prev) => ({ ...prev, isConnected: true }));
-      })
-    );
-
+    // Disconnect event
     unsubscribers.push(
       wsService.on(WS_EVENTS.DISCONNECT, () => {
         setState((prev) => ({ ...prev, isConnected: false }));
       })
     );
 
-    // Lobby events
+    // Lobby events - EXTRACT PAYLOAD
     unsubscribers.push(
-      wsService.on(WS_EVENTS.LOBBY_CREATED, (payload: LobbyState) => {
-        setState((prev) => ({ ...prev, lobby: payload }));
+      wsService.on(WS_EVENTS.LOBBY_CREATED, (data: any) => {
+        console.log('🔵 LOBBY_CREATED event received:', data);
+        setState((prev) => ({ ...prev, lobby: data.payload }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.LOBBY_UPDATED, (payload: LobbyState) => {
-        setState((prev) => ({ ...prev, lobby: payload }));
+      wsService.on(WS_EVENTS.LOBBY_UPDATED, (data: any) => {
+        console.log('🔵 LOBBY_UPDATED event received:', data);
+        setState((prev) => ({ ...prev, lobby: data.payload }));
       })
     );
 
-    // Draft events
+    // Draft events - EXTRACT PAYLOAD
     unsubscribers.push(
-      wsService.on(WS_EVENTS.DRAFT_STARTED, (payload: DraftState) => {
+      wsService.on(WS_EVENTS.DRAFT_STARTED, (data: any) => {
+        console.log('🔵 DRAFT_STARTED event received:', data);
         setState((prev) => ({
           ...prev,
-          draft: payload,
-          timeRemaining: payload.timeRemaining,
+          draft: data.payload,
+          timeRemaining: data.payload.timeRemaining,
         }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.DRAFT_UPDATED, (payload: DraftState) => {
+      wsService.on(WS_EVENTS.DRAFT_UPDATED, (data: any) => {
+        console.log('🔵 DRAFT_UPDATED event received:', data);
         setState((prev) => ({
           ...prev,
-          draft: payload,
+          draft: data.payload,
         }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.PICK_MADE, (payload: DraftPick) => {
+      wsService.on(WS_EVENTS.PICK_MADE, (data: any) => {
+        console.log('🔵 PICK_MADE event received:', data);
         // Pick is already in draft state, just trigger re-render
         setState((prev) => ({ ...prev }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.TIMER_TICK, (payload: { timeRemaining: number }) => {
+      wsService.on(WS_EVENTS.TIMER_TICK, (data: any) => {
         setState((prev) => ({
           ...prev,
-          timeRemaining: payload.timeRemaining,
+          timeRemaining: data.payload.timeRemaining,
         }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.DRAFT_COMPLETED, (payload: DraftState) => {
-        setState((prev) => ({ ...prev, draft: payload }));
+      wsService.on(WS_EVENTS.DRAFT_COMPLETED, (data: any) => {
+        console.log('🔵 DRAFT_COMPLETED event received:', data);
+        setState((prev) => ({ ...prev, draft: data.payload }));
       })
     );
 
-    // League events
+    // League events - EXTRACT PAYLOAD
     unsubscribers.push(
-      wsService.on(WS_EVENTS.LEAGUE_UPDATED, (payload: LeagueState) => {
-        setState((prev) => ({ ...prev, league: payload }));
-      })
-    );
-
-    unsubscribers.push(
-      wsService.on(WS_EVENTS.REGULAR_SEASON_STARTED, (payload: RegularSeasonResults) => {
-        setState((prev) => ({ ...prev, regularSeasonResults: payload }));
+      wsService.on(WS_EVENTS.LEAGUE_UPDATED, (data: any) => {
+        console.log('🔵 LEAGUE_UPDATED event received:', data);
+        setState((prev) => ({ ...prev, league: data.payload }));
       })
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (payload: PlayoffResults) => {
-        setState((prev) => ({ ...prev, playoffResults: payload }));
+      wsService.on(WS_EVENTS.REGULAR_SEASON_STARTED, (data: any) => {
+        console.log('🔵 REGULAR_SEASON_STARTED event received:', data);
+        setState((prev) => ({ ...prev, regularSeasonResults: data.payload }));
       })
     );
 
-    // Error events
     unsubscribers.push(
-      wsService.on(WS_EVENTS.ERROR, (payload: { message: string }) => {
-        setState((prev) => ({ ...prev, error: payload.message }));
+      wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
+        console.log('🔵 PLAYOFFS_STARTED event received:', data);
+        setState((prev) => ({ ...prev, playoffResults: data.payload }));
+      })
+    );
+
+    // Error events - EXTRACT PAYLOAD
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.ERROR, (data: any) => {
+        console.log('🔴 ERROR event received:', data);
+        setState((prev) => ({ ...prev, error: data.payload.message }));
       })
     );
 

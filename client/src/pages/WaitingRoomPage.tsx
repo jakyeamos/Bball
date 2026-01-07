@@ -17,6 +17,7 @@ export function WaitingRoomPage() {
   // Redirect when draft starts
   React.useEffect(() => {
     if (draft) {
+      console.log('🟢 Draft detected, navigating to /draft');
       navigate('/draft');
     }
   }, [draft, navigate]);
@@ -24,15 +25,17 @@ export function WaitingRoomPage() {
   // Redirect if no lobby
   React.useEffect(() => {
     if (!lobby) {
+      console.log('🔴 No lobby detected, navigating to /');
       navigate('/');
     }
   }, [lobby, navigate]);
 
   if (!lobby) return null;
 
-  const isCommissioner = lobby.users.some(
+  // Safe access with optional chaining
+  const isCommissioner = lobby?.users?.some(
     (u) => u.isCommissioner && u.isConnected
-  );
+  ) || false;
 
   const handleStartDraft = () => {
     wsService.startDraft();
@@ -58,10 +61,10 @@ export function WaitingRoomPage() {
 
           <div className="mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Players ({lobby.users.length}/{lobby.config.teamCount})
+              Players ({lobby.users?.length || 0}/{lobby.config?.teamCount || 0})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {lobby.users.map((user, index) => (
+              {(lobby.users || []).map((user, index) => (
                 <div
                   key={user.userId}
                   className={`
@@ -91,7 +94,7 @@ export function WaitingRoomPage() {
               ))}
 
               {/* Empty slots */}
-              {Array.from({ length: lobby.config.teamCount - lobby.users.length }).map((_, index) => (
+              {Array.from({ length: (lobby.config?.teamCount || 0) - (lobby.users?.length || 0) }).map((_, index) => (
                 <div
                   key={`empty-${index}`}
                   className="p-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50"
@@ -109,19 +112,19 @@ export function WaitingRoomPage() {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-primary-600">
-                  {lobby.config.teamCount}
+                  {lobby.config?.teamCount || 0}
                 </div>
                 <div className="text-sm text-gray-600">Teams</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-primary-600">
-                  {lobby.config.rosterSize}
+                  {lobby.config?.rosterSize || 0}
                 </div>
                 <div className="text-sm text-gray-600">Roster Size</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-primary-600">
-                  {lobby.config.pickTimer / 60}m
+                  {(lobby.config?.pickTimer || 0) / 60}m
                 </div>
                 <div className="text-sm text-gray-600">Pick Timer</div>
               </div>
@@ -143,7 +146,7 @@ export function WaitingRoomPage() {
 
           {!lobby.canStart && (
             <div className="mt-8 text-center text-gray-600">
-              Waiting for {lobby.config.teamCount - lobby.users.length} more player(s)...
+              Waiting for {(lobby.config?.teamCount || 0) - (lobby.users?.length || 0)} more player(s)...
             </div>
           )}
         </Card>

@@ -1,5 +1,5 @@
 /**
- * Lobby Page
+ * Lobby Page - FIXED VERSION
  * Entry point - create or join a lobby
  */
 
@@ -15,10 +15,11 @@ import { Input } from '../components/Input';
 
 export function LobbyPage() {
   const navigate = useNavigate();
-  const { lobby } = useApp();
+  const { lobby, isConnected } = useApp(); // ← Get connection status
 
   const [mode, setMode] = useState<'select' | 'create' | 'join'>('select');
   const [displayName, setDisplayName] = useState('');
+  const [error, setError] = useState<string>(''); // ← Add local error state
 
   // Create lobby form
   const [teamCount, setTeamCount] = useState(6);
@@ -37,20 +38,56 @@ export function LobbyPage() {
 
   const handleCreateLobby = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
 
-    const config: LobbyConfig = {
-      teamCount,
-      rosterSize,
-      pickTimer,
-    };
+    console.log('🔵 Create Lobby button clicked');
+    console.log('🔵 isConnected:', isConnected);
 
-    wsService.createLobby(config);
+    // Check if connected
+    if (!isConnected) {
+      setError('Not connected to server. Please wait and try again.');
+      console.error('🔴 Socket not connected!');
+      return;
+    }
+
+    try {
+      const config: LobbyConfig = {
+        teamCount,
+        rosterSize,
+        pickTimer,
+      };
+
+      console.log('🔵 Calling createLobby with config:', config);
+      wsService.createLobby(config);
+      console.log('🔵 createLobby called successfully');
+    } catch (err: any) {
+      console.error('🔴 Error creating lobby:', err);
+      setError(err.message || 'Failed to create lobby');
+    }
   };
 
   const handleJoinLobby = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous errors
 
-    wsService.joinLobby(inviteCode.toUpperCase(), displayName || 'Player');
+    console.log('🔵 Join Lobby button clicked');
+    console.log('🔵 isConnected:', isConnected);
+
+    // Check if connected
+    if (!isConnected) {
+      setError('Not connected to server. Please wait and try again.');
+      console.error('🔴 Socket not connected!');
+      return;
+    }
+
+    try {
+      console.log('🔵 Calling joinLobby');
+      wsService.joinLobby(inviteCode.toUpperCase(), displayName || 'Player');
+      console.log('🔵 joinLobby called successfully');
+    } catch (err: any) {
+      console.error('🔴 Error joining lobby:', err);
+      setError(err.message || 'Failed to join lobby');
+    }
   };
 
   if (mode === 'select') {
@@ -64,7 +101,23 @@ export function LobbyPage() {
             <p className="text-gray-600">
               Draft your team, simulate the season, win the championship
             </p>
+            
+            {/* Connection Status */}
+            <div className="mt-4">
+              {isConnected ? (
+                <span className="text-green-600 text-sm">✅ Connected</span>
+              ) : (
+                <span className="text-orange-600 text-sm">⏳ Connecting to server...</span>
+              )}
+            </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-4">
             <Button
@@ -72,6 +125,7 @@ export function LobbyPage() {
               size="lg"
               fullWidth
               onClick={() => setMode('create')}
+              disabled={!isConnected} // ← Disable if not connected
             >
               Create Lobby
             </Button>
@@ -81,6 +135,7 @@ export function LobbyPage() {
               size="lg"
               fullWidth
               onClick={() => setMode('join')}
+              disabled={!isConnected} // ← Disable if not connected
             >
               Join Lobby
             </Button>
@@ -116,6 +171,13 @@ export function LobbyPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Create Lobby
           </h2>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleCreateLobby} className="space-y-4">
             <div>
@@ -168,7 +230,13 @@ export function LobbyPage() {
             </div>
 
             <div className="pt-4">
-              <Button type="submit" variant="primary" size="lg" fullWidth>
+              <Button 
+                type="submit" 
+                variant="primary" 
+                size="lg" 
+                fullWidth
+                disabled={!isConnected} // ← Disable if not connected
+              >
                 Create Lobby
               </Button>
             </div>
@@ -195,6 +263,13 @@ export function LobbyPage() {
           Join Lobby
         </h2>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleJoinLobby} className="space-y-4">
           <Input
             label="Invite Code"
@@ -215,7 +290,13 @@ export function LobbyPage() {
           />
 
           <div className="pt-4">
-            <Button type="submit" variant="primary" size="lg" fullWidth>
+            <Button 
+              type="submit" 
+              variant="primary" 
+              size="lg" 
+              fullWidth
+              disabled={!isConnected} // ← Disable if not connected
+            >
               Join Lobby
             </Button>
           </div>

@@ -88,8 +88,9 @@ export type ArchetypeName =
   | 'SwitchableBig'
   | 'ScreenHub';
 
-export type ArchetypeProfile = Record<ArchetypeName, number>;
-
+export interface ArchetypeProfile extends Record<ArchetypeName, number> {
+  [key: string]: number | undefined;
+}
 export interface Player {
   playerId: string;
   name: string;
@@ -404,7 +405,7 @@ export type WSEvent = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
 
 // Keep these aligned with your product rules
 export const DRAFT_CONSTRAINTS = {
-  TEAMS_MIN: 4,
+  TEAMS_MIN: 1,
   TEAMS_MAX: 12,
   ROSTER_MIN: 10,
   ROSTER_MAX: 15,
@@ -431,4 +432,5 @@ export interface RoleSummary {
   avg_usage_proxy: number;
   avg_PAR: number;
   avg_VI: number;
+  [key: string]: number;
 }
