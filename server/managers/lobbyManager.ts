@@ -44,7 +44,6 @@ export function createLobby(
     teamId: null, // Will be assigned when lobby fills
     isCommissioner: true,
     isConnected: true,
-    rejoinToken: uuidv4(),
   };
 
   const users = [commissioner];
@@ -84,7 +83,6 @@ export function addUserToLobby(
     teamId: null,
     isCommissioner: false,
     isConnected: true,
-    rejoinToken: uuidv4(),
   };
 
   const newUsers = [...lobby.users, newUser];

@@ -195,13 +195,6 @@ class WebSocketService {
   }
 
   /**
-   * Rejoin a draft
-   */
-  rejoinDraft(token: string) {
-    this.emit('rejoin:draft', { token });
-  }
-
-  /**
    * Check if connected
    */
   isConnected(): boolean {

@@ -544,51 +544,6 @@ export function handleAutoPick(
 }
 
 /**
- * Handle REJOIN_DRAFT event
- */
-export function handleRejoinDraft(
-    io: SocketServer,
-    socket: Socket,
-    payload: { token: string },
-    allPlayers: Player[]
-) {
-    try {
-        const { token } = payload;
-        let lobbyId: string | undefined;
-        let userId: string | undefined;
-
-        // Find the lobby and user with the given rejoin token
-        for (const [id, lobby] of lobbies.entries()) {
-            const user = lobby.users.find(u => u.rejoinToken === token);
-            if (user) {
-                lobbyId = id;
-                userId = user.userId;
-                break;
-            }
-        }
-
-        if (!lobbyId || !userId) {
-            throw new Error('Invalid rejoin token');
-        }
-
-        const draftState = drafts.get(lobbyId);
-        if (!draftState) {
-            throw new Error('Draft not found');
-        }
-
-        // Join the lobby room
-        joinLobbyRoom(socket, lobbyId);
-        socket.data.lobbyId = lobbyId;
-        socket.data.userId = userId;
-
-        // Send the current draft state to the user
-        socket.emit('rejoin:success', { payload: draftState });
-    } catch (error: any) {
-        socket.emit('rejoin:failure', { payload: { message: error.message } });
-    }
-}
-
-/**
  * Export stores for timer management
  */
 export { lobbies, drafts };

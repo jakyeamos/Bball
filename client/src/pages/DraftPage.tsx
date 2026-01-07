@@ -18,7 +18,7 @@ type SortDirection = 'asc' | 'desc';
 
 export function DraftPage() {
   const navigate = useNavigate();
-  const { draft, allPlayers, timeRemaining, league, lobby, isLoading } = useApp();
+  const { draft, allPlayers, timeRemaining, league, lobby } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('impact');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -201,14 +201,6 @@ export function DraftPage() {
   const handleUnpauseDraft = () => {
     wsService.unpauseDraft();
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-2xl font-bold text-gray-700">Loading...</div>
-      </div>
-    );
-  }
 
   if (!draft) return null;
 
