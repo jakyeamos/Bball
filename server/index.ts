@@ -93,14 +93,11 @@ async function startServer() {
     console.log(`✅ Snapshot created with ${leagueSnapshot.players.length} players`);
 
     if (leagueSnapshot.players.length > 0) {
-      const samplePlayer = leagueSnapshot.players[0];
-      console.log('=== SAMPLE PLAYER DEBUG ===');
-      console.log('Name:', samplePlayer.name);
-      console.log('Raw stats (MP/GP):', samplePlayer.rawStats.MP_TOTAL, samplePlayer.rawStats.GP);
-      console.log('Features:', samplePlayer.features);
-      console.log('Archetypes:', samplePlayer.archetypes);
-      console.log('Archetype keys:', Object.keys(samplePlayer.archetypes));
-      console.log('Archetype values:', Object.values(samplePlayer.archetypes));
+      console.log('=== SAMPLE PLAYER POSITIONS ===');
+      for (let i = 0; i < 5; i++) {
+        const player = leagueSnapshot.players[i];
+        console.log(`Player: ${player.name}, Position: ${player.position}`);
+      }
     }
 
     // Step 3: Create HTTP server

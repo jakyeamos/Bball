@@ -306,6 +306,7 @@ export interface LobbyUser {
   teamId: string | null;
   isCommissioner: boolean;
   isConnected: boolean;
+  rejoinToken: string;
 }
 
 export interface LobbyState {

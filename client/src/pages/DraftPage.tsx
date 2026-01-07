@@ -13,12 +13,12 @@ import { Input } from '../components/Input';
 import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
 import { Player } from '@nba-draft-sim/shared';
 
-type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts';
+type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts' | 'threeP' | 'threePA' | 'ft' | 'usg' | 'stl' | 'blk';
 type SortDirection = 'asc' | 'desc';
 
 export function DraftPage() {
   const navigate = useNavigate();
-  const { draft, allPlayers, timeRemaining, league, lobby } = useApp();
+  const { draft, allPlayers, timeRemaining, league, lobby, isLoading } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('impact');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -125,6 +125,30 @@ export function DraftPage() {
           aVal = a.rawStats.TS_PCT;
           bVal = b.rawStats.TS_PCT;
           break;
+        case 'threeP':
+          aVal = a.rawStats.THREE_P_PCT;
+          bVal = b.rawStats.THREE_P_PCT;
+          break;
+        case 'threePA':
+          aVal = a.rawStats.THREE_PA / a.rawStats.GP;
+          bVal = b.rawStats.THREE_PA / b.rawStats.GP;
+          break;
+        case 'ft':
+          aVal = a.rawStats.FT_PCT;
+          bVal = b.rawStats.FT_PCT;
+          break;
+        case 'usg':
+          aVal = a.features.USG;
+          bVal = b.features.USG;
+          break;
+        case 'stl':
+            aVal = a.rawStats.STL / a.rawStats.GP;
+            bVal = b.rawStats.STL / b.rawStats.GP;
+            break;
+        case 'blk':
+            aVal = a.rawStats.BLK / a.rawStats.GP;
+            bVal = b.rawStats.BLK / b.rawStats.GP;
+            break;
         default:
           aVal = a.impactRating;
           bVal = b.impactRating;
@@ -178,6 +202,14 @@ export function DraftPage() {
     wsService.unpauseDraft();
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-2xl font-bold text-gray-700">Loading...</div>
+      </div>
+    );
+  }
+
   if (!draft) return null;
 
   const formatTime = (seconds: number) => {
@@ -191,10 +223,10 @@ export function DraftPage() {
     return sortDirection === 'desc' ? <span>↓</span> : <span>↑</span>;
   };
 
-  // Grid layout: main content takes remaining space, sidebar fixed width
+  // Grid layout: 80/20 split when roster is shown
   const gridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: showRoster ? '1fr 384px' : '1fr',
+    gridTemplateColumns: showRoster ? '4fr 1fr' : '1fr',
     height: '100vh',
     width: '100vw',
     backgroundColor: '#f9fafb',
@@ -304,6 +336,24 @@ export function DraftPage() {
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ts')}>
                     TS% <SortIcon field="ts" />
                   </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('threeP')}>
+                    3P% <SortIcon field="threeP" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('threePA')}>
+                    3PA <SortIcon field="threePA" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ft')}>
+                    FT% <SortIcon field="ft" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('usg')}>
+                    USG% <SortIcon field="usg" />
+                  </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('stl')}>
+                    STL <SortIcon field="stl" />
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('blk')}>
+                    BLK <SortIcon field="blk" />
+                    </th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -320,15 +370,21 @@ export function DraftPage() {
                       <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
                       <td className="px-4 py-3">
                         {topArchetypes.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {topArchetypes.map((arch) => (
-                              <span
-                                key={arch.name}
-                                className={`inline-block px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(arch.name)}`}
-                                title={`${(arch.percentage * 100).toFixed(1)}%`}
-                              >
-                                {formatArchetypeName(arch.name)}
-                              </span>
+                          <div className="flex flex-wrap items-center">
+                            {topArchetypes.map((arch, index) => (
+                              <React.Fragment key={arch.name}>
+                                <span
+                                  className={`inline-block px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(
+                                    arch.name
+                                  )}`}
+                                  title={`${(arch.percentage * 100).toFixed(1)}%`}
+                                >
+                                  {formatArchetypeName(arch.name)}
+                                </span>
+                                {index < topArchetypes.length - 1 && (
+                                  <span className="px-2 text-gray-500">•</span>
+                                )}
+                              </React.Fragment>
                             ))}
                           </div>
                         ) : (
@@ -339,6 +395,12 @@ export function DraftPage() {
                       <td className="px-4 py-3 text-sm text-right font-medium">{rpg.toFixed(1)}</td>
                       <td className="px-4 py-3 text-sm text-right font-medium">{apg.toFixed(1)}</td>
                       <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.TS_PCT * 100).toFixed(1)}%</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.THREE_P_PCT * 100).toFixed(1)}%</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.THREE_PA / player.rawStats.GP).toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.FT_PCT * 100).toFixed(1)}%</td>
+                        <td className="px-4 py-3 text-sm text-right font-medium">{(player.features.USG * 100).toFixed(1)}%</td>
+                        <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.STL / player.rawStats.GP).toFixed(1)}</td>
+                        <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.BLK / player.rawStats.GP).toFixed(1)}</td>
                       <td className="px-4 py-3 text-right">
                         <Button
                           size="sm"

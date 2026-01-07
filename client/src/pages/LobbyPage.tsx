@@ -145,11 +145,12 @@ export function LobbyPage() {
 
           <div className="mt-8 pt-6 border-t border-gray-200">
             <Input
-              label="Your Name"
+              label="Team Name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder="Enter your team name"
               fullWidth
+              required
             />
           </div>
         </Card>
@@ -284,11 +285,12 @@ export function LobbyPage() {
           />
 
           <Input
-            label="Your Name"
+            label="Team Name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Enter your name"
+            placeholder="Enter your team name"
             fullWidth
+            required
           />
 
           <div className="pt-4">

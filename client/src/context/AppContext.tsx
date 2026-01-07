@@ -12,6 +12,7 @@ import {
   RegularSeasonResults,
   PlayoffResults,
 } from '@nba-draft-sim/shared';
+import { useNavigate } from 'react-router-dom';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
 import { wsService } from '../services/websocket';
 import { DraftPick } from '@nba-draft-sim/shared';
@@ -37,6 +38,7 @@ interface AppState {
 
   // Error
   error: string | null;
+  isLoading: boolean;
 }
 
 interface AppContextValue extends AppState {
@@ -51,6 +53,7 @@ interface AppProviderProps {
 }
 
 export function AppProvider({ children }: AppProviderProps) {
+  const navigate = useNavigate();
   const [state, setState] = useState<AppState>({
     isConnected: false,
     allPlayers: [],
@@ -61,6 +64,7 @@ export function AppProvider({ children }: AppProviderProps) {
     regularSeasonResults: null,
     playoffResults: null,
     error: null,
+    isLoading: true, // Add isLoading state
   });
 
   useEffect(() => {
@@ -88,6 +92,10 @@ export function AppProvider({ children }: AppProviderProps) {
       wsService.on(WS_EVENTS.LOBBY_CREATED, (data: any) => {
         console.log('🔵 LOBBY_CREATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
+        const user = data.payload.users.find((u: any) => u.userId === wsService.socket?.id);
+        if (user) {
+          localStorage.setItem('rejoinToken', user.rejoinToken);
+        }
       })
     );
 
@@ -95,6 +103,10 @@ export function AppProvider({ children }: AppProviderProps) {
       wsService.on(WS_EVENTS.LOBBY_UPDATED, (data: any) => {
         console.log('🔵 LOBBY_UPDATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
+        const user = data.payload.users.find((u: any) => u.userId === wsService.socket?.id);
+        if (user) {
+          localStorage.setItem('rejoinToken', user.rejoinToken);
+        }
       })
     );
 
@@ -107,7 +119,28 @@ export function AppProvider({ children }: AppProviderProps) {
           draft: data.payload,
           timeRemaining: data.payload.timeRemaining,
         }));
+        navigate('/draft');
       })
+    );
+
+    unsubscribers.push(
+        wsService.on('rejoin:success', (data: any) => {
+            console.log('🔵 REJOIN_SUCCESS event received:', data);
+            setState((prev) => ({
+                ...prev,
+                draft: data.payload,
+                timeRemaining: data.payload.timeRemaining,
+            }));
+            navigate('/draft');
+        })
+    );
+
+    unsubscribers.push(
+        wsService.on('rejoin:failure', (data: any) => {
+            console.log('🔴 REJOIN_FAILURE event received:', data);
+            localStorage.removeItem('rejoinToken');
+            setState((prev) => ({ ...prev, error: data.payload.message }));
+        })
     );
 
     unsubscribers.push(
@@ -190,6 +223,9 @@ export function AppProvider({ children }: AppProviderProps) {
       })
       .catch((error) => {
         setState((prev) => ({ ...prev, error: error.message }));
+      })
+      .finally(() => {
+        setState((prev) => ({ ...prev, isLoading: false }));
       });
   }, []);
 

@@ -40,10 +40,11 @@ export function createLobby(
 
   const commissioner: LobbyUser = {
     userId: commissionerId,
-    displayName,
+    displayName: displayName || 'Team 1',
     teamId: null, // Will be assigned when lobby fills
     isCommissioner: true,
     isConnected: true,
+    rejoinToken: uuidv4(),
   };
 
   const users = [commissioner];
@@ -79,10 +80,11 @@ export function addUserToLobby(
 
   const newUser: LobbyUser = {
     userId,
-    displayName,
+    displayName: displayName || `Team ${lobby.users.length + 1}`,
     teamId: null,
     isCommissioner: false,
     isConnected: true,
+    rejoinToken: uuidv4(),
   };
 
   const newUsers = [...lobby.users, newUser];

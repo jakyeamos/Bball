@@ -12,7 +12,16 @@ import { DraftPage } from './pages/DraftPage';
 import { DraftRecapPage } from './pages/DraftRecapPage';
 import { ResultsPage } from './pages/ResultsPage';
 
+import { wsService } from './services/websocket';
+
 function App() {
+  React.useEffect(() => {
+    const token = localStorage.getItem('rejoinToken');
+    if (token) {
+      wsService.rejoinDraft(token);
+    }
+  }, []);
+
   return (
     <AppProvider>
       <BrowserRouter>
