@@ -1,74 +1,65 @@
 /**
  * Anti-Domination Modifiers
- * Implements Section 6 from pseudocode: prevents dominant meta builds
  */
 
 import { TeamAggregation, TeamModifiers } from '@nba-draft-sim/shared';
 import { TEAM_MODIFIER_PARAMS } from '@nba-draft-sim/shared';
-import { clamp, exponentialDecay } from '../utils/utils';
+import { clamp } from './utils';
 
-/**
- * Diminishing returns function
- * Returns: cap * (1 - exp(-k * max(0, x)))
- */
 function diminishingReturns(x: number, cap: number, k: number): number {
-  const bounded = Math.max(0, x);
-  return cap * (1 - exponentialDecay(bounded, k));
+  return cap * (1 - Math.exp(-k * Math.max(0, x)));
 }
 
-/**
- * Compute team-level modifiers to prevent dominant strategies
- *
- * Three main penalties/bonuses:
- * 1. Creator Penalty: Too many ball-dominant creators
- * 2. Shooting Bonus: Rewards spacing
- * 3. Rim Protection Penalty: Punishes lack of interior defense
- */
 export function computeTeamModifiers(team: TeamAggregation): TeamModifiers {
-  const {
-    CREATOR_TARGET,
-    CREATOR_CAP,
-    CREATOR_K,
-    SHOOT_CAP,
-    SHOOT_K,
-    RIMPROT_MIN,
-    RIMPROT_PENALTY_RATE,
-    RIMPROT_MAX_PENALTY,
-    TOTAL_MIN,
-    TOTAL_MAX,
-  } = TEAM_MODIFIER_PARAMS;
+  const p = TEAM_MODIFIER_PARAMS;
+  const arch = team.archetypes;
 
-  // 1. Creator penalty (for exceeding target %)
-  const creatorPercent =
-    team.archetypes.PrimaryCreator + team.archetypes.SecondaryCreator;
-  const creatorOverage = Math.max(0, creatorPercent - CREATOR_TARGET);
-  const creatorPen = diminishingReturns(creatorOverage, CREATOR_CAP, CREATOR_K);
+  // Core archetype buckets
+  const creators = (arch.PrimaryCreator ?? 0) + (arch.SecondaryCreator ?? 0);
+  const shooters = (arch.OffBallShooter ?? 0) + (arch.MovementShooter ?? 0) + (arch.ThreeAndD ?? 0) + (arch.StretchBig ?? 0);
+  const rimprot  = (arch.RimProtector ?? 0) + (arch.DefAnchor ?? 0);
 
-  // 2. Shooting bonus (for high shooting archetype %)
-  const shootingPercent =
-    team.archetypes.OffBallShooter + team.archetypes.MovementShooter;
-  const shootBonus = diminishingReturns(shootingPercent, SHOOT_CAP, SHOOT_K);
+  // NEW: stability proxy from team versatility
+  const viTeam = (team.features as any).VI ?? 0.5;
 
-  // 3. Rim protection penalty (for insufficient rim protection)
-  const rimProtPercent =
-    team.archetypes.RimProtector + team.archetypes.DefAnchor;
-  let rimPen = 0;
-  if (rimProtPercent < RIMPROT_MIN) {
-    const deficit = RIMPROT_MIN - rimProtPercent;
-    rimPen = Math.min(RIMPROT_MAX_PENALTY, deficit * RIMPROT_PENALTY_RATE);
-  }
+  // Creator redundancy (too many creators → diminishing returns / turnovers / role overlap)
+  const creatorOver = Math.max(0, creators - p.CREATOR_TARGET);
+  const creatorPen = diminishingReturns(creatorOver, p.CREATOR_REDUNDANCY_CAP, p.DIMINISH_K);
 
-  // Total modifier (clamped)
-  const total = clamp(
-    TOTAL_MIN,
-    TOTAL_MAX,
-    shootBonus - creatorPen - rimPen
-  );
+  // Spacing bonus (helps but capped)
+  const shootBonus = diminishingReturns(shooters, p.SPACING_BONUS_CAP, p.DIMINISH_K);
+
+  // Rim protection floor
+  const rimPen = rimprot < p.RIMPROT_MIN
+    ? Math.min(p.RIM_HOLE_CAP, (p.RIMPROT_MIN - rimprot) * 0.002)
+    : 0;
+
+  // Low versatility penalty (fragile teams more exploitable/volatile)
+  const lowVIPen = viTeam < 0.45
+    ? Math.min(p.LOW_VI_PEN_CAP, (0.45 - viTeam) * 0.06)
+    : 0;
+
+  // Split modifiers (preferred by the upgraded sim engine)
+  const offenseBonus = shootBonus;
+  const offensePenalty = creatorPen;
+
+  const defenseBonus = 0;
+  const defensePenalty = rimPen;
+
+  // Variance penalty is used to increase sigma (more volatile) rather than directly impacting rating
+  const variancePenalty = lowVIPen;
+
+  const total = clamp(-p.MAX_TOTAL, p.MAX_TOTAL, offenseBonus - offensePenalty - defensePenalty);
 
   return {
     total,
     shootBonus,
     creatorPen,
     rimPen,
+    offenseBonus,
+    offensePenalty,
+    defenseBonus,
+    defensePenalty,
+    variancePenalty,
   };
 }

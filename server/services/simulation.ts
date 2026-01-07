@@ -1,45 +1,64 @@
 /**
  * Matchup Simulation
- * Implements Section 7 from pseudocode: simulate games between teams
+ * Upgraded: ratings-based + score sampling (μ/σ) instead of logistic coinflip.
  */
 
 import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver } from '@nba-draft-sim/shared';
-import { STRENGTH_WEIGHTS, SIM_PARAMS } from '@nba-draft-sim/shared';
-import { logistic, randomNormal } from '../utils/utils';
+import { SIM_PARAMS } from '@nba-draft-sim/shared';
+import { randomNormal } from './utils';
 import { computeTeamModifiers } from './modifiers';
 
-/**
- * Calculate team strength from features and modifiers
- *
- * Offense: 0.40*TS + 0.20*AST + 0.15*3PA_RATE + 0.10*FT_RATE - 0.15*TOV
- * Defense: 0.25*BLK + 0.25*STL + 0.20*REB
- * Total: offense + defense + modifiers
- */
-export function calculateTeamStrength(
-  team: TeamAggregation,
-  modifiers: TeamModifiers
-): number {
-  const { OFFENSE, DEFENSE } = STRENGTH_WEIGHTS;
-
-  const offense =
-    OFFENSE.TS * team.features.TS +
-    OFFENSE.AST * team.features.AST +
-    OFFENSE.THREE_PA_RATE * team.features.THREE_PA_RATE +
-    OFFENSE.FT_RATE * team.features.FT_RATE +
-    OFFENSE.TOV * team.features.TOV; // Note: weight is already negative
-
-  const defense =
-    DEFENSE.BLK * team.features.BLK +
-    DEFENSE.STL * team.features.STL +
-    DEFENSE.REB * team.features.REB;
-
-  return offense + defense + modifiers.total;
+function getMod(mods: TeamModifiers, key: string): number {
+  return (mods as any)[key] ?? 0;
 }
 
 /**
- * Generate matchup drivers (explanation of key advantages)
- * For v1, this is simplified - returns basic categorical advantages
+ * Convert team features + modifiers into ORtg/DRtg
+ * Still v1-lightweight, but much stronger than linear "strength".
  */
+function computeTeamRatings(team: TeamAggregation, mods: TeamModifiers) {
+  const P = SIM_PARAMS as any;
+
+  const vi = (team.features as any).VI ?? 0.5;
+  const par = (team.features as any).PAR ?? 0.6;
+
+  const offenseBonus = getMod(mods, 'offenseBonus');
+  const offensePenalty = getMod(mods, 'offensePenalty');
+  const defenseBonus = getMod(mods, 'defenseBonus');
+  const defensePenalty = getMod(mods, 'defensePenalty');
+
+  // ORtg from your allowed inputs + PAR/VI internally
+  const ORtg =
+    P.LEAGUE_ORtg +
+    P.ORTG_TS_MULT * (team.features.TS - 0.56) +
+    P.ORTG_AST_MULT * (team.features.AST / 10) +
+    P.ORTG_PAR_MULT * (par - 0.60) +
+    P.ORTG_3PA_MULT * (team.features.THREE_PA_RATE - 0.35) +
+    P.ORTG_FT_MULT * (team.features.FT_RATE - 0.25) +
+    P.ORTG_TOV_MULT * (team.features.TOV / 5) +   // turnover sensitivity
+    offenseBonus -
+    offensePenalty;
+
+  // DRtg (lower is better)
+  const DRtg =
+    P.LEAGUE_DRtg -
+    P.DRTG_BLK_MULT * team.features.BLK -
+    P.DRTG_STL_MULT * team.features.STL -
+    P.DRTG_REB_MULT * team.features.REB +
+    defensePenalty -
+    defenseBonus;
+
+  // Score variance (series looks different even with same mapped series length)
+  const sigma =
+    P.BASE_SIGMA +
+    P.SIGMA_THREES * team.features.THREE_PA_RATE +
+    P.SIGMA_TOV * (team.features.TOV / 5) -
+    P.SIGMA_VI * vi +
+    getMod(mods, 'variancePenalty') * 10;
+
+  return { ORtg, DRtg, sigma };
+}
+
 function generateMatchupDrivers(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
@@ -48,107 +67,77 @@ function generateMatchupDrivers(
 ): MatchupDriver[] {
   const drivers: MatchupDriver[] = [];
 
-  // Offense comparison
-  const offenseDiff = teamA.features.TS - teamB.features.TS;
-  if (Math.abs(offenseDiff) > 0.02) {
-    drivers.push({
-      category: 'Shooting Efficiency',
-      impact: Math.abs(offenseDiff),
-      advantage: offenseDiff > 0 ? 'A' : 'B',
-    });
+  const tsDiff = teamA.features.TS - teamB.features.TS;
+  if (Math.abs(tsDiff) > 0.02) {
+    drivers.push({ category: 'Shooting Efficiency', impact: Math.abs(tsDiff), advantage: tsDiff > 0 ? 'A' : 'B' });
   }
 
-  // Playmaking comparison
-  const playDiff = teamA.features.AST - teamB.features.AST;
-  if (Math.abs(playDiff) > 0.5) {
-    drivers.push({
-      category: 'Playmaking',
-      impact: Math.abs(playDiff),
-      advantage: playDiff > 0 ? 'A' : 'B',
-    });
+  const parA = (teamA.features as any).PAR ?? 0.6;
+  const parB = (teamB.features as any).PAR ?? 0.6;
+  const parDiff = parA - parB;
+  if (Math.abs(parDiff) > 0.05) {
+    drivers.push({ category: 'Ball Security (PAR)', impact: Math.abs(parDiff), advantage: parDiff > 0 ? 'A' : 'B' });
   }
 
-  // Rim protection comparison
-  const rimDiff = teamA.features.BLK - teamB.features.BLK;
-  if (Math.abs(rimDiff) > 0.3) {
-    drivers.push({
-      category: 'Rim Protection',
-      impact: Math.abs(rimDiff),
-      advantage: rimDiff > 0 ? 'A' : 'B',
-    });
+  const threeDiff = teamA.features.THREE_PA_RATE - teamB.features.THREE_PA_RATE;
+  if (Math.abs(threeDiff) > 0.06) {
+    drivers.push({ category: 'Spacing / 3PA Rate', impact: Math.abs(threeDiff), advantage: threeDiff > 0 ? 'A' : 'B' });
   }
 
-  // Team composition modifiers
-  if (Math.abs(modsA.total - modsB.total) > 0.02) {
-    drivers.push({
-      category: 'Team Composition',
-      impact: Math.abs(modsA.total - modsB.total),
-      advantage: modsA.total > modsB.total ? 'A' : 'B',
-    });
+  const viA = (teamA.features as any).VI ?? 0.5;
+  const viB = (teamB.features as any).VI ?? 0.5;
+  const viDiff = viA - viB;
+  if (Math.abs(viDiff) > 0.07) {
+    drivers.push({ category: 'Lineup Versatility (VI)', impact: Math.abs(viDiff), advantage: viDiff > 0 ? 'A' : 'B' });
   }
 
-  return drivers;
+  const compDiff = (modsA.total ?? 0) - (modsB.total ?? 0);
+  if (Math.abs(compDiff) > 0.02) {
+    drivers.push({ category: 'Team Composition', impact: Math.abs(compDiff), advantage: compDiff > 0 ? 'A' : 'B' });
+  }
+
+  return drivers.slice(0, 3);
 }
 
-/**
- * Simulate a single matchup between two teams
- * Runs multiple simulations and returns win probability and winner
- */
 export function simulateMatchup(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
   numSims: number = SIM_PARAMS.SIMS_PER_MATCHUP
 ): MatchupResult {
-  const { STRENGTH_SCALE, SHOOT_SIGMA, TOV_SIGMA, GAME_SIGMA } = SIM_PARAMS;
+  const P = SIM_PARAMS as any;
 
-  // Calculate modifiers
   const modsA = computeTeamModifiers(teamA);
   const modsB = computeTeamModifiers(teamB);
 
-  // Calculate base strength difference
-  const strengthA = calculateTeamStrength(teamA, modsA);
-  const strengthB = calculateTeamStrength(teamB, modsB);
-  const baseDiff = (strengthA - strengthB) * STRENGTH_SCALE;
+  const rA = computeTeamRatings(teamA, modsA);
+  const rB = computeTeamRatings(teamB, modsB);
 
-  // Run simulations
+  // Offense vs opponent defense interaction
+  const ORtgA_vs_B = rA.ORtg - P.DEF_INTERACTION * (rB.DRtg - P.LEAGUE_DRtg);
+  const ORtgB_vs_A = rB.ORtg - P.DEF_INTERACTION * (rA.DRtg - P.LEAGUE_DRtg);
+
+  const pace = P.BASE_PACE;
+
+  const muA = pace * (ORtgA_vs_B / 100);
+  const muB = pace * (ORtgB_vs_A / 100);
+
   let winsA = 0;
 
   for (let i = 0; i < numSims; i++) {
-    // Add variance
-    let diff = baseDiff;
-    diff += randomNormal(0, SHOOT_SIGMA); // Shooting variance
-    diff += randomNormal(0, TOV_SIGMA);   // Turnover variance
-    diff += randomNormal(0, GAME_SIGMA);  // Generic game noise
-
-    // Convert to win probability via logistic
-    const probA = logistic(diff);
-
-    // Simulate game outcome
-    if (Math.random() < probA) {
-      winsA++;
-    }
+    const scoreA = randomNormal(muA, rA.sigma);
+    const scoreB = randomNormal(muB, rB.sigma);
+    if (scoreA > scoreB) winsA++;
   }
 
   const winsB = numSims - winsA;
   const winPctA = winsA / numSims;
   const winner = winsA > winsB ? 'A' : 'B';
 
-  // Generate drivers
   const drivers = generateMatchupDrivers(teamA, teamB, modsA, modsB);
 
-  return {
-    winner,
-    winPctA,
-    winsA,
-    winsB,
-    drivers,
-  };
+  return { winner, winPctA, winsA, winsB, drivers };
 }
 
-/**
- * Simulate a best-of-N series (for playoffs)
- * Each "game" is actually 100 sims to determine winner
- */
 export function simulateSeries(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
@@ -161,18 +150,9 @@ export function simulateSeries(
   while (winsA < winsNeeded && winsB < winsNeeded) {
     const gameResult = simulateMatchup(teamA, teamB);
     games.push(gameResult);
-
-    if (gameResult.winner === 'A') {
-      winsA++;
-    } else {
-      winsB++;
-    }
+    if (gameResult.winner === 'A') winsA++;
+    else winsB++;
   }
 
-  return {
-    winsA,
-    winsB,
-    winner: winsA >= winsNeeded ? 'A' : 'B',
-    games,
-  };
+  return { winsA, winsB, winner: winsA >= winsNeeded ? 'A' : 'B', games };
 }

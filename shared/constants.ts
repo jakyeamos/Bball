@@ -10,38 +10,15 @@ import { ArchetypeName } from './types';
 // ============================================================================
 
 export const RELIABILITY_PARAMS = {
-  MP_MIDPOINT: 1000,    // Minutes played midpoint for sigmoid
-  MP_SCALE: 300,        // Scale factor for minutes sigmoid
-  GP_MIDPOINT: 50,      // Games played midpoint for sigmoid
-  GP_SCALE: 15,         // Scale factor for games sigmoid
-  MP_WEIGHT: 0.75,      // Weight for minutes in reliability
-  GP_WEIGHT: 0.25,      // Weight for games in reliability
-};
+  MP_MIDPOINT: 1000,
+  MP_SCALE: 300,
+  GP_MIDPOINT: 50,
+  GP_SCALE: 15,
+} as const;
 
 // ============================================================================
-// ARCHETYPE WEIGHTS
+// ARCHETYPES
 // ============================================================================
-
-export const ARCHETYPE_WEIGHTS: Record<ArchetypeName, Record<string, number>> = {
-  PrimaryCreator: { USG: 1.4, AST: 1.2, A2T: 0.6, TS: 0.2, TOV: -0.6 },
-  SecondaryCreator: { USG: 0.8, AST: 0.8, TS: 0.4, TOV: -0.3 },
-  Connector: { A2T: 1.2, TOV: -0.7, TS: 0.4, AST: 0.4 },
-  OffBallShooter: { THREE_PA_RATE: 1.4, TS: 0.9, USG: -0.2 },
-  MovementShooter: { THREE_PA_RATE: 1.1, TS: 0.7, USG: 0.2 },
-  Slasher: { FT_RATE: 1.2, USG: 0.6, TS: 0.2, THREE_PA_RATE: -0.3 },
-  PostScorer: { USG: 0.6, TS: 0.3, FT_RATE: 0.3 },
-  PlaymakingBig: { AST: 1.0, USG: 0.4, REB: 0.4 },
-  POAStopper: { STL: 0.8 },
-  HelpDefender: { STL: 0.6, BLK: 0.4 },
-  RimProtector: { BLK: 1.6, REB: 0.5 },
-  DefAnchor: { BLK: 1.0, REB: 1.0 },
-  DefPlaymaker: { STL: 1.4, BLK: 0.6 },
-  ThreeAndD: { THREE_PA_RATE: 0.9, TS: 0.5, STL: 0.4, BLK: 0.2 },
-  StretchBig: { THREE_PA_RATE: 1.0, REB: 0.2, BLK: 0.2 },
-  VerticalRoller: { FT_RATE: 0.7, REB: 0.6, BLK: 0.2 },
-  Rebounder: { REB: 1.7, BLK: 0.2 },
-  UtilityWing: { TS: 0.5, THREE_PA_RATE: 0.4, AST: 0.4, STL: 0.4, REB: 0.3 },
-};
 
 export const ARCHETYPE_NAMES: ArchetypeName[] = [
   'PrimaryCreator',
@@ -62,49 +39,73 @@ export const ARCHETYPE_NAMES: ArchetypeName[] = [
   'VerticalRoller',
   'Rebounder',
   'UtilityWing',
-];
+
+  // Extra archetypes (requested “more archetypes”)
+  'TransitionEngine',
+  'BenchMicrowave',
+  'LowUsageSniper',
+  'SwitchableBig',
+  'ScreenHub',
+] as unknown as ArchetypeName[];
+
+// NOTE: weights live in archetypes.ts in your project; constants here stay minimal.
+// Keep this export because other modules import it.
+export const ARCHETYPE_WEIGHTS = {} as Record<string, Record<string, number>>;
 
 // ============================================================================
-// IMPACT RATING WEIGHTS (for rotation selection & auto-pick)
+// IMPACT RATING (autopick + rotation selection)
 // ============================================================================
 
 export const IMPACT_WEIGHTS = {
-  TS: 0.35,
-  AST: 0.20,
-  TOV: -0.15,
+  // Offense
+  TS: 0.32,
+  AST: 0.12,
+  PAR: 0.18,              // NEW (Pomeroy Assist Ratio)
   THREE_PA_RATE: 0.10,
-  BLK: 0.10,
-  STL: 0.10,
-};
+  FT_RATE: 0.06,
+  USG: 0.04,
+
+  // Defense
+  STL: 0.09,
+  BLK: 0.06,
+  REB: 0.05,
+
+  // Stability
+  VI: 0.10,               // NEW (Versatility Index; positive-only entropy)
+  TOV: -0.12,
+} as const;
+
+export const ROTATION_SIZE = 8 as const;
 
 // ============================================================================
-// TEAM AGGREGATION
-// ============================================================================
-
-export const ROTATION_SIZE = 8;  // Top 8 players by impact rating
-
-// ============================================================================
-// ANTI-DOMINATION MODIFIERS
+// TEAM MODIFIERS (anti-domination, floors, diminishing returns)
 // ============================================================================
 
 export const TEAM_MODIFIER_PARAMS = {
-  CREATOR_TARGET: 30,      // Target % for Primary + Secondary creators
-  CREATOR_CAP: 0.07,       // Max penalty for too many creators
-  CREATOR_K: 0.05,         // Diminishing returns steepness
+  // Targets in "archetype percent" space (0..100)
+  CREATOR_TARGET: 45,           // too many creators → redundancy
+  SPACING_TARGET: 35,           // want meaningful spacing presence
+  RIMPROT_MIN: 18,              // floor to avoid no-center cheese
 
-  SHOOT_CAP: 0.05,         // Max bonus for shooting
-  SHOOT_K: 0.04,           // Diminishing returns steepness
+  // Caps (modifiers should not dominate outcomes)
+  MAX_TOTAL: 0.07,              // +/- 7% equivalent impact in ratings-space
+  MAX_COMPONENT: 0.06,
 
-  RIMPROT_MIN: 10,         // Minimum % for rim protection
-  RIMPROT_PENALTY_RATE: 0.002,  // Penalty per % below minimum
-  RIMPROT_MAX_PENALTY: 0.06,    // Max penalty for lack of rim protection
+  // Diminishing return curves
+  DIMINISH_K: 0.05,
 
-  TOTAL_MIN: -0.07,        // Min total modifier
-  TOTAL_MAX: 0.07,         // Max total modifier
-};
+  // Penalty/bonus strengths (these are applied to ratings, not win-prob directly)
+  CREATOR_REDUNDANCY_CAP: 0.06,
+  SPACING_BONUS_CAP: 0.05,
+  RIM_HOLE_CAP: 0.06,
+
+  // NEW: stability controls
+  LOW_VI_PEN_CAP: 0.03,
+} as const;
 
 // ============================================================================
-// TEAM STRENGTH CALCULATION
+// (Legacy) TEAM STRENGTH WEIGHTS
+// Kept for compatibility; newer sim uses ratings-based engine.
 // ============================================================================
 
 export const STRENGTH_WEIGHTS = {
@@ -120,64 +121,82 @@ export const STRENGTH_WEIGHTS = {
     STL: 0.25,
     REB: 0.20,
   },
-};
+} as const;
 
 // ============================================================================
-// MATCHUP SIMULATION PARAMETERS
+// SIMULATION PARAMETERS (ratings + score simulation)
 // ============================================================================
 
 export const SIM_PARAMS = {
   SIMS_PER_MATCHUP: 100,
-  STRENGTH_SCALE: 2.5,      // Scale factor for team strength difference
-  SHOOT_SIGMA: 0.3,         // Shooting variance std dev
-  TOV_SIGMA: 0.25,          // Turnover variance std dev
-  GAME_SIGMA: 0.4,          // Generic game noise std dev
-};
 
-// ============================================================================
-// PLAYOFFS PARAMETERS
-// ============================================================================
+  // Ratings
+  LEAGUE_ORtg: 115,        // baseline points / 100 possessions
+  LEAGUE_DRtg: 115,
+  BASE_PACE: 99,           // possessions per game (fixed v1)
+
+  // Convert feature deltas -> ORtg/DRtg deltas
+  ORTG_TS_MULT: 18.0,      // TS difference around league avg
+  ORTG_AST_MULT: 1.2,      // AST per game scaled /10 in code
+  ORTG_PAR_MULT: 6.0,      // PAR shift matters
+  ORTG_3PA_MULT: 4.0,
+  ORTG_FT_MULT: 3.0,
+  ORTG_TOV_MULT: -6.0,     // turnover hurts ORtg
+
+  DRTG_BLK_MULT: 0.6,
+  DRTG_STL_MULT: 0.6,
+  DRTG_REB_MULT: 0.3,
+
+  // Offense vs defense interaction strength
+  DEF_INTERACTION: 0.55,
+
+  // Score variance controls (to make series look different)
+  BASE_SIGMA: 11.5,
+  SIGMA_THREES: 6.0,
+  SIGMA_TOV: 1.5,
+  SIGMA_VI: 4.0,
+
+  // Optional matchup knobs (v1 lightweight)
+  MATCHUP_RIM_ALPHA: 1.0,
+  MATCHUP_TOV_ALPHA: 0.8,
+  MATCHUP_SHOOT_ALPHA: 0.7,
+
+  // Legacy fields (kept so other imports don't break)
+  STRENGTH_SCALE: 1.0,
+  SHOOT_SIGMA: 0.35,
+  TOV_SIGMA: 0.35,
+  GAME_SIGMA: 0.35,
+} as const;
 
 export const PLAYOFF_PARAMS = {
   TOP_TEAMS: 4,
-  SERIES_WINS_NEEDED: 2,    // Best of 3
-  SIMS_PER_GAME: 100,       // Each game is 100 sims
-};
+  WINS_NEEDED: 2, // best-of-3
+} as const;
 
-// ============================================================================
-// SERIES LENGTH MAPPING (UI)
-// ============================================================================
-
+// Series visual mapping thresholds (UI-only)
 export const SERIES_LENGTH_THRESHOLDS = [
-  { minWinPct: 0.80, seriesLength: [4, 0] as [number, number] },
-  { minWinPct: 0.70, seriesLength: [4, 1] as [number, number] },
-  { minWinPct: 0.60, seriesLength: [4, 2] as [number, number] },
-  { minWinPct: 0.00, seriesLength: [4, 3] as [number, number] },
-];
+  { minWinPct: 0.80, wins: [4, 0] },
+  { minWinPct: 0.70, wins: [4, 1] },
+  { minWinPct: 0.60, wins: [4, 2] },
+  { minWinPct: 0.50, wins: [4, 3] },
+] as const;
 
 export const SERIES_PATH_PARAMS = {
-  BIAS_STRENGTH: 0.15,      // How much to bias early games
-  MIN_PROB: 0.35,           // Minimum probability for any single game
-  MAX_PROB: 0.65,           // Maximum probability for any single game
-};
+  MIN_EARLY_P: 0.35,
+  MAX_EARLY_P: 0.65,
+  BIAS_STRENGTH: 0.15,
+} as const;
 
-// ============================================================================
-// DRAFT CONFIGURATION CONSTRAINTS
-// ============================================================================
-
+// Draft constraints
 export const DRAFT_CONSTRAINTS = {
   MIN_TEAMS: 4,
   MAX_TEAMS: 12,
   MIN_ROSTER: 10,
   MAX_ROSTER: 15,
   PICK_TIMERS: [60, 120, 300] as const,
-  TOP_20_AUTO_PICK: 20,     // Auto-pick from top 20 by impact if timer expires
-};
+} as const;
 
-// ============================================================================
-// FEATURE NAMES (for standardization)
-// ============================================================================
-
+// Feature names (used for standardization / debugging)
 export const FEATURE_NAMES = [
   'TS',
   'AST',
@@ -189,64 +208,22 @@ export const FEATURE_NAMES = [
   'STL',
   'REB',
   'USG',
+  'PAR',
+  'VI',
 ] as const;
 
-// ============================================================================
-// ROLE CATEGORIES (for shrinkage)
-// ============================================================================
+// Position → broad role bucket (for role averages)
+export const POSITION_TO_ROLE = {
+  PG: 'G',
+  SG: 'G',
+  SF: 'W',
+  PF: 'B',
+  C: 'B',
+} as const;
 
-export type RoleCategory = 'G' | 'W' | 'B';  // Guard, Wing, Big
-
-export const POSITION_TO_ROLE: Record<string, RoleCategory> = {
-  'PG': 'G',
-  'SG': 'G',
-  'G': 'G',
-  'SF': 'W',
-  'PF': 'W',
-  'F': 'W',
-  'C': 'B',
-};
-
-// ============================================================================
-// TRADE WINDOW
-// ============================================================================
-
-export const TRADE_WINDOW_DURATION_MS = 5 * 60 * 1000;  // 5 minutes
-
-// ============================================================================
-// WEBSOCKET EVENTS
-// ============================================================================
+export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 export const WS_EVENTS = {
-  // Client -> Server
-  CREATE_LOBBY: 'CREATE_LOBBY',
-  JOIN_LOBBY: 'JOIN_LOBBY',
-  START_DRAFT: 'START_DRAFT',
-  MAKE_PICK: 'MAKE_PICK',
-  UPDATE_QUEUE: 'UPDATE_QUEUE',
-  PAUSE_DRAFT: 'PAUSE_DRAFT',
-  UNPAUSE_DRAFT: 'UNPAUSE_DRAFT',
-  START_TRADE_WINDOW: 'START_TRADE_WINDOW',
-  EXECUTE_TRADE: 'EXECUTE_TRADE',
-  START_REGULAR_SEASON: 'START_REGULAR_SEASON',
-  START_PLAYOFFS: 'START_PLAYOFFS',
-
-  // Server -> Client
-  LOBBY_CREATED: 'LOBBY_CREATED',
-  LOBBY_UPDATED: 'LOBBY_UPDATED',
-  DRAFT_STARTED: 'DRAFT_STARTED',
-  DRAFT_UPDATED: 'DRAFT_UPDATED',
-  PICK_MADE: 'PICK_MADE',
-  TIMER_TICK: 'TIMER_TICK',
-  DRAFT_COMPLETED: 'DRAFT_COMPLETED',
-  TRADE_WINDOW_STARTED: 'TRADE_WINDOW_STARTED',
-  TRADE_EXECUTED: 'TRADE_EXECUTED',
-  REGULAR_SEASON_STARTED: 'REGULAR_SEASON_STARTED',
-  PLAYOFFS_STARTED: 'PLAYOFFS_STARTED',
-  LEAGUE_UPDATED: 'LEAGUE_UPDATED',
-  ERROR: 'ERROR',
-
-  // Connection
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
   RECONNECT: 'reconnect',

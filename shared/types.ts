@@ -58,6 +58,8 @@ export interface PlayerFeatures {
   STL: number;
   REB: number;
   USG: number;
+  PAR: number;  // Pomeroy Assist Ratio
+  VI: number;   // Versatility Index (positive-only)
 }
 
 export type ArchetypeName =
@@ -78,7 +80,12 @@ export type ArchetypeName =
   | 'StretchBig'
   | 'VerticalRoller'
   | 'Rebounder'
-  | 'UtilityWing';
+  | 'UtilityWing'
+  | 'TransitionEngine'
+  | 'BenchMicrowave'
+  | 'LowUsageSniper'
+  | 'SwitchableBig'
+  | 'ScreenHub';
 
 export type ArchetypeProfile = Record<ArchetypeName, number>;
 
@@ -177,6 +184,10 @@ export interface TeamAggregation {
     REB: number;
     BLK: number;
     STL: number;
+    USG: number;
+    PAR: number;
+    VI: number;
+    A2T?: number;
   };
   archetypes: ArchetypeProfile;
   rotationPlayerIds: string[];  // Top 8 by impact rating
@@ -187,6 +198,11 @@ export interface TeamModifiers {
   shootBonus: number;
   creatorPen: number;
   rimPen: number;
+  offenseBonus: number;
+  offensePenalty: number;
+  defenseBonus: number;
+  defensePenalty: number;
+  variancePenalty: number;
 }
 
 export interface MatchupDriver {
@@ -340,3 +356,43 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+export const WS_EVENTS = {
+  // lobby lifecycle
+  LOBBY_CREATED: 'lobby:created',
+  LOBBY_UPDATED: 'lobby:updated',
+  LOBBY_FULL: 'lobby:full',
+
+  // membership / presence
+  MEMBER_JOINED: 'member:joined',
+  MEMBER_LEFT: 'member:left',
+  MEMBER_UPDATED: 'member:updated',
+
+  // draft flow
+  DRAFT_STARTED: 'draft:started',
+  PICK_MADE: 'draft:pick_made',
+  PICK_AUTO: 'draft:pick_auto',
+  TIMER_TICK: 'draft:timer_tick',
+  DRAFT_PAUSED: 'draft:paused',
+  DRAFT_RESUMED: 'draft:resumed',
+  DRAFT_FINISHED: 'draft:finished',
+
+  // server errors
+  ERROR: 'error',
+} as const;
+
+export type WSEvent = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
+
+// Keep these aligned with your product rules
+export const DRAFT_CONSTRAINTS = {
+  TEAMS_MIN: 4,
+  TEAMS_MAX: 12,
+  ROSTER_MIN: 10,
+  ROSTER_MAX: 15,
+  // you said 1,2,5 minutes per pick
+  PICK_TIMER_OPTIONS_SECONDS: [60, 120, 300] as const,
+  SIMS_PER_MATCHUP: 100,
+  PLAYOFF_TEAMS: 4,
+  PLAYOFF_BEST_OF: 3, // 3 separate sims, not a series animation
+  SERIES_VISUAL_MAX_GAMES: 7, // visual suspense only
+} as const;
