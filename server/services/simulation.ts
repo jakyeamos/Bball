@@ -5,7 +5,7 @@
 
 import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver } from '@nba-draft-sim/shared';
 import { SIM_PARAMS } from '@nba-draft-sim/shared';
-import { randomNormal } from './utils';
+import { randomNormal } from '../utils/utils';
 import { computeTeamModifiers } from './modifiers';
 
 function getMod(mods: TeamModifiers, key: string): number {

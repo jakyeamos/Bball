@@ -330,12 +330,12 @@ export function validateDraftState(state: DraftState): { valid: boolean; errors:
   const errors: string[] = [];
 
   // Check team count
-  if (state.teams.length < DRAFT_CONSTRAINTS.MIN_TEAMS || state.teams.length > DRAFT_CONSTRAINTS.MAX_TEAMS) {
+  if (state.teams.length < DRAFT_CONSTRAINTS.TEAMS_MIN || state.teams.length > DRAFT_CONSTRAINTS.TEAMS_MAX) {
     errors.push(`Invalid team count: ${state.teams.length}`);
   }
 
   // Check roster size
-  if (state.config.rosterSize < DRAFT_CONSTRAINTS.MIN_ROSTER || state.config.rosterSize > DRAFT_CONSTRAINTS.MAX_ROSTER) {
+  if (state.config.rosterSize < DRAFT_CONSTRAINTS.ROSTER_MIN || state.config.rosterSize > DRAFT_CONSTRAINTS.ROSTER_MAX) {
     errors.push(`Invalid roster size: ${state.config.rosterSize}`);
   }
 
@@ -353,7 +353,7 @@ export function validateDraftState(state: DraftState): { valid: boolean; errors:
   }
 
   // Check all picked players are not in available pool
-  const intersection = pickedPlayers.filter(p => state.availablePlayers.includes(p));
+  const intersection = pickedPlayers.filter(p => p !== null && state.availablePlayers.includes(p));
   if (intersection.length > 0) {
     errors.push('Picked players still in available pool');
   }

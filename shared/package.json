@@ -1,5 +1,8 @@
 {
   "name": "@nba-draft-sim/shared",
   "version": "1.0.0",
-  "main": "types.ts"
+  "main": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
 }

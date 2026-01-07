@@ -4,7 +4,7 @@
 
 import { TeamAggregation, TeamModifiers } from '@nba-draft-sim/shared';
 import { TEAM_MODIFIER_PARAMS } from '@nba-draft-sim/shared';
-import { clamp } from './utils';
+import { clamp } from '../utils/utils';
 
 function diminishingReturns(x: number, cap: number, k: number): number {
   return cap * (1 - Math.exp(-k * Math.max(0, x)));

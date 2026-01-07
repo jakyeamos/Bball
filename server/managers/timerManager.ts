@@ -8,12 +8,14 @@ import { Player } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
 import { updateTimer, isTimerExpired, resetTimer } from '../services/draftState';
 import { drafts, handleAutoPick } from '../services/handlers';
+import { clearInterval as clearIntervalNode } from 'timers';
+
 
 /**
  * Active timer intervals
  * Maps lobbyId -> NodeJS.Timer
  */
-const activeTimers = new Map<string, NodeJS.Timer>();
+const activeTimers = new Map<string, NodeJS.Timeout>();
 
 /**
  * Start draft timer for a lobby
@@ -69,7 +71,7 @@ export function startDraftTimer(
 export function stopDraftTimer(lobbyId: string) {
   const interval = activeTimers.get(lobbyId);
   if (interval) {
-    clearInterval(interval);
+    clearInterval(interval);  // This should work now
     activeTimers.delete(lobbyId);
   }
 }

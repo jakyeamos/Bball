@@ -120,12 +120,12 @@ export function LobbyPage() {
           <form onSubmit={handleCreateLobby} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Teams ({DRAFT_CONSTRAINTS.MIN_TEAMS}-{DRAFT_CONSTRAINTS.MAX_TEAMS})
+                Number of Teams ({DRAFT_CONSTRAINTS.TEAMS_MIN}-{DRAFT_CONSTRAINTS.TEAMS_MAX})
               </label>
               <input
                 type="range"
-                min={DRAFT_CONSTRAINTS.MIN_TEAMS}
-                max={DRAFT_CONSTRAINTS.MAX_TEAMS}
+                min={DRAFT_CONSTRAINTS.TEAMS_MIN}
+                max={DRAFT_CONSTRAINTS.TEAMS_MAX}
                 value={teamCount}
                 onChange={(e) => setTeamCount(Number(e.target.value))}
                 className="w-full"
@@ -137,12 +137,12 @@ export function LobbyPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Roster Size ({DRAFT_CONSTRAINTS.MIN_ROSTER}-{DRAFT_CONSTRAINTS.MAX_ROSTER})
+                Roster Size ({DRAFT_CONSTRAINTS.ROSTER_MIN}-{DRAFT_CONSTRAINTS.ROSTER_MAX})
               </label>
               <input
                 type="range"
-                min={DRAFT_CONSTRAINTS.MIN_ROSTER}
-                max={DRAFT_CONSTRAINTS.MAX_ROSTER}
+                min={DRAFT_CONSTRAINTS.ROSTER_MIN}
+                max={DRAFT_CONSTRAINTS.ROSTER_MAX}
                 value={rosterSize}
                 onChange={(e) => setRosterSize(Number(e.target.value))}
                 className="w-full"

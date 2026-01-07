@@ -9,7 +9,7 @@ import {
 } from '@nba-draft-sim/shared';
 
 import { IMPACT_WEIGHTS, ROTATION_SIZE } from '@nba-draft-sim/shared';
-import { safeDivide } from './utils';
+import { safeDivide } from '../utils/utils';
 import { aggregateArchetypeProfiles } from './archetypes';
 
 function scaleTS(ts: number): number {
@@ -17,7 +17,7 @@ function scaleTS(ts: number): number {
   return (ts - 0.56) * 100;
 }
 
-function playerImpactRating(f: PlayerFeatures): number {
+export function calculateImpactRating(f: PlayerFeatures): number {
   const w = IMPACT_WEIGHTS as any;
 
   const par = (f as any).PAR ?? safeDivide(f.AST, f.AST + f.TOV);
@@ -51,11 +51,11 @@ function weightedAvg(values: number[], weights: number[]): number {
   return values.reduce((acc, v, i) => acc + v * weights[i], 0);
 }
 
-export function aggregateTeam(players: Player[]): TeamAggregation {
+export function aggregateTeam(players: Player[], teamId: string): TeamAggregation {
   // compute impact for each player (should already be computed elsewhere; safe here)
   const rated = players.map(p => ({
     ...p,
-    impactRating: p.impactRating ?? playerImpactRating(p.features),
+    impactRating: p.impactRating ?? calculateImpactRating(p.features),
   }));
 
   // Top rotation
@@ -88,6 +88,7 @@ export function aggregateTeam(players: Player[]): TeamAggregation {
   );
 
   return {
+    teamId,
     features: teamFeatures as any,
     archetypes,
     rotationPlayerIds: rotation.map(p => p.playerId),

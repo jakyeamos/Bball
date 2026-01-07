@@ -4,7 +4,7 @@
 
 import { PlayerRawStats, PlayerFeatures } from '@nba-draft-sim/shared';
 import { calculateReliabilityFactor, shrinkToRoleAverage } from './reliability';
-import { safeDivide, zscore } from './utils';
+import { safeDivide, zscore } from '../utils/utils';
 
 export interface RoleSummary {
   avg_TS: number;
@@ -96,8 +96,6 @@ export function buildPlayerFeatures(
     STL: stl,
     REB: reb,
     USG: usg,
-
-    // @ts-expect-error - add PAR/VI to PlayerFeatures in shared types
     PAR: par,
     VI: vi,
   };

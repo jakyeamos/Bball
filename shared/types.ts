@@ -58,8 +58,9 @@ export interface PlayerFeatures {
   STL: number;
   REB: number;
   USG: number;
-  PAR: number;  // Pomeroy Assist Ratio
-  VI: number;   // Versatility Index (positive-only)
+  PAR?: number;  // Pomeroy Assist Ratio
+  VI?: number;   // Versatility Index (positive-only)
+  [key: string]: number | undefined;
 }
 
 export type ArchetypeName =
@@ -358,26 +359,44 @@ export interface ApiResponse<T> {
 }
 
 export const WS_EVENTS = {
-  // lobby lifecycle
+  // Socket.io built-in events
+  CONNECT: 'connect',
+  DISCONNECT: 'disconnect',
+
+  // Client → Server events (actions initiated by client)
+  CREATE_LOBBY: 'create:lobby',
+  JOIN_LOBBY: 'join:lobby',
+  START_DRAFT: 'draft:start',
+  MAKE_PICK: 'draft:make_pick',
+  UPDATE_QUEUE: 'draft:update_queue',
+  PAUSE_DRAFT: 'draft:pause',
+  UNPAUSE_DRAFT: 'draft:unpause',
+  START_TRADE_WINDOW: 'trade:start_window',
+  EXECUTE_TRADE: 'trade:execute',
+  START_REGULAR_SEASON: 'season:start_regular',
+  START_PLAYOFFS: 'playoffs:start',
+
+  // Server → Client events (updates from server)
   LOBBY_CREATED: 'lobby:created',
   LOBBY_UPDATED: 'lobby:updated',
   LOBBY_FULL: 'lobby:full',
-
-  // membership / presence
   MEMBER_JOINED: 'member:joined',
   MEMBER_LEFT: 'member:left',
   MEMBER_UPDATED: 'member:updated',
-
-  // draft flow
   DRAFT_STARTED: 'draft:started',
+  DRAFT_UPDATED: 'draft:updated',
+  DRAFT_COMPLETED: 'draft:completed',
   PICK_MADE: 'draft:pick_made',
   PICK_AUTO: 'draft:pick_auto',
   TIMER_TICK: 'draft:timer_tick',
   DRAFT_PAUSED: 'draft:paused',
   DRAFT_RESUMED: 'draft:resumed',
   DRAFT_FINISHED: 'draft:finished',
-
-  // server errors
+  LEAGUE_UPDATED: 'league:updated',
+  TRADE_WINDOW_STARTED: 'trade:window_started',
+  REGULAR_SEASON_STARTED: 'season:regular_started',
+  PLAYOFFS_STARTED: 'playoffs:started',
+  TRADE_EXECUTED: 'trade:executed',
   ERROR: 'error',
 } as const;
 
@@ -395,4 +414,21 @@ export const DRAFT_CONSTRAINTS = {
   PLAYOFF_TEAMS: 4,
   PLAYOFF_BEST_OF: 3, // 3 separate sims, not a series animation
   SERIES_VISUAL_MAX_GAMES: 7, // visual suspense only
+  TOP_20_AUTO_PICK: 20,
 } as const;
+
+export type RoleCategory = 'G' | 'W' | 'B';
+
+export interface RoleSummary {
+  avg_TS: number;
+  avg_AST: number;
+  avg_TOV: number;
+  avg_3PA_rate: number;
+  avg_FT_rate: number;
+  avg_BLK: number;
+  avg_STL: number;
+  avg_REB: number;
+  avg_usage_proxy: number;
+  avg_PAR: number;
+  avg_VI: number;
+}

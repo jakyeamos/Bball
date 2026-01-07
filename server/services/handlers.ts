@@ -124,7 +124,10 @@ export function handleJoinLobby(
     socket.data.lobbyId = lobbyId;
 
     // Broadcast update to all users in lobby
-    emitToLobby(io, lobbyId, WS_EVENTS.LOBBY_UPDATED, { payload: updatedLobby });
+    emitToLobby(io, lobbyId, WS_EVENTS.LOBBY_UPDATED, {
+      type: 'LOBBY_UPDATED',
+      payload: updatedLobby
+    });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -182,7 +185,7 @@ export function handleStartDraft(
     createLeague(activeDraft);
 
     // Broadcast draft start
-    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_STARTED, { payload: activeDraft });
+    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_STARTED, { type: 'DRAFT_STARTED', payload: activeDraft });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -226,17 +229,17 @@ export function handleMakePick(
 
     // Broadcast pick
     const pick = updatedDraft.picks[updatedDraft.picks.length - 1];
-    emitToLobby(io, lobbyId, WS_EVENTS.PICK_MADE, { payload: pick });
-    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { payload: updatedDraft });
+    emitToLobby(io, lobbyId, WS_EVENTS.PICK_MADE, { type: 'PICK_MADE', payload: pick });
+    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: updatedDraft });
 
     // Check if draft is complete
     if (updatedDraft.status === 'completed') {
-      emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_COMPLETED, { payload: updatedDraft });
+      emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_COMPLETED, { type: 'DRAFT_COMPLETED', payload: updatedDraft });
 
       // Transition to draft recap
       const updatedLeague = transitionToDraftRecap(lobbyId);
       if (updatedLeague) {
-        emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: updatedLeague });
+        emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
       }
     }
   } catch (error: any) {
@@ -308,7 +311,7 @@ export function handlePauseDraft(
     const pausedDraft = pauseDraft(draftState, userId);
     drafts.set(lobbyId, pausedDraft);
 
-    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { payload: pausedDraft });
+    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: pausedDraft });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -341,7 +344,7 @@ export function handleUnpauseDraft(
     const unpausedDraft = unpauseDraft(draftState);
     drafts.set(lobbyId, unpausedDraft);
 
-    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { payload: unpausedDraft });
+    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: unpausedDraft });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -371,10 +374,10 @@ export function handleStartTradeWindow(
       throw new Error('Failed to start trade window');
     }
 
-    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_WINDOW_STARTED, {
-      payload: { endsAt: updatedLeague.tradeWindowEndsAt },
+    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_WINDOW_STARTED, { type: 'TRADE_WINDOW_STARTED',
+      payload: { endsAt: updatedLeague.tradeWindowEndsAt ?? String(Date.now()) },
     });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: updatedLeague });
+    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -415,8 +418,8 @@ export function handleExecuteTrade(
     // Update draft state
     drafts.set(lobbyId, updatedLeague.draftState);
 
-    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_EXECUTED, { payload: updatedLeague.draftState });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: updatedLeague });
+    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_EXECUTED, { type: 'TRADE_EXECUTED', payload: updatedLeague.draftState });
+    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -447,10 +450,10 @@ export function handleStartRegularSeason(
       throw new Error('Failed to start regular season');
     }
 
-    emitToLobby(io, lobbyId, WS_EVENTS.REGULAR_SEASON_STARTED, {
+    emitToLobby(io, lobbyId, WS_EVENTS.REGULAR_SEASON_STARTED, { type: 'REGULAR_SEASON_STARTED',
       payload: updatedLeague.regularSeasonResults,
     });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: updatedLeague });
+    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
@@ -484,12 +487,12 @@ export function handleStartPlayoffs(
     // Mark league as complete
     const completedLeague = completeLeague(lobbyId);
 
-    emitToLobby(io, lobbyId, WS_EVENTS.PLAYOFFS_STARTED, {
+    emitToLobby(io, lobbyId, WS_EVENTS.PLAYOFFS_STARTED, { type: 'PLAYOFFS_STARTED',
       payload: updatedLeague.playoffResults,
     });
 
     if (completedLeague) {
-      emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: completedLeague });
+      emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: completedLeague });
     }
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
@@ -522,16 +525,16 @@ export function handleAutoPick(
 
     // Broadcast pick
     const pick = updatedDraft.picks[updatedDraft.picks.length - 1];
-    emitToLobby(io, lobbyId, WS_EVENTS.PICK_MADE, { payload: pick });
-    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { payload: updatedDraft });
+    emitToLobby(io, lobbyId, WS_EVENTS.PICK_MADE, { type: 'PICK_MADE', payload: pick });
+    emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: updatedDraft });
 
     // Check if draft is complete
     if (updatedDraft.status === 'completed') {
-      emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_COMPLETED, { payload: updatedDraft });
+      emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_COMPLETED, { type: 'DRAFT_COMPLETED', payload: updatedDraft });
 
       const updatedLeague = transitionToDraftRecap(lobbyId);
       if (updatedLeague) {
-        emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { payload: updatedLeague });
+        emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
       }
     }
   } catch (error) {

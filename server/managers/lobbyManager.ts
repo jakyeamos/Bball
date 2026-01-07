@@ -177,16 +177,16 @@ export function createDraftTeamsFromLobby(lobby: LobbyState): DraftTeam[] {
 function validateLobbyConfig(config: LobbyConfig): void {
   const errors: string[] = [];
 
-  if (config.teamCount < DRAFT_CONSTRAINTS.MIN_TEAMS || config.teamCount > DRAFT_CONSTRAINTS.MAX_TEAMS) {
-    errors.push(`Team count must be between ${DRAFT_CONSTRAINTS.MIN_TEAMS} and ${DRAFT_CONSTRAINTS.MAX_TEAMS}`);
+  if (config.teamCount < DRAFT_CONSTRAINTS.TEAMS_MIN || config.teamCount > DRAFT_CONSTRAINTS.TEAMS_MAX) {
+    errors.push(`Team count must be between ${DRAFT_CONSTRAINTS.TEAMS_MIN} and ${DRAFT_CONSTRAINTS.TEAMS_MAX}`);
   }
 
-  if (config.rosterSize < DRAFT_CONSTRAINTS.MIN_ROSTER || config.rosterSize > DRAFT_CONSTRAINTS.MAX_ROSTER) {
-    errors.push(`Roster size must be between ${DRAFT_CONSTRAINTS.MIN_ROSTER} and ${DRAFT_CONSTRAINTS.MAX_ROSTER}`);
+  if (config.rosterSize < DRAFT_CONSTRAINTS.ROSTER_MIN || config.rosterSize > DRAFT_CONSTRAINTS.ROSTER_MAX) {
+    errors.push(`Roster size must be between ${DRAFT_CONSTRAINTS.ROSTER_MIN} and ${DRAFT_CONSTRAINTS.ROSTER_MAX}`);
   }
 
-  if (!DRAFT_CONSTRAINTS.PICK_TIMERS.includes(config.pickTimer)) {
-    errors.push(`Pick timer must be one of: ${DRAFT_CONSTRAINTS.PICK_TIMERS.join(', ')}`);
+  if (!DRAFT_CONSTRAINTS.PICK_TIMER_OPTIONS_SECONDS.includes(config.pickTimer)) {
+    errors.push(`Pick timer must be one of: ${DRAFT_CONSTRAINTS.PICK_TIMER_OPTIONS_SECONDS.join(', ')}`);
   }
 
   if (errors.length > 0) {

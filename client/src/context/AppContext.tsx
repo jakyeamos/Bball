@@ -14,6 +14,7 @@ import {
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
 import { wsService } from '../services/websocket';
+import { DraftPick } from '@nba-draft-sim/shared';
 
 interface AppState {
   // Connection

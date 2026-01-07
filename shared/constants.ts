@@ -75,7 +75,7 @@ export const IMPACT_WEIGHTS = {
   TOV: -0.12,
 } as const;
 
-export const ROTATION_SIZE = 8 as const;
+export const ROTATION_SIZE = 10 as const;
 
 // ============================================================================
 // TEAM MODIFIERS (anti-domination, floors, diminishing returns)
@@ -187,15 +187,6 @@ export const SERIES_PATH_PARAMS = {
   BIAS_STRENGTH: 0.15,
 } as const;
 
-// Draft constraints
-export const DRAFT_CONSTRAINTS = {
-  MIN_TEAMS: 4,
-  MAX_TEAMS: 12,
-  MIN_ROSTER: 10,
-  MAX_ROSTER: 15,
-  PICK_TIMERS: [60, 120, 300] as const,
-} as const;
-
 // Feature names (used for standardization / debugging)
 export const FEATURE_NAMES = [
   'TS',
@@ -222,9 +213,3 @@ export const POSITION_TO_ROLE = {
 } as const;
 
 export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000; // 10 minutes
-
-export const WS_EVENTS = {
-  CONNECT: 'connect',
-  DISCONNECT: 'disconnect',
-  RECONNECT: 'reconnect',
-} as const;

@@ -185,7 +185,7 @@ export function startRegularSeason(
       throw new Error(`Team ${team.teamId} has no players`);
     }
 
-    const aggregation = aggregateTeam(team.teamId, roster);
+    const aggregation = aggregateTeam(roster, team.teamId);
     teamAggregations.set(team.teamId, aggregation);
   }
 
@@ -223,7 +223,7 @@ export function startPlayoffs(
 
     if (roster.length === 0) continue;
 
-    const aggregation = aggregateTeam(team.teamId, roster);
+    const aggregation = aggregateTeam(roster, team.teamId);
     teamAggregations.set(team.teamId, aggregation);
   }
 
