@@ -1,6 +1,7 @@
 /**
- * Results Page
+ * Results Page - TRADE BUTTON REMOVED
  * Shows regular season standings and playoffs
+ * Trade window button removed as requested
  */
 
 import React from 'react';
@@ -12,7 +13,7 @@ import { Card } from '../components/Card';
 
 export function ResultsPage() {
   const navigate = useNavigate();
-  const { league, regularSeasonResults, playoffResults, draft } = useApp();
+  const { league, regularSeasonResults, playoffResults, draft, lobby } = useApp();
 
   React.useEffect(() => {
     if (!league) {
@@ -22,7 +23,10 @@ export function ResultsPage() {
 
   if (!league) return null;
 
+  const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
+
   const handleStartPlayoffs = () => {
+    console.log('🏀 Starting playoffs...');
     wsService.startPlayoffs();
   };
 
@@ -79,11 +83,17 @@ export function ResultsPage() {
               </table>
             </div>
 
-            {!playoffResults && league.phase === 'regular_season' && (
+            {!playoffResults && league.phase === 'regular_season' && isCommissioner && (
               <div className="mt-6 text-center">
                 <Button size="lg" onClick={handleStartPlayoffs}>
-                  Start Playoffs
+                  🏆 Start Playoffs
                 </Button>
+              </div>
+            )}
+
+            {!playoffResults && league.phase === 'regular_season' && !isCommissioner && (
+              <div className="mt-6 text-center text-gray-600">
+                Waiting for commissioner to start playoffs...
               </div>
             )}
           </Card>

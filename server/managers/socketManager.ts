@@ -22,6 +22,7 @@ import {
   handleStartPlayoffs,
 } from '../services/handlers';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
+console.log('Server WS_EVENTS.CREATE_LOBBY:', WS_EVENTS.CREATE_LOBBY);
 
 /**
  * Initialize Socket.io server
@@ -72,6 +73,13 @@ export function initializeSocketServer(
 
   // Connection handler
   io.on(WS_EVENTS.CONNECT, (socket: Socket) => {
+    console.log(`✅ Client connected: ${socket.id} (user: ${socket.data.userId})`);
+    console.log('🔵 Registering CREATE_LOBBY listener for event:', WS_EVENTS.CREATE_LOBBY);
+
+    socket.onAny((eventName, ...args) => {
+      console.log(`📥 Received event: "${eventName}"`, args);
+    });
+
     console.log(`Client connected: ${socket.id} (user: ${socket.data.userId})`);
 
     const userId = socket.data.userId;
@@ -79,6 +87,8 @@ export function initializeSocketServer(
 
     // CREATE_LOBBY
     socket.on(WS_EVENTS.CREATE_LOBBY, (payload: any) => {
+      console.log('🟢 CREATE_LOBBY EVENT RECEIVED!', payload);
+
       handleCreateLobby(io, socket, payload, userId, displayName);
     });
 

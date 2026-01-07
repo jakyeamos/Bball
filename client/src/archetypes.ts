@@ -1,192 +1,160 @@
 /**
- * Archetype Utilities
- * Helper functions for displaying archetypes and analyzing team composition
+ * Archetype Utilities - TYPE-SAFE VERSION
  */
 
-import { ArchetypeProfile, Player } from '@nba-draft-sim/shared';
-
-export interface TopArchetype {
-  name: string;
-  percentage: number;
-}
-
-export interface TeamComposition {
-  creators: number;
-  shooting: number;
-  rimProtection: number;
-  defense: number;
-  hasCreatorPenalty: boolean;
-  hasShootingBonus: boolean;
-  hasRimProtectionPenalty: boolean;
-}
+import { Player, ArchetypeProfile } from '@nba-draft-sim/shared';
 
 /**
- * Get top N archetypes for a player
- */
-export function getTopArchetypes(archetypes: ArchetypeProfile, count: number = 3): TopArchetype[] {
-  const entries = Object.entries(archetypes)
-    .map(([name, percentage]) => ({ name, percentage }))
-    .sort((a, b) => b.percentage - a.percentage)
-    .slice(0, count);
-
-  return entries;
-}
-
-/**
- * Get color for archetype category
- */
-export function getArchetypeColor(archetypeName: string): string {
-  // Offensive archetypes - blue shades
-  const offensive = [
-    'PrimaryCreator',
-    'SecondaryCreator',
-    'Connector',
-    'OffBallShooter',
-    'MovementShooter',
-    'Slasher',
-    'PostScorer',
-    'PlaymakingBig',
-  ];
-
-  // Defensive archetypes - red shades
-  const defensive = [
-    'POAStopper',
-    'HelpDefender',
-    'RimProtector',
-    'DefAnchor',
-    'DefPlaymaker',
-  ];
-
-  // Hybrid/versatile archetypes - green/purple shades
-  const hybrid = [
-    'ThreeAndD',
-    'StretchBig',
-    'VerticalRoller',
-    'Rebounder',
-    'UtilityWing',
-  ];
-
-  if (offensive.includes(archetypeName)) {
-    return 'bg-blue-100 text-blue-800 border-blue-200';
-  } else if (defensive.includes(archetypeName)) {
-    return 'bg-red-100 text-red-800 border-red-200';
-  } else if (hybrid.includes(archetypeName)) {
-    return 'bg-green-100 text-green-800 border-green-200';
-  }
-
-  return 'bg-gray-100 text-gray-800 border-gray-200';
-}
-
-/**
- * Format archetype name for display (remove camelCase)
+ * Add spaces to camelCase archetype names
  */
 export function formatArchetypeName(name: string): string {
-  // Insert space before capitals
+  const specialCases: Record<string, string> = {
+    'ThreeAndD': '3&D',
+    'POAStopper': 'POA Stopper',
+    'DefAnchor': 'Def Anchor',
+    'DefPlaymaker': 'Def Playmaker',
+    'StretchBig': 'Stretch Big',
+    'VerticalRoller': 'Vertical Roller',
+    'UtilityWing': 'Utility Wing',
+    'OffBallShooter': 'Off-Ball Shooter',
+    'MovementShooter': 'Movement Shooter',
+    'PostScorer': 'Post Scorer',
+    'PlaymakingBig': 'Playmaking Big',
+    'HelpDefender': 'Help Defender',
+    'RimProtector': 'Rim Protector',
+  };
+
+  if (specialCases[name]) {
+    return specialCases[name];
+  }
+
   return name.replace(/([A-Z])/g, ' $1').trim();
 }
 
 /**
- * Calculate team composition percentages
+ * Get archetype color class
  */
-export function calculateTeamComposition(players: Player[]): TeamComposition {
-  if (players.length === 0) {
-    return {
-      creators: 0,
-      shooting: 0,
-      rimProtection: 0,
-      defense: 0,
-      hasCreatorPenalty: false,
-      hasShootingBonus: false,
-      hasRimProtectionPenalty: false,
-    };
+export function getArchetypeColor(name: string): string {
+  if (name.includes('Creator') || name.includes('Playmaking')) {
+    return 'bg-blue-100 text-blue-800 border-blue-300';
   }
+  if (name.includes('Shooter') || name.includes('Stretch') || name === 'ThreeAndD') {
+    return 'bg-purple-100 text-purple-800 border-purple-300';
+  }
+  if (name.includes('Scorer') || name.includes('Slasher')) {
+    return 'bg-indigo-100 text-indigo-800 border-indigo-300';
+  }
+  if (name.includes('Defender') || name.includes('Stopper') || name.includes('Anchor')) {
+    return 'bg-red-100 text-red-800 border-red-300';
+  }
+  if (name.includes('Rim') || name.includes('Protector')) {
+    return 'bg-orange-100 text-orange-800 border-orange-300';
+  }
+  if (name.includes('Utility') || name.includes('Connector') || name.includes('Roller')) {
+    return 'bg-green-100 text-green-800 border-green-300';
+  }
+  if (name.includes('Rebounder')) {
+    return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+  }
+  return 'bg-gray-100 text-gray-800 border-gray-300';
+}
 
-  // Calculate weighted average of archetypes
-  const totalImpact = players.reduce((sum, p) => sum + p.impactRating, 0);
+/**
+ * Get top N archetypes sorted by percentage
+ * FIXED: Handles ArchetypeProfile type properly
+ */
+export function getTopArchetypes(
+  archetypes: ArchetypeProfile,
+  count: number = 3
+): Array<{ name: string; percentage: number }> {
+  return Object.entries(archetypes)
+    .filter(([_, percentage]) => percentage !== undefined && percentage > 0)
+    .map(([name, percentage]) => ({ name, percentage: percentage as number }))
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, count);
+}
 
+/**
+ * Calculate team composition from roster
+ * FIXED: Handles optional archetype values
+ */
+export function calculateTeamComposition(roster: Player[]) {
   let creators = 0;
   let shooting = 0;
   let rimProtection = 0;
-  let defense = 0;
 
-  players.forEach(player => {
-    const weight = player.impactRating / totalImpact;
+  roster.forEach(player => {
+    // Ball handlers (creators)
+    const creatorTypes = ['PrimaryCreator', 'SecondaryCreator', 'Connector', 'PlaymakingBig'];
+    creatorTypes.forEach(type => {
+      const value = player.archetypes[type as keyof ArchetypeProfile];
+      if (value) creators += value;
+    });
 
-    // Creators: PrimaryCreator + SecondaryCreator
-    creators += (player.archetypes.PrimaryCreator + player.archetypes.SecondaryCreator) * weight;
+    // Shooters
+    const shooterTypes = ['ThreeAndD', 'OffBallShooter', 'MovementShooter', 'StretchBig'];
+    shooterTypes.forEach(type => {
+      const value = player.archetypes[type as keyof ArchetypeProfile];
+      if (value) shooting += value;
+    });
 
-    // Shooting: OffBallShooter + MovementShooter
-    shooting += (player.archetypes.OffBallShooter + player.archetypes.MovementShooter) * weight;
-
-    // Rim Protection: RimProtector + DefAnchor
-    rimProtection += (player.archetypes.RimProtector + player.archetypes.DefAnchor) * weight;
-
-    // General Defense: All defensive archetypes
-    defense += (
-      player.archetypes.POAStopper +
-      player.archetypes.HelpDefender +
-      player.archetypes.RimProtector +
-      player.archetypes.DefAnchor +
-      player.archetypes.DefPlaymaker
-    ) * weight;
+    // Rim protection
+    const rimTypes = ['RimProtector', 'DefAnchor', 'VerticalRoller'];
+    rimTypes.forEach(type => {
+      const value = player.archetypes[type as keyof ArchetypeProfile];
+      if (value) rimProtection += value;
+    });
   });
 
-  // Apply thresholds from anti-domination system
-  const hasCreatorPenalty = creators > 30;
-  const hasShootingBonus = shooting > 15;
-  const hasRimProtectionPenalty = rimProtection < 10;
+  const totalPlayers = roster.length;
+  
+  // Values are 0-1, multiply by 100 for percentage
+  const creatorsPercent = (creators / totalPlayers) * 100;
+  const shootingPercent = (shooting / totalPlayers) * 100;
+  const rimProtectionPercent = (rimProtection / totalPlayers) * 100;
 
   return {
-    creators,
-    shooting,
-    rimProtection,
-    defense,
-    hasCreatorPenalty,
-    hasShootingBonus,
-    hasRimProtectionPenalty,
+    creators: creatorsPercent,
+    shooting: shootingPercent,
+    rimProtection: rimProtectionPercent,
+    hasCreatorPenalty: creatorsPercent < 15,
+    hasShootingBonus: shootingPercent > 40,
+    hasRimProtectionPenalty: rimProtectionPercent < 10,
   };
 }
 
 /**
- * Get composition status (good/warning/danger)
+ * Get composition status
  */
 export function getCompositionStatus(
   value: number,
   type: 'creators' | 'shooting' | 'rimProtection'
 ): 'good' | 'warning' | 'danger' {
-  switch (type) {
-    case 'creators':
-      if (value > 40) return 'danger';
-      if (value > 30) return 'warning';
-      return 'good';
-
-    case 'shooting':
-      if (value > 25) return 'good';
-      if (value > 15) return 'warning';
-      return 'danger';
-
-    case 'rimProtection':
-      if (value < 5) return 'danger';
-      if (value < 10) return 'warning';
-      return 'good';
-
-    default:
-      return 'good';
+  if (type === 'creators') {
+    if (value >= 25) return 'good';
+    if (value >= 15) return 'warning';
+    return 'danger';
   }
+  if (type === 'shooting') {
+    if (value >= 40) return 'good';
+    if (value >= 25) return 'warning';
+    return 'danger';
+  }
+  if (type === 'rimProtection') {
+    if (value >= 15) return 'good';
+    if (value >= 10) return 'warning';
+    return 'danger';
+  }
+  return 'warning';
 }
 
 /**
  * Get status color classes
  */
 export function getStatusColor(status: 'good' | 'warning' | 'danger'): string {
-  switch (status) {
-    case 'good':
-      return 'text-green-600 bg-green-50 border-green-200';
-    case 'warning':
-      return 'text-orange-600 bg-orange-50 border-orange-200';
-    case 'danger':
-      return 'text-red-600 bg-red-50 border-red-200';
-  }
+  if (status === 'good') return 'bg-green-100 text-green-800 border-green-300';
+  if (status === 'warning') return 'bg-orange-100 text-orange-800 border-orange-300';
+  return 'bg-red-100 text-red-800 border-red-300';
 }
 
 /**
@@ -198,35 +166,20 @@ export function getCompositionMessage(
   hasPenalty: boolean,
   hasBonus: boolean
 ): string {
-  switch (type) {
-    case 'creators':
-      if (hasPenalty) {
-        return '⚠️ Creator penalty active! Too many ball-dominant players.';
-      }
-      if (value > 25) {
-        return '⚠️ High creator percentage. Consider balance.';
-      }
-      return '✅ Balanced creator distribution.';
-
-    case 'shooting':
-      if (hasBonus) {
-        return '✨ Spacing bonus active! Great shooting team.';
-      }
-      if (value < 15) {
-        return '⚠️ Low shooting. May struggle with spacing.';
-      }
-      return '✅ Decent shooting distribution.';
-
-    case 'rimProtection':
-      if (hasPenalty) {
-        return '⚠️ Rim protection penalty! Vulnerable inside.';
-      }
-      if (value < 10) {
-        return '⚠️ Low rim protection. Consider adding a big.';
-      }
-      return '✅ Solid rim protection.';
-
-    default:
-      return '';
+  if (type === 'creators') {
+    if (value >= 25) return 'Strong ball handling';
+    if (value >= 15) return 'Adequate playmaking';
+    return 'Needs more ball handlers';
   }
+  if (type === 'shooting') {
+    if (hasBonus) return 'Elite spacing!';
+    if (value >= 25) return 'Good spacing';
+    return 'Needs more shooting';
+  }
+  if (type === 'rimProtection') {
+    if (value >= 15) return 'Strong rim protection';
+    if (value >= 10) return 'Adequate rim protection';
+    return 'Vulnerable at rim';
+  }
+  return '';
 }

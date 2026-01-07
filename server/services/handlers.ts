@@ -75,6 +75,7 @@ export function handleCreateLobby(
   userId: string,
   displayName: string
 ) {
+  console.log('🟢 handleCreateLobby called!', { userId, displayName, config: payload.config });
   try {
     const lobby = createLobby(userId, displayName, payload.config);
 

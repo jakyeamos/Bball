@@ -11,7 +11,13 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@nba-draft-sim/shared']  // Add this line
+    include: ['@nba-draft-sim/shared']
+  },
+  build: {
+    commonjsOptions: {
+      include: [/shared/, /node_modules/],
+      transformMixedEsModules: true,
+    },
   },
   server: {
     port: 3000,

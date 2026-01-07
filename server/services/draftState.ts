@@ -170,7 +170,7 @@ export function makePick(
   newState.currentPickIndex = state.currentPickIndex + 1;
 
   // Reset timer
-  newState.timeRemaining = null;
+  newState.timeRemaining = state.config.pickTimer;
 
   // Check if draft is complete
   if (isDraftComplete(newState)) {

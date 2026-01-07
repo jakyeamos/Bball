@@ -1,6 +1,6 @@
 /**
- * Archetype Service - FIXED
- * Handles archetype profile computation and aggregation
+ * Archetype Service - DOUBLE NORMALIZATION BUG FIX
+ * The bug: Normalizes twice, making all values too small
  */
 
 import { ArchetypeProfile, PlayerFeatures, Player } from '@nba-draft-sim/shared';
@@ -8,11 +8,13 @@ import { ARCHETYPE_WEIGHTS } from '@nba-draft-sim/shared';
 
 /**
  * Compute archetype profile for a player
+ * FIXED: Only normalizes once
  */
 export function computeArchetypeProfile(features: PlayerFeatures | Record<string, number>): ArchetypeProfile {
   const profile: Partial<Record<string, number>> = {};
   let totalScore = 0;
 
+  // Calculate raw scores for each archetype
   for (const archetype in ARCHETYPE_WEIGHTS) {
     let score = 0;
     for (const feature in ARCHETYPE_WEIGHTS[archetype]) {
@@ -22,15 +24,25 @@ export function computeArchetypeProfile(features: PlayerFeatures | Record<string
         score += featureValue * weight;
       }
     }
-    profile[archetype] = score;
-    totalScore += score;
+    
+    // Only consider positive scores
+    if (score > 0) {
+      profile[archetype] = score;
+      totalScore += score;
+    }
   }
 
-  // Normalize scores
+  // Normalize scores to percentages (0-1) - ONLY ONCE!
   if (totalScore > 0) {
     for (const archetype in profile) {
-      profile[archetype] = (profile[archetype] || 0) / totalScore;
+      const normalized = (profile[archetype] || 0) / totalScore;
+      // Keep only archetypes above 5% threshold
+      if (normalized >= 0.05) {
+        profile[archetype] = normalized;
+      }
     }
+  } else {
+    console.warn('⚠️ Player has no positive archetype scores');
   }
 
   return profile as ArchetypeProfile;

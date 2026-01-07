@@ -102,6 +102,7 @@ class WebSocketService {
     if (!this.socket) {
       throw new Error('Socket not connected');
     }
+      console.log('📤 Emitting to server:', event, data);
     this.socket.emit(event, data);
   }
 
@@ -109,6 +110,7 @@ class WebSocketService {
    * Create a lobby
    */
   createLobby(config: LobbyConfig) {
+    console.log('🔵 WS_EVENTS.CREATE_LOBBY value:', WS_EVENTS.CREATE_LOBBY);
     this.emit(WS_EVENTS.CREATE_LOBBY, { config });
   }
 

@@ -1,6 +1,6 @@
 /**
- * Draft Page
- * Main draft interface with player board and pick timer
+ * Draft Page - CSS GRID VERSION
+ * Uses CSS Grid with fr units - guaranteed to work
  */
 
 import React, { useState, useMemo } from 'react';
@@ -11,47 +11,131 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
+import { Player } from '@nba-draft-sim/shared';
+
+type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts';
+type SortDirection = 'asc' | 'desc';
 
 export function DraftPage() {
   const navigate = useNavigate();
-  const { draft, allPlayers, timeRemaining, league } = useApp();
+  const { draft, allPlayers, timeRemaining, league, lobby } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('impact');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [showRoster, setShowRoster] = useState(false);
 
-  // Redirect if no draft
   React.useEffect(() => {
     if (!draft) {
       navigate('/');
     }
   }, [draft, navigate]);
 
-  // Redirect when draft completes
   React.useEffect(() => {
     if (draft?.status === 'completed' && league?.phase === 'draft_recap') {
       navigate('/draft-recap');
     }
   }, [draft, league, navigate]);
 
-  // Get available players
+  const isCommissioner = useMemo(() => {
+    if (!lobby || !draft) return false;
+    return lobby.users?.some(u => u.isCommissioner) || false;
+  }, [lobby, draft]);
+
+  const myTeam = useMemo(() => {
+    if (!draft) return null;
+    return draft.teams[0] || null;
+  }, [draft]);
+
+  const myRoster = useMemo(() => {
+    if (!draft || !myTeam || !allPlayers) return [];
+    
+    const myPicks = draft.picks.filter(p => p.teamId === myTeam.teamId);
+    return myPicks.map(pick => {
+      const player = allPlayers.find(p => p.playerId === pick.playerId);
+      return player;
+    }).filter(Boolean) as Player[];
+  }, [draft, myTeam, allPlayers]);
+
+  const teamComposition = useMemo(() => {
+    if (myRoster.length < 4) return null;
+
+    const archetypeCounts: Record<string, number> = {};
+    let totalPercentage = 0;
+
+    myRoster.forEach(player => {
+      Object.entries(player.archetypes).forEach(([archetype, percentage]) => {
+        const pct = percentage ?? 0;
+        archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + pct;
+        totalPercentage += pct;
+      });
+    });
+
+    const composition = Object.entries(archetypeCounts)
+      .map(([name, total]) => ({
+        name,
+        percentage: totalPercentage > 0 ? (total / totalPercentage) * 100 : 0
+      }))
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 5);
+
+    return composition;
+  }, [myRoster]);
+
   const availablePlayers = useMemo(() => {
     if (!draft || !allPlayers) return [];
 
-    const available = allPlayers.filter((p) =>
+    let available = allPlayers.filter((p) =>
       draft.availablePlayers.includes(p.playerId)
     );
 
-    // Filter by search
     if (searchTerm) {
-      return available.filter((p) =>
+      available = available.filter((p) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.team.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    return available;
-  }, [draft, allPlayers, searchTerm]);
+    available.sort((a, b) => {
+      let aVal: number;
+      let bVal: number;
 
-  // Get current pick info
+      switch (sortField) {
+        case 'impact':
+          aVal = a.impactRating;
+          bVal = b.impactRating;
+          break;
+        case 'name':
+          return sortDirection === 'asc' 
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name);
+        case 'pts':
+          aVal = a.rawStats.PTS / a.rawStats.GP;
+          bVal = b.rawStats.PTS / b.rawStats.GP;
+          break;
+        case 'reb':
+          aVal = a.rawStats.REB / a.rawStats.GP;
+          bVal = b.rawStats.REB / b.rawStats.GP;
+          break;
+        case 'ast':
+          aVal = a.rawStats.AST / a.rawStats.GP;
+          bVal = b.rawStats.AST / b.rawStats.GP;
+          break;
+        case 'ts':
+          aVal = a.rawStats.TS_PCT;
+          bVal = b.rawStats.TS_PCT;
+          break;
+        default:
+          aVal = a.impactRating;
+          bVal = b.impactRating;
+      }
+
+      return sortDirection === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    return available;
+  }, [draft, allPlayers, searchTerm, sortField, sortDirection]);
+
   const currentPick = useMemo(() => {
     if (!draft) return null;
     return draft.draftOrder[draft.currentPickIndex];
@@ -63,13 +147,35 @@ export function DraftPage() {
   }, [draft, currentPick]);
 
   const isMyPick = useMemo(() => {
-    // In a real app, you'd track userId
-    // For now, just check if it's your team
-    return currentTeam !== null;
-  }, [currentTeam]);
+    if (!myTeam || !currentTeam) return false;
+    return myTeam.teamId === currentTeam.teamId;
+  }, [myTeam, currentTeam]);
 
   const handleMakePick = (playerId: string) => {
     wsService.makePick(playerId);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setSortField('impact');
+    setSortDirection('desc');
+  };
+
+  const handlePauseDraft = () => {
+    wsService.pauseDraft();
+  };
+
+  const handleUnpauseDraft = () => {
+    wsService.unpauseDraft();
   };
 
   if (!draft) return null;
@@ -80,9 +186,24 @@ export function DraftPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <span className="text-gray-400">⇅</span>;
+    return sortDirection === 'desc' ? <span>↓</span> : <span>↑</span>;
+  };
+
+  // Grid layout: main content takes remaining space, sidebar fixed width
+  const gridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: showRoster ? '1fr 384px' : '1fr',
+    height: '100vh',
+    width: '100vw',
+    backgroundColor: '#f9fafb',
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
+    <div style={gridStyle}>
+      {/* Main Content */}
+      <div style={{ padding: '1rem', overflowY: 'auto' }}>
         {/* Header */}
         <Card className="mb-4" padding="md">
           <div className="flex items-center justify-between">
@@ -93,20 +214,39 @@ export function DraftPage() {
               </p>
             </div>
 
-            {draft.status === 'active' && timeRemaining !== null && (
-              <div className="text-center">
-                <div className="text-3xl font-bold text-primary-600">
-                  {formatTime(timeRemaining)}
+            <div className="flex items-center gap-4">
+              {draft.status === 'active' && timeRemaining !== null && (
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary-600">
+                    {formatTime(timeRemaining)}
+                  </div>
+                  <div className="text-sm text-gray-600">Time Remaining</div>
                 </div>
-                <div className="text-sm text-gray-600">Time Remaining</div>
-              </div>
-            )}
+              )}
 
-            {draft.status === 'paused' && (
-              <div className="text-orange-600 font-bold">
-                PAUSED
-              </div>
-            )}
+              {draft.status === 'paused' && (
+                <div className="text-orange-600 font-bold text-xl">⏸ PAUSED</div>
+              )}
+
+              {isCommissioner && (
+                <div className="flex gap-2">
+                  {draft.status === 'active' && (
+                    <Button size="sm" variant="secondary" onClick={handlePauseDraft}>
+                      ⏸ Pause
+                    </Button>
+                  )}
+                  {draft.status === 'paused' && (
+                    <Button size="sm" variant="primary" onClick={handleUnpauseDraft}>
+                      ▶ Resume
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <Button size="sm" variant="secondary" onClick={() => setShowRoster(!showRoster)}>
+                {showRoster ? '→ Hide' : '← Show'} Roster
+              </Button>
+            </div>
           </div>
 
           {currentTeam && (
@@ -116,64 +256,89 @@ export function DraftPage() {
               </div>
               {isMyPick && (
                 <div className="text-sm text-primary-700 mt-1">
-                  It's your pick! Select a player below.
+                  🔔 It's your pick! Select a player below.
                 </div>
               )}
             </div>
           )}
         </Card>
 
-        {/* Search and Player Board */}
-        <Card padding="md">
-          <Input
-            placeholder="Search players by name, position, or team..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            className="mb-4"
-          />
+        {/* Search */}
+        <Card padding="md" className="mb-4">
+          <div className="flex gap-4 items-center">
+            <Input
+              placeholder="Search players"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
+            <Button size="sm" variant="secondary" onClick={handleResetFilters}>
+              🔄 Reset
+            </Button>
+            <div className="text-sm text-gray-600">
+              Sorted by: <span className="font-medium">{sortField === 'impact' ? 'Impact' : sortField.toUpperCase()}</span>
+            </div>
+          </div>
+        </Card>
 
-          <div className="overflow-auto max-h-[600px]">
+        {/* Player Table */}
+        <Card padding="md">
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('name')}>
+                    Player <SortIcon field="name" />
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Team</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archetypes</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">PTS</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">REB</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">AST</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TS%</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" style={{ minWidth: '350px' }}>Archetypes</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('pts')}>
+                    PPG <SortIcon field="pts" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('reb')}>
+                    RPG <SortIcon field="reb" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ast')}>
+                    APG <SortIcon field="ast" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ts')}>
+                    TS% <SortIcon field="ts" />
+                  </th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {availablePlayers.map((player) => {
                   const topArchetypes = getTopArchetypes(player.archetypes, 3);
+                  const ppg = player.rawStats.PTS / player.rawStats.GP;
+                  const rpg = player.rawStats.REB / player.rawStats.GP;
+                  const apg = player.rawStats.AST / player.rawStats.GP;
 
                   return (
                     <tr key={player.playerId} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{player.team}</td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {topArchetypes.map((arch) => (
-                            <span
-                              key={arch.name}
-                              className={`inline-block px-2 py-0.5 text-xs rounded border ${getArchetypeColor(arch.name)}`}
-                              title={`${formatArchetypeName(arch.name)}: ${arch.percentage.toFixed(1)}%`}
-                            >
-                              {formatArchetypeName(arch.name)}
-                            </span>
-                          ))}
-                        </div>
+                        {topArchetypes.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {topArchetypes.map((arch) => (
+                              <span
+                                key={arch.name}
+                                className={`inline-block px-2.5 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(arch.name)}`}
+                                title={`${(arch.percentage * 100).toFixed(1)}%`}
+                              >
+                                {formatArchetypeName(arch.name)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">No archetypes</span>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right">{player.rawStats.PTS.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{player.rawStats.REB.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{player.rawStats.AST.toFixed(1)}</td>
-                      <td className="px-4 py-3 text-sm text-right">{(player.rawStats.TS_PCT * 100).toFixed(1)}%</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{ppg.toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{rpg.toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{apg.toFixed(1)}</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.TS_PCT * 100).toFixed(1)}%</td>
                       <td className="px-4 py-3 text-right">
                         <Button
                           size="sm"
@@ -188,50 +353,73 @@ export function DraftPage() {
                 })}
               </tbody>
             </table>
-
-            {availablePlayers.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                No players found
-              </div>
-            )}
           </div>
         </Card>
-
-        {/* Recent Picks */}
-        {draft.picks.length > 0 && (
-          <Card className="mt-4" padding="md">
-            <h3 className="font-bold text-gray-900 mb-4">Recent Picks</h3>
-            <div className="space-y-2">
-              {draft.picks.slice(-5).reverse().map((pick) => {
-                const player = allPlayers.find((p) => p.playerId === pick.playerId);
-                const team = draft.teams.find((t) => t.teamId === pick.teamId);
-
-                return (
-                  <div key={pick.pickNumber} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-gray-600">
-                        #{pick.pickNumber}
-                      </span>
-                      <span className="font-medium text-gray-900">
-                        {player?.name || 'Unknown'}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        {player?.position} - {player?.team}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {team?.displayName}
-                      {pick.isAutoPick && (
-                        <span className="ml-2 text-xs text-orange-600">(Auto)</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
       </div>
+
+      {/* Sidebar */}
+      {showRoster && (
+        <div style={{ backgroundColor: 'white', borderLeft: '1px solid #e5e7eb', overflowY: 'auto' }}>
+          <div className="p-4">
+            <div className="sticky top-0 bg-white pb-4 border-b z-10">
+              <h2 className="text-xl font-bold text-gray-900">{myTeam?.displayName || 'My Team'}</h2>
+              <p className="text-sm text-gray-600">
+                {myRoster.length} / {draft.config.rosterSize} players
+              </p>
+            </div>
+
+            {teamComposition && teamComposition.length > 0 && (
+              <div className="mt-4">
+                <Card padding="sm" className="bg-gray-50">
+                  <h3 className="font-bold text-sm text-gray-900 mb-3">Team Composition</h3>
+                  <div className="space-y-2">
+                    {teamComposition.map((comp) => (
+                      <div key={comp.name} className="flex items-center justify-between">
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(comp.name)}`}>
+                          {formatArchetypeName(comp.name)}
+                        </span>
+                        <span className="text-sm font-semibold text-gray-700">{comp.percentage.toFixed(0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            <div className="mt-4 space-y-2">
+              {myRoster.length > 0 ? (
+                myRoster.map((player, index) => {
+                  const topArch = getTopArchetypes(player.archetypes, 1)[0];
+                  
+                  return (
+                    <Card key={player.playerId} padding="sm" className="hover:shadow-md transition-shadow border border-gray-200">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-gray-900">
+                            {index + 1}. {player.name}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">{player.position} • {player.team}</div>
+                          {topArch && (
+                            <span className={`inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(topArch.name)}`}>
+                              {formatArchetypeName(topArch.name)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <div className="text-4xl mb-2">📋</div>
+                  <div className="text-sm">No picks yet</div>
+                  <div className="text-xs mt-1">Start drafting!</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
