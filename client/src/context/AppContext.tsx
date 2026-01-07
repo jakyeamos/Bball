@@ -187,7 +187,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // Fetch players on mount
   useEffect(() => {
-    fetch('/api/players')
+    fetch(`${import.meta.env.VITE_API_URL}/api/players`)
       .then((res) => res.json())
       .then((data) => {
         setState((prev) => ({ ...prev, allPlayers: data.players }));
