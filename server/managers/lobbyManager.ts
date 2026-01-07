@@ -46,13 +46,16 @@ export function createLobby(
     isConnected: true,
   };
 
+  const users = [commissioner];
+  const canStart = users.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
+
   return {
     lobbyId,
     commissionerId,
     config,
-    users: [commissioner],
+    users,
     inviteCode,
-    canStart: false,
+    canStart,
   };
 }
 
@@ -84,6 +87,7 @@ export function addUserToLobby(
 
   const newUsers = [...lobby.users, newUser];
   const isFull = newUsers.length === lobby.config.teamCount;
+  const canStart = newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
 
   // Assign teams if lobby is now full
   let usersWithTeams = newUsers;
@@ -94,7 +98,7 @@ export function addUserToLobby(
   return {
     ...lobby,
     users: usersWithTeams,
-    canStart: isFull,
+    canStart,
   };
 }
 
@@ -124,17 +128,17 @@ export function removeUserFromLobby(
 
   // If lobby was full and now isn't, unassign all teams
   const wasFull = lobby.users.length === lobby.config.teamCount;
-  const isFullNow = newUsers.length === lobby.config.teamCount;
+  const canStart = newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
 
   let usersWithTeams = newUsers;
-  if (wasFull && !isFullNow) {
+  if (wasFull && !canStart) {
     usersWithTeams = newUsers.map(u => ({ ...u, teamId: null }));
   }
 
   return {
     ...lobby,
     users: usersWithTeams,
-    canStart: isFullNow,
+    canStart,
   };
 }
 
@@ -236,6 +240,6 @@ export function updateLobbyConfig(
     ...lobby,
     config: newConfig,
     users: newUsers,
-    canStart: newUsers.length === newConfig.teamCount && newUsers.every(u => u.teamId !== null),
+    canStart: newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN,
   };
 }
