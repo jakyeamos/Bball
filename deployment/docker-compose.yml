@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - CLIENT_URL=http://localhost:3000
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-in-production}
+    volumes:
+      # Mount data directory for persistent player data (optional)
+      - ./server/data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_SERVER_URL=http://localhost:3001
+    depends_on:
+      - server
+    restart: unless-stopped
+
+networks:
+  default:
+    name: nba-draft-sim
