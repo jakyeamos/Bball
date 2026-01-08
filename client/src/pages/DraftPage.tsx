@@ -175,6 +175,18 @@ export function DraftPage() {
     return draft.teams.find((t) => t.teamId === currentPick.teamId);
   }, [draft, currentPick]);
 
+  const picksUntilTurn = useMemo(() => {
+    if (!draft || !myTeam) return null;
+    
+    // Find the index of the next pick belonging to the user's team
+    const nextPickIndex = draft.draftOrder.findIndex(
+      (pick, index) => index >= draft.currentPickIndex && pick.teamId === myTeam.teamId
+    );
+
+    if (nextPickIndex === -1) return null; // No more picks
+    return nextPickIndex - draft.currentPickIndex;
+  }, [draft, myTeam]);
+
   // ════════════════════════════════════════════════════════════════════════
   // 🆕 FIX: Determine if it's MY turn using userId directly
   // This is more robust than comparing team objects
@@ -245,12 +257,42 @@ export function DraftPage() {
               {timeRemaining !== null ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}` : '--:--'}
             </div>
 
-            {/* On the Clock */}
-            <Card padding="sm" className={`${isMyPick ? 'bg-green-100 border-green-500 border-2' : 'bg-white'}`}>
-              <div className="text-sm text-gray-600">On the Clock</div>
-              <div className="font-bold text-lg">{currentTeam?.displayName || 'Unknown'}</div>
-              {isMyPick && <div className="text-green-600 text-sm font-medium">Your Pick!</div>}
-            </Card>
+           {/* --- INSERT NOTIFICATION UNDER HEADER --- */}
+          {draft.status === 'active' && picksUntilTurn !== null && (
+            <div className={`mt-4 p-4 rounded-lg flex items-center justify-between shadow-sm transition-colors ${
+              picksUntilTurn === 0 
+                ? 'bg-green-100 border-2 border-green-400 animate-pulse' // It's your turn!
+                : picksUntilTurn <= 2 
+                ? 'bg-yellow-50 border border-yellow-200' // Getting close
+                : 'bg-blue-50 border border-blue-200' // Far away
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">
+                  {picksUntilTurn === 0 ? '🚨' : picksUntilTurn <= 2 ? '⚠️' : '⏳'}
+                </span>
+                <div>
+                  <div className={`font-bold text-lg ${
+                    picksUntilTurn === 0 ? 'text-green-800' : 'text-gray-800'
+                  }`}>
+                    {picksUntilTurn === 0 
+                      ? "IT'S YOUR TURN!" 
+                      : `${picksUntilTurn} pick${picksUntilTurn === 1 ? '' : 's'} until your turn`}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {picksUntilTurn === 0 
+                      ? "Make your selection below." 
+                      : "Check your queue and get ready."}
+                  </div>
+                </div>
+              </div>
+              
+              {picksUntilTurn > 0 && (
+                <div className="text-right text-gray-500 font-mono text-sm">
+                  Est. wait: ~{Math.ceil(picksUntilTurn * (draft.config.pickTimer / 60))}m
+                </div>
+              )}
+            </div>
+          )}
 
             {/* Toggle Roster */}
             <Button
