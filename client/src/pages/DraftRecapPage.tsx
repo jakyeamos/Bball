@@ -7,21 +7,48 @@
  * - Professional appearance
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
+import { apiService } from '../services/api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { TeamAnalysis } from '../components/TeamAnalysis';
 import {
-  calculateTeamComposition,
-  getCompositionStatus,
-  getStatusColor,
-  getCompositionMessage,
   getTopArchetypes,
   getArchetypeColor,
   formatArchetypeName,
+  getPrimaryTeamIdentity,
 } from '../archetypes';
+import { TeamAggregation, TeamComposition, Player } from '@nba-draft-sim/shared';
+
+const SynergyMark = ({ synergy }) => {
+  const synergyStyles = {
+    great: 'bg-green-500',
+    good: 'bg-blue-500',
+    poor: 'bg-red-500',
+  };
+  return (
+    <span
+      className={`inline-block w-2 h-2 rounded-full ${
+        synergyStyles[synergy] || 'bg-gray-400'
+      }`}
+    ></span>
+  );
+};
+
+const getSynergy = (player: Player, teamAggregation?: TeamAggregation) => {
+  if (!teamAggregation) return 'average';
+  const primaryIdentity = getPrimaryTeamIdentity(teamAggregation);
+  if (player.archetypes[primaryIdentity] > 0.5) {
+    return 'great';
+  }
+  if (player.archetypes[primaryIdentity] > 0.25) {
+    return 'good';
+  }
+  return 'poor';
+};
 
 export function DraftRecapPage() {
   const navigate = useNavigate();
@@ -30,6 +57,26 @@ export function DraftRecapPage() {
   const [startingSeason, setStartingSeason] = useState(false);
   const tradeClickedRef = useRef(false);
   const seasonClickedRef = useRef(false);
+  const [teamAggregations, setTeamAggregations] = useState<
+    Record<string, TeamAggregation>
+  >({});
+
+  useEffect(() => {
+    if (draft) {
+      draft.teams.forEach((team) => {
+        if (team.roster.length > 0) {
+          apiService
+            .aggregateTeam(team.roster, team.teamId)
+            .then((aggregation) => {
+              setTeamAggregations((prev) => ({
+                ...prev,
+                [team.teamId]: aggregation,
+              }));
+            });
+        }
+      });
+    }
+  }, [draft]);
 
   React.useEffect(() => {
     if (!draft || !league) {
@@ -66,19 +113,25 @@ export function DraftRecapPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-gray-900 mb-3">🏀 Draft Complete!</h1>
-          <p className="text-lg text-gray-600">Review your rosters and prepare for the season</p>
+        <div className="text-center mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2">
+            🏀 Draft Complete!
+          </h1>
+          <p className="text-base sm:text-lg text-gray-600">
+            Review your rosters and prepare for the season
+          </p>
         </div>
 
         {/* Commissioner Controls */}
         {isCommissioner && league.phase === 'draft_recap' && (
-          <Card className="mb-8" padding="lg">
+          <Card className="mb-6" padding="lg">
             <div className="text-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Ready to Begin?</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Ready to Begin?
+              </h3>
               <div className="flex items-center justify-center gap-6">
                 <Button 
                   onClick={handleStartSeason} 
@@ -109,11 +162,6 @@ export function DraftRecapPage() {
               .map((pid) => allPlayers.find((p) => p.playerId === pid))
               .filter((p) => p !== undefined);
 
-            const composition = calculateTeamComposition(roster);
-            const creatorStatus = getCompositionStatus(composition.creators, 'creators');
-            const shootingStatus = getCompositionStatus(composition.shooting, 'shooting');
-            const rimProtStatus = getCompositionStatus(composition.rimProtection, 'rimProtection');
-
             return (
               <Card key={team.teamId} padding="none" className="overflow-hidden hover:shadow-xl transition-shadow">
                 {/* Team Header */}
@@ -126,70 +174,10 @@ export function DraftRecapPage() {
                   </p>
                 </div>
 
-                {/* Team Composition */}
-                <div className="p-4 bg-gray-50 border-b border-gray-200">
-                  <h4 className="text-sm font-bold text-gray-700 mb-3">📊 Team Analysis</h4>
-
-                  {/* Ball Handlers */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-600">Ball Handlers</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded border ${getStatusColor(creatorStatus)}`}>
-                        {composition.creators.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          creatorStatus === 'danger' ? 'bg-red-500' :
-                          creatorStatus === 'warning' ? 'bg-orange-500' :
-                          'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(composition.creators, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Shooting */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-600">Shooting/Spacing</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded border ${getStatusColor(shootingStatus)}`}>
-                        {composition.shooting.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          shootingStatus === 'good' ? 'bg-green-500' :
-                          shootingStatus === 'warning' ? 'bg-orange-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${Math.min(composition.shooting * 2, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Rim Protection */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-600">Rim Protection</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded border ${getStatusColor(rimProtStatus)}`}>
-                        {composition.rimProtection.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          rimProtStatus === 'good' ? 'bg-green-500' :
-                          rimProtStatus === 'warning' ? 'bg-orange-500' :
-                          'bg-red-500'
-                        }`}
-                        style={{ width: `${Math.min(composition.rimProtection * 5, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Team Analysis */}
+                {teamAggregations[team.teamId] && (
+                  <TeamAnalysis aggregation={teamAggregations[team.teamId]} />
+                )}
 
                 {/* Player List */}
                 <div className="p-4 max-h-96 overflow-y-auto">
@@ -215,23 +203,33 @@ export function DraftRecapPage() {
                                 <span className="font-bold text-sm text-gray-900 truncate">
                                   {player.name}
                                 </span>
+                                <SynergyMark
+                                  synergy={getSynergy(
+                                    player,
+                                    teamAggregations[team.teamId]
+                                  )}
+                                />
                               </div>
-                              
+
                               {/* Position and Team */}
                               <div className="text-xs text-gray-500 ml-8">
                                 {player.position} • {player.team}
                               </div>
-                              
+
                               {/* Top Archetype */}
                               {topArch && (
                                 <div className="ml-8 mt-2">
-                                  <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${getArchetypeColor(topArch.name)}`}>
+                                  <span
+                                    className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${getArchetypeColor(
+                                      topArch.name
+                                    )}`}
+                                  >
                                     {formatArchetypeName(topArch.name)}
                                   </span>
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* Stats */}
                             <div className="text-right flex-shrink-0">
                               <div className="text-sm font-bold text-primary-600">
