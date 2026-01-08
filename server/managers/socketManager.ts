@@ -33,7 +33,22 @@ export function initializeSocketServer(
 ): SocketServer {
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'https://bball-client.vercel.app',
+        ];
+
+        const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
+
+        if (allowedOrigins.includes(origin) || isVercelPreview) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
     pingTimeout: 60000,
@@ -147,7 +162,7 @@ export function initializeSocketServer(
     socket.on(WS_EVENTS.START_PLAYOFFS, () => {
       handleStartPlayoffs(io, socket, userId, allPlayers);
     });
-    
+
     // DISCONNECT
     socket.on(WS_EVENTS.DISCONNECT, () => {
       console.log(`Client disconnected: ${socket.id}`);
