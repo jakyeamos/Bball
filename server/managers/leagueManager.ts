@@ -152,7 +152,7 @@ export function startRegularSeason(
   const league = leagueStore.get(leagueId);
 
   // Phase 0: Validate current phase
-  if (!league || league.phase !== 'trade_window') {
+  if (!league || (league.phase !== 'trade_window' && league.phase !== 'draft_recap')) {
     throw new Error(`Invalid phase for regular season. Current: ${league?.phase}`);
   }
 
