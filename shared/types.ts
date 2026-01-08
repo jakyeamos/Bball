@@ -240,6 +240,13 @@ export interface RegularSeasonResults {
   games: RegularSeasonGame[];
 }
 
+// This is a UI-specific type for displaying matchup results
+export interface UIMatchupResult extends RegularSeasonGame {
+  matchupIndex: number;
+  seriesScore: string;
+  games: any[]; // You can define a proper game type if needed
+}
+
 // ============================================================================
 // PLAYOFFS TYPES
 // ============================================================================

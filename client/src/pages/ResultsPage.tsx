@@ -4,7 +4,8 @@ import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { TeamRecord } from '@nba-draft-sim/shared';
+import { MatchupResultCard } from '../components/MatchupResultCard';
+import { TeamRecord, UIMatchupResult } from '@nba-draft-sim/shared';
 
 // ------------------------------------------------------------------
 // 1. CONFIG & HELPER LOGIC (Moved inside or outside component)
@@ -91,11 +92,11 @@ export function ResultsPage() {
   const { league, regularSeasonResults, playoffResults, draft, lobby } = useApp();
 
   // --- STATE ---
-  const [playbackQueue, setPlaybackQueue] = useState<any[]>([]);
-  const [displayedGames, setDisplayedGames] = useState<any[]>([]);
+  const [playbackQueue, setPlaybackQueue] = useState<UIMatchupResult[]>([]);
+  const [displayedMatchups, setDisplayedMatchups] = useState<UIMatchupResult[]>([]);
   const [currentMatchupIdx, setCurrentMatchupIdx] = useState(0); // For "Matchup 1/X"
   const [isSimulating, setIsSimulating] = useState(false);
-  const [simSpeed, setSimSpeed] = useState(200); // Slower default for readability
+  const [simSpeed, setSimSpeed] = useState(400); // Slower default for readability
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
@@ -107,29 +108,30 @@ export function ResultsPage() {
 
   // When results arrive, build the "Animation Queue"
   useEffect(() => {
-    if (regularSeasonResults && !playoffResults && playbackQueue.length === 0) {
+    if (regularSeasonResults && !playoffResults && playbackQueue.length === 0 && displayedMatchups.length === 0) {
       
-      // Expand all matchups into a flat list of single games for the ticker
-      const queue: any[] = [];
-      
-      regularSeasonResults.games.forEach((matchup, idx) => {
+      const queue = regularSeasonResults.games.map((matchup, idx) => {
         const seriesGames = expandMatchupToSeries(matchup);
+        const winnerId = matchup.result.winner === 'A' ? matchup.teamAId : matchup.teamBId;
+
+        let winnerWins = 0;
+        let loserWins = 0;
         seriesGames.forEach(g => {
-          queue.push({
-            ...g,
-            matchupId: matchup.gameId,
-            matchupIndex: idx + 1,
-            totalMatchups: regularSeasonResults.games.length,
-            teamAId: matchup.teamAId,
-            teamBId: matchup.teamBId,
-            origMatchup: matchup
-          });
+          if (g.winnerId === winnerId) winnerWins++;
+          else loserWins++;
         });
+
+        return {
+          ...matchup,
+          matchupIndex: idx + 1,
+          seriesScore: `${winnerWins}-${loserWins}`,
+          games: seriesGames, // Keep the games for potential drill-down later
+        };
       });
 
       setPlaybackQueue(queue);
       setIsSimulating(true);
-    } 
+    }
     // If Playoffs exist, skip logic
     else if (playoffResults) {
         setIsSimulating(false);
@@ -144,19 +146,17 @@ export function ResultsPage() {
     if (!isSimulating || playbackQueue.length === 0) return;
 
     const timer = setTimeout(() => {
-      // Move one game from Queue to Display
-      const nextGame = playbackQueue[0];
+      const nextMatchup = playbackQueue[0];
       const remaining = playbackQueue.slice(1);
 
-      setDisplayedGames(prev => [...prev, nextGame]);
+      setDisplayedMatchups(prev => [...prev, nextMatchup]);
       setPlaybackQueue(remaining);
-      setCurrentMatchupIdx(nextGame.matchupIndex);
+      setCurrentMatchupIdx(nextMatchup.matchupIndex);
 
       if (remaining.length === 0) {
         setIsSimulating(false);
       }
 
-      // Scroll to bottom
       if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
@@ -174,18 +174,14 @@ export function ResultsPage() {
     const records: Record<string, TeamRecord> = {};
     draft.teams.forEach(t => records[t.teamId] = { teamId: t.teamId, wins: 0, losses: 0, winPct: 0 });
 
-    // Calculate based on displayed individual games
-    // Note: Since we are simulating series, "Wins" in standings usually means Series Wins? 
-    // OR Game wins? Usually in NBA, standings are game wins.
-    // If you want "Matchup Wins" (Series wins), we only count when a series finishes.
-    
-    // APPROACH: Counting individual GAME wins for standings (NBA style)
-    displayedGames.forEach(game => {
-       const winner = game.winnerId;
-       const loser = game.winnerId === game.teamAId ? game.teamBId : game.teamAId;
+    // APPROACH: Counting MATCHUP (Series) wins for standings.
+    displayedMatchups.forEach(matchup => {
+      const isTeamA = matchup.result.winner === 'A';
+      const winnerId = isTeamA ? matchup.teamAId : matchup.teamBId;
+      const loserId = isTeamA ? matchup.teamBId : matchup.teamAId;
        
-       if (records[winner]) records[winner].wins++;
-       if (records[loser]) records[loser].losses++;
+      if (records[winnerId]) records[winnerId].wins++;
+      if (records[loserId]) records[loserId].losses++;
     });
 
     return Object.values(records)
@@ -194,11 +190,11 @@ export function ResultsPage() {
         winPct: (r.wins + r.losses) > 0 ? r.wins / (r.wins + r.losses) : 0
       }))
       .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
-  }, [displayedGames, draft]);
+  }, [displayedMatchups, draft]);
 
   // --- HANDLERS ---
   const handleSkip = () => {
-    setDisplayedGames(prev => [...prev, ...playbackQueue]);
+    setDisplayedMatchups(prev => [...prev, ...playbackQueue]);
     setPlaybackQueue([]);
     setIsSimulating(false);
   };
@@ -291,46 +287,17 @@ export function ResultsPage() {
                 <div className="text-xs text-gray-400 mt-1">Series & Scores</div>
               </div>
               
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 font-mono">
-                {displayedGames.map((game, idx) => {
-                  const isTeamAWin = game.winnerId === game.teamAId;
-                  
-                  return (
-                    <div key={idx} className="bg-gray-800 p-3 rounded border border-gray-700 text-sm animate-in slide-in-from-right-4 fade-in duration-300">
-                      <div className="flex justify-between items-center text-xs text-gray-400 mb-2 uppercase tracking-wide">
-                        <span>Matchup {game.matchupIndex}</span>
-                        <span>Game {game.gameNumber}</span>
-                      </div>
-                      
-                      {/* SCOREBOARD */}
-                      <div className="flex justify-between items-center mb-2">
-                        <div className={`flex flex-col ${isTeamAWin ? 'text-green-400 font-bold' : 'text-gray-300'}`}>
-                            <span>{getTeamName(game.teamAId).substring(0, 15)}</span>
-                            <span className="text-lg">{game.scoreA}</span>
-                        </div>
-                        <div className="text-gray-600 px-2">vs</div>
-                        <div className={`flex flex-col items-end ${!isTeamAWin ? 'text-green-400 font-bold' : 'text-gray-300'}`}>
-                            <span>{getTeamName(game.teamBId).substring(0, 15)}</span>
-                            <span className="text-lg">{game.scoreB}</span>
-                        </div>
-                      </div>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                {displayedMatchups.map((matchup) => (
+                  <MatchupResultCard
+                    key={matchup.gameId}
+                    matchup={matchup}
+                    getTeamName={getTeamName}
+                  />
+                ))}
 
-                      {/* KEY DRIVER */}
-                      <div className="pt-2 border-t border-gray-700 text-xs text-blue-300 flex gap-1 items-center">
-                        <span className="opacity-75">🔑 Key:</span> 
-                        <span>{game.driver?.category || "Clutch Performance"}</span>
-                        {game.driver?.impact && (
-                            <span className="bg-blue-900 text-blue-200 px-1 rounded ml-auto">
-                                +{game.driver.impact.toFixed(1)}
-                            </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {displayedGames.length === 0 && (
-                    <div className="text-center text-gray-600 py-12 italic">
+                {displayedMatchups.length === 0 && (
+                    <div className="text-center text-gray-400 py-12 italic">
                         Initializing Season...
                     </div>
                 )}
