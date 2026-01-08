@@ -250,6 +250,7 @@ export interface RoleSummary {
   // Usage
   USG: number;
   VI: number;
+  [key: string]: number;
 }
 
 // ============================================================================

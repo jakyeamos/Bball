@@ -1,11 +1,13 @@
 /**
  * League Snapshot Creation
  * Processes raw player stats into a complete league snapshot with:
- * - Player features
+ * - Player features (30 features - Phase 2)
  * - Archetype profiles
  * - Impact ratings
  * - Population statistics
  * - Role averages
+ * 
+ * UPDATED for Phase 2: All 30 features, REB → REB_TOTAL
  */
 
 import {
@@ -13,11 +15,10 @@ import {
   Player,
   LeagueSnapshot,
   PlayerFeatures,
-  RoleSummary,
   RoleCategory,
   POSITION_TO_ROLE
 } from '@nba-draft-sim/shared';
-import { buildPlayerFeatures, standardizeFeatures } from './features';
+import { buildPlayerFeatures, standardizeFeatures, RoleSummary } from './features';
 import { computeArchetypeProfile } from './archetypes';
 import { calculateImpactRating } from './aggregation';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,19 +43,37 @@ function calculateStd(values: number[], mean: number): number {
 }
 
 /**
- * Calculate population statistics for all features
+ * Calculate population statistics for all features (Phase 2: 30 features)
  */
 function calculatePopulationStats(features: PlayerFeatures[]): {
   mean: Record<string, number>;
   std: Record<string, number>;
 } {
-  const featureNames = ['TS', 'AST', 'TOV', 'A2T', 'THREE_PA_RATE', 'FT_RATE', 'BLK', 'STL', 'REB', 'USG'];
+  // Phase 2: All 30 feature names
+  const featureNames = [
+    // Shooting (9)
+    'TS', 'THREE_P_PCT', 'THREE_PA_RATE', 'TWO_P_PCT', 'TWO_PA_RATE',
+    'FT_PCT', 'FT_RATE', 'EFG', 'THREE_P_VOLUME',
+    // Playmaking (6)
+    'AST', 'AST_RATE', 'POTENTIAL_AST', 'AST_TO_PASS_RATE', 'SECONDARY_AST', 'PAR',
+    // Ball Security (3)
+    'TOV', 'TOV_RATE', 'A2T',
+    // Defense (7)
+    'STL', 'BLK', 'STL_RATE', 'BLK_RATE', 'DEFLECTIONS', 'PF_RATE', 'CHARGES_DRAWN',
+    // Rebounding (3)
+    'OREB_PCT', 'DREB_PCT', 'REB_TOTAL',
+    // Usage (2)
+    'USG', 'VI'
+  ];
 
   const mean: Record<string, number> = {};
   const std: Record<string, number> = {};
 
   for (const feature of featureNames) {
-    const values = features.map(f => (f as any)[feature] as number);
+    const values = features
+      .map(f => (f as any)[feature] as number | undefined)
+      .filter((v): v is number => v !== undefined);
+    
     const meanVal = calculateMean(values);
     mean[feature] = meanVal;
     std[feature] = calculateStd(values, meanVal);
@@ -64,7 +83,7 @@ function calculatePopulationStats(features: PlayerFeatures[]): {
 }
 
 /**
- * Calculate role averages (G, W, B) for shrinkage
+ * Calculate role averages (G, W, B) for shrinkage (Phase 2: 30 features)
  */
 function calculateRoleAverages(
   players: Array<{ rawStats: PlayerRawStats; features: PlayerFeatures }>
@@ -90,18 +109,49 @@ function calculateRoleAverages(
       features.push(...Object.values(roleGroups).flat());
     }
 
+    // Phase 2: RoleSummary with 30 fields (no avg_ prefix)
     roleAverages[role] = {
-      avg_TS: calculateMean(features.map(f => f.TS)),
-      avg_AST: calculateMean(features.map(f => f.AST)),
-      avg_TOV: calculateMean(features.map(f => f.TOV)),
-      avg_3PA_rate: calculateMean(features.map(f => f.THREE_PA_RATE)),
-      avg_FT_rate: calculateMean(features.map(f => f.FT_RATE)),
-      avg_BLK: calculateMean(features.map(f => f.BLK)),
-      avg_STL: calculateMean(features.map(f => f.STL)),
-      avg_REB: calculateMean(features.map(f => f.REB)),
-      avg_usage_proxy: calculateMean(features.map(f => f.USG)),
-      avg_PAR: calculateMean(features.map(f => f.PAR || 0)),  // ← ADD
-      avg_VI: calculateMean(features.map(f => f.VI || 0)),
+      // Shooting (9)
+      TS: calculateMean(features.map(f => f.TS ?? 0)),
+      THREE_P_PCT: calculateMean(features.map(f => f.THREE_P_PCT ?? 0)),
+      THREE_PA_RATE: calculateMean(features.map(f => f.THREE_PA_RATE ?? 0)),
+      TWO_P_PCT: calculateMean(features.map(f => f.TWO_P_PCT ?? 0)),
+      TWO_PA_RATE: calculateMean(features.map(f => f.TWO_PA_RATE ?? 0)),
+      FT_PCT: calculateMean(features.map(f => f.FT_PCT ?? 0)),
+      FT_RATE: calculateMean(features.map(f => f.FT_RATE ?? 0)),
+      EFG: calculateMean(features.map(f => f.EFG ?? 0)),
+      THREE_P_VOLUME: calculateMean(features.map(f => f.THREE_P_VOLUME ?? 0)),
+      
+      // Playmaking (6)
+      AST: calculateMean(features.map(f => f.AST ?? 0)),
+      AST_RATE: calculateMean(features.map(f => f.AST_RATE ?? 0)),
+      POTENTIAL_AST: calculateMean(features.map(f => f.POTENTIAL_AST ?? 0)),
+      AST_TO_PASS_RATE: calculateMean(features.map(f => f.AST_TO_PASS_RATE ?? 0)),
+      SECONDARY_AST: calculateMean(features.map(f => f.SECONDARY_AST ?? 0)),
+      PAR: calculateMean(features.map(f => f.PAR ?? 0)),
+      
+      // Ball Security (3)
+      TOV: calculateMean(features.map(f => f.TOV ?? 0)),
+      TOV_RATE: calculateMean(features.map(f => f.TOV_RATE ?? 0)),
+      A2T: calculateMean(features.map(f => f.A2T ?? 0)),
+      
+      // Defense (7)
+      STL: calculateMean(features.map(f => f.STL ?? 0)),
+      BLK: calculateMean(features.map(f => f.BLK ?? 0)),
+      STL_RATE: calculateMean(features.map(f => f.STL_RATE ?? 0)),
+      BLK_RATE: calculateMean(features.map(f => f.BLK_RATE ?? 0)),
+      DEFLECTIONS: calculateMean(features.map(f => f.DEFLECTIONS ?? 0)),
+      PF_RATE: calculateMean(features.map(f => f.PF_RATE ?? 0)),
+      CHARGES_DRAWN: calculateMean(features.map(f => f.CHARGES_DRAWN ?? 0)),
+      
+      // Rebounding (3)
+      OREB_PCT: calculateMean(features.map(f => f.OREB_PCT ?? 0)),
+      DREB_PCT: calculateMean(features.map(f => f.DREB_PCT ?? 0)),
+      REB_TOTAL: calculateMean(features.map(f => f.REB_TOTAL ?? 0)),
+      
+      // Usage (2)
+      USG: calculateMean(features.map(f => f.USG ?? 0)),
+      VI: calculateMean(features.map(f => f.VI ?? 0)),
     };
   }
 
@@ -190,33 +240,74 @@ export async function createLeagueSnapshot(
 
 /**
  * Bootstrap initial role averages (use league-wide averages initially)
+ * Phase 2: Calculate all 30 features
  */
 function bootstrapRoleAverages(rawStats: PlayerRawStats[]): Record<RoleCategory, RoleSummary> {
   // Calculate simple averages across all players for bootstrapping
   const allTS = rawStats.map(s => s.TS_PCT);
+  const allThreePct = rawStats.map(s => s.THREE_P_PCT);
+  const allThreeRate = rawStats.map(s => s.THREE_PA / Math.max(1, s.FGA));
+  const allTwoPct = rawStats.map(s => s.TWO_P_PCT);
+  const allTwoRate = rawStats.map(s => s.TWO_PA / Math.max(1, s.FGA));
+  const allFTPct = rawStats.map(s => s.FT_PCT);
+  const allFTRate = rawStats.map(s => s.FTA / Math.max(1, s.FGA));
+  const allEFG = rawStats.map(s => (s.FGA > 0 ? (s.FGA - s.THREE_PA + 1.5 * s.THREE_PA) / s.FGA : 0));
+  const allThreeVol = rawStats.map(s => s.THREE_PA / Math.max(1, s.MP_TOTAL / 36));
+  
   const allAST = rawStats.map(s => s.AST);
   const allTOV = rawStats.map(s => s.TOV);
-  const all3PARate = rawStats.map(s => s.THREE_PA / Math.max(1, s.FGA));
-  const allFTRate = rawStats.map(s => s.FTA / Math.max(1, s.FGA));
   const allBLK = rawStats.map(s => s.BLK);
   const allSTL = rawStats.map(s => s.STL);
-  const allREB = rawStats.map(s => s.REB);
+  const allREB = rawStats.map(s => s.ORB + s.DRB);
+  const allOREB = rawStats.map(s => s.OREB_PCT || 0);
+  const allDREB = rawStats.map(s => s.DREB_PCT || 0);
+  
   const allUSG = rawStats.map(s =>
     (s.FGA + 0.44 * s.FTA + s.TOV) / Math.max(1, s.MP_TOTAL)
   );
 
   const bootstrap: RoleSummary = {
-    avg_TS: calculateMean(allTS),
-    avg_AST: calculateMean(allAST),
-    avg_TOV: calculateMean(allTOV),
-    avg_3PA_rate: calculateMean(all3PARate),
-    avg_FT_rate: calculateMean(allFTRate),
-    avg_BLK: calculateMean(allBLK),
-    avg_STL: calculateMean(allSTL),
-    avg_REB: calculateMean(allREB),
-    avg_usage_proxy: calculateMean(allUSG),
-    avg_PAR: 0.6,   // ← ADD
-    avg_VI: 0.5,
+    // Shooting (9)
+    TS: calculateMean(allTS),
+    THREE_P_PCT: calculateMean(allThreePct),
+    THREE_PA_RATE: calculateMean(allThreeRate),
+    TWO_P_PCT: calculateMean(allTwoPct),
+    TWO_PA_RATE: calculateMean(allTwoRate),
+    FT_PCT: calculateMean(allFTPct),
+    FT_RATE: calculateMean(allFTRate),
+    EFG: calculateMean(allEFG),
+    THREE_P_VOLUME: calculateMean(allThreeVol),
+    
+    // Playmaking (6) - Use reasonable defaults for unavailable stats
+    AST: calculateMean(allAST),
+    AST_RATE: 0,  // Will be calculated properly in buildPlayerFeatures
+    POTENTIAL_AST: 0,
+    AST_TO_PASS_RATE: 0,
+    SECONDARY_AST: 0,
+    PAR: 0.6,  // Reasonable default
+    
+    // Ball Security (3)
+    TOV: calculateMean(allTOV),
+    TOV_RATE: 0,
+    A2T: 0,
+    
+    // Defense (7)
+    STL: calculateMean(allSTL),
+    BLK: calculateMean(allBLK),
+    STL_RATE: 0,
+    BLK_RATE: 0,
+    DEFLECTIONS: 0,
+    PF_RATE: 0,
+    CHARGES_DRAWN: 0,
+    
+    // Rebounding (3)
+    OREB_PCT: calculateMean(allOREB),
+    DREB_PCT: calculateMean(allDREB),
+    REB_TOTAL: calculateMean(allREB),
+    
+    // Usage (2)
+    USG: calculateMean(allUSG),
+    VI: 0.5,  // Reasonable default
   };
 
   // Use same bootstrap for all roles initially

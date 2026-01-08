@@ -148,13 +148,16 @@ export function aggregateArchetypeProfiles(
 
   // Sum up all archetype values
   for (const profile of profiles) {
-    for (const archetype in profile) {
+  for (const archetype in profile) {
+    const value = profile[archetype];      // ← ADD THIS LINE
+    if (value !== undefined) {             // ← ADD THIS LINE
       if (!aggregated[archetype]) {
         aggregated[archetype] = 0;
       }
-      aggregated[archetype] += profile[archetype];
-    }
+      aggregated[archetype] += value;      // ← CHANGE profile[archetype] to value
+    }                                      // ← ADD THIS LINE
   }
+}
 
   // Normalize by number of players
   for (const archetype in aggregated) {

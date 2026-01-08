@@ -4,7 +4,7 @@
  */
 
 import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver } from '@nba-draft-sim/shared';
-import { SIM_PARAMS } from '@nba-draft-sim/shared';
+import { SIMULATION_PARAMS } from '@nba-draft-sim/shared';
 import { randomNormal } from '../utils/utils';
 import { computeTeamModifiers } from './modifiers';
 
@@ -17,7 +17,7 @@ function getMod(mods: TeamModifiers, key: string): number {
  * Still v1-lightweight, but much stronger than linear "strength".
  */
 function computeTeamRatings(team: TeamAggregation, mods: TeamModifiers) {
-  const P = SIM_PARAMS as any;
+  const P = SIMULATION_PARAMS as any;
 
   const vi = (team.features as any).VI ?? 0.5;
   const par = (team.features as any).PAR ?? 0.6;
@@ -41,12 +41,12 @@ function computeTeamRatings(team: TeamAggregation, mods: TeamModifiers) {
 
   // DRtg (lower is better)
   const DRtg =
-    P.LEAGUE_DRtg -
-    P.DRTG_BLK_MULT * team.features.BLK -
-    P.DRTG_STL_MULT * team.features.STL -
-    P.DRTG_REB_MULT * team.features.REB +
-    defensePenalty -
-    defenseBonus;
+  P.LEAGUE_DRtg -
+  P.DRTG_BLK_MULT * (team.features.BLK ?? 0) -
+  P.DRTG_STL_MULT * (team.features.STL ?? 0) -
+  P.DRTG_REB_MULT * (team.features.REB_TOTAL ?? 0) +
+  defensePenalty -
+  defenseBonus;
 
   // Score variance (series looks different even with same mapped series length)
   const sigma =
@@ -102,9 +102,9 @@ function generateMatchupDrivers(
 export function simulateMatchup(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
-  numSims: number = SIM_PARAMS.SIMS_PER_MATCHUP
+  numSims: number = SIMULATION_PARAMS.NUM_SIMULATIONS
 ): MatchupResult {
-  const P = SIM_PARAMS as any;
+  const P = SIMULATION_PARAMS as any;
 
   const modsA = computeTeamModifiers(teamA);
   const modsB = computeTeamModifiers(teamB);

@@ -241,22 +241,15 @@ export interface DraftState {
 
 export interface TeamAggregation {
   teamId: string;
-  features: {
-    TS: number;
-    AST: number;
-    TOV: number;
-    THREE_PA_RATE: number;
-    FT_RATE: number;
-    REB: number;
-    BLK: number;
-    STL: number;
-    USG: number;
-    PAR: number;
-    VI: number;
-    A2T?: number;
-  };
+  features: PlayerFeatures;
   archetypes: ArchetypeProfile;
-  rotationPlayerIds: string[];  // Top 8 by impact rating
+  modifiers: TeamModifiers;
+  overallRating: number;
+  rotation: Array<{
+    playerId: string;
+    name: string;
+    impactRating: number;
+  }>;
 }
 
 export interface TeamModifiers {
@@ -507,21 +500,6 @@ export const DRAFT_CONSTRAINTS = {
 } as const;
 
 export type RoleCategory = 'G' | 'W' | 'B';
-
-export interface RoleSummary {
-  avg_TS: number;
-  avg_AST: number;
-  avg_TOV: number;
-  avg_3PA_rate: number;
-  avg_FT_rate: number;
-  avg_BLK: number;
-  avg_STL: number;
-  avg_REB: number;
-  avg_usage_proxy: number;
-  avg_PAR: number;
-  avg_VI: number;
-  [key: string]: number;
-}
 
 /**
  * Shared constants for NBA Draft + League Simulation

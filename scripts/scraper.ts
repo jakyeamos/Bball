@@ -2,8 +2,9 @@
  * NBA Stats Scraper
  * Fetches player stats using nba_api Python library via child process
  * Falls back to sample data if scraping fails
+ * 
+ * UPDATED for Phase 2: Added missing fields (FTM, THREE_PM, TWO_PA, TWO_PM, TWO_P_PCT)
  */
-
 import { PlayerRawStats } from '@nba-draft-sim/shared';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -43,6 +44,11 @@ function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
   const fgPct = data.FGA > 0 ? data.FGM / data.FGA : 0;
   const ftPct = data.FTA > 0 ? data.FTM / data.FTA : 0;
   const threePct = data.THREE_PA > 0 ? data.THREE_PM / data.THREE_PA : 0;
+  
+  // ✅ PHASE 2: Calculate two-point stats
+  const twoPA = data.FGA - data.THREE_PA;
+  const twoPM = data.FGM - data.THREE_PM;
+  const twoPct = twoPA > 0 ? twoPM / twoPA : 0;
 
   // Calculate True Shooting %: PTS / (2 * (FGA + 0.44 * FTA))
   const tsPct = data.FGA + 0.44 * data.FTA > 0
@@ -54,7 +60,7 @@ function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
     name: data.name,
     team: data.team,
     position: data.position || 'G', // Default to guard if missing
-
+    
     // Displayed stats
     PTS: data.PTS,
     REB: data.REB,
@@ -62,19 +68,44 @@ function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
     STL: data.STL,
     BLK: data.BLK,
     TS_PCT: tsPct,
-
-    // Internal stats
+    
+    // Core stats
     MP_TOTAL: data.MIN,
     GP: data.GP,
     FGA: data.FGA,
     FTA: data.FTA,
+    FTM: data.FTM,           // ✅ PHASE 2: Added
     TOV: data.TOV,
     THREE_PA: data.THREE_PA,
+    THREE_PM: data.THREE_PM, // ✅ PHASE 2: Added
     THREE_P_PCT: threePct,
     FT_PCT: ftPct,
     ORB: data.ORB,
     DRB: data.DRB,
     PF: data.PF,
+    
+    // ✅ PHASE 2: Two-point stats (calculated)
+    TWO_PA: twoPA,
+    TWO_PM: twoPM,
+    TWO_P_PCT: twoPct,
+    
+    // Optional advanced stats (not available from basic scraper)
+    POTENTIAL_AST: undefined,
+    SECONDARY_AST: undefined,
+    PASSES_MADE: undefined,
+    PASSES_RECEIVED: undefined,
+    DEFLECTIONS: undefined,
+    CHARGES_DRAWN: undefined,
+    CONTESTED_SHOTS: undefined,
+    POSSESSIONS: undefined,
+    TOUCHES: undefined,
+    SCREEN_ASSISTS: undefined,
+    USG_PROXY: undefined,
+    AST_PCT_PROXY: undefined,
+    TOV_PCT_PROXY: undefined,
+    OREB_PCT: undefined,
+    DREB_PCT: undefined,
+    REB_PCT: undefined,
   };
 }
 
@@ -84,7 +115,7 @@ function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
 export async function scrapeNBAStats(season: string = '2025-26'): Promise<PlayerRawStats[]> {
   try {
     const pythonScriptPath = path.join(__dirname, '../../scripts/scrape_nba_stats.py');
-
+    
     // Check if Python script exists
     try {
       await fs.access(pythonScriptPath);
@@ -96,9 +127,8 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
     // Execute Python script
     const { stdout } = await execAsync(`python3 ${pythonScriptPath} --season ${season}`);
     const data: NBAPlayerData[] = JSON.parse(stdout);
-
+    
     console.log(`Scraped ${data.length} players for season ${season}`);
-
     return data.map(convertToRawStats);
   } catch (error) {
     console.error('Error scraping NBA stats:', error);
@@ -112,7 +142,7 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
  */
 async function loadFallbackData(): Promise<PlayerRawStats[]> {
   const fallbackPath = path.join(__dirname, '../../data/sample_players.json');
-
+  
   try {
     const data = await fs.readFile(fallbackPath, 'utf-8');
     const players: NBAPlayerData[] = JSON.parse(data);

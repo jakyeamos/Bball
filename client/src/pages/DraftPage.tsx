@@ -95,9 +95,7 @@ export function DraftPage() {
 
     if (searchTerm) {
       available = available.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.team.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -320,7 +318,7 @@ export function DraftPage() {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Search players by name, position, or team..."
+                placeholder="Search players by name"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 fullWidth
@@ -351,7 +349,6 @@ export function DraftPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('name')}>
                     Player <SortIcon field="name" />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase" style={{ minWidth: '350px' }}>Archetypes</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('pts')}>
                     PPG <SortIcon field="pts" />
@@ -396,7 +393,6 @@ export function DraftPage() {
                   return (
                     <tr key={player.playerId} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
                       <td className="px-4 py-3">
                         {topArchetypes.length > 0 ? (
                           <div className="flex flex-wrap items-center">
@@ -478,7 +474,6 @@ export function DraftPage() {
                           <div className="font-semibold text-sm text-gray-900">
                             {index + 1}. {player.name}
                           </div>
-                          <div className="text-xs text-gray-500 mt-0.5">{player.position} • {player.team}</div>
                           {topArch && (
                             <span className={`inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(topArch.name)}`}>
                               {formatArchetypeName(topArch.name)}
