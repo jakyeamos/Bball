@@ -1,24 +1,28 @@
 /**
  * App Context
- * Manages global app state from WebSocket events
+ * Global state management for the NBA Draft Simulator
+ * 
+ * UPDATED: Added userId tracking via SESSION_INFO event
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { wsService } from '../services/websocket';
 import {
+  Player,
   LobbyState,
   DraftState,
   LeagueState,
-  Player,
   RegularSeasonResults,
   PlayoffResults,
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
-import { wsService } from '../services/websocket';
-import { DraftPick } from '@nba-draft-sim/shared';
 
 interface AppState {
   // Connection
   isConnected: boolean;
+  
+  // 🆕 User Identity - Track who the current user is
+  userId: string | null;
 
   // Player data
   allPlayers: Player[];
@@ -53,6 +57,7 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [state, setState] = useState<AppState>({
     isConnected: false,
+    userId: null,  // 🆕 Initialize userId as null
     allPlayers: [],
     lobby: null,
     draft: null,
@@ -82,6 +87,19 @@ export function AppProvider({ children }: AppProviderProps) {
         setState((prev) => ({ ...prev, isConnected: false }));
       })
     );
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 🆕 SESSION INFO - Receive userId from server
+    // ════════════════════════════════════════════════════════════════════════
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.SESSION_INFO, (data: any) => {
+        console.log('🔵 SESSION_INFO received:', data);
+        const userId = data.payload?.userId || data.userId;
+        setState((prev) => ({ ...prev, userId }));
+        console.log('✅ userId set to:', userId);
+      })
+    );
+    // ════════════════════════════════════════════════════════════════════════
 
     // Lobby events - EXTRACT PAYLOAD
     unsubscribers.push(

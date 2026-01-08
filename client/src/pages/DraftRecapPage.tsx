@@ -5,6 +5,11 @@
  * - Team composition working
  * - Per-game stats displayed nicely
  * - Professional appearance
+ * 
+ * FIXED: TypeScript errors
+ * - Removed unused TeamComposition import
+ * - Added proper types for SynergyMark component
+ * - Fixed player type narrowing in roster mapping
  */
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -21,30 +26,38 @@ import {
   formatArchetypeName,
   getPrimaryTeamIdentity,
 } from '../archetypes';
-import { TeamAggregation, TeamComposition, Player } from '@nba-draft-sim/shared';
+// 🆕 FIX: Removed TeamComposition - it doesn't exist in shared types
+import { TeamAggregation, Player } from '@nba-draft-sim/shared';
 
-const SynergyMark = ({ synergy }) => {
-  const synergyStyles = {
+// 🆕 FIX: Define synergy type
+type SynergyLevel = 'great' | 'good' | 'poor' | 'average';
+
+// 🆕 FIX: Add proper props interface for SynergyMark
+interface SynergyMarkProps {
+  synergy: SynergyLevel;
+}
+
+const SynergyMark: React.FC<SynergyMarkProps> = ({ synergy }) => {
+  const synergyStyles: Record<SynergyLevel, string> = {
     great: 'bg-green-500',
     good: 'bg-blue-500',
     poor: 'bg-red-500',
+    average: 'bg-gray-400',
   };
   return (
     <span
-      className={`inline-block w-2 h-2 rounded-full ${
-        synergyStyles[synergy] || 'bg-gray-400'
-      }`}
+      className={`inline-block w-2 h-2 rounded-full ${synergyStyles[synergy]}`}
     ></span>
   );
 };
 
-const getSynergy = (player: Player, teamAggregation?: TeamAggregation) => {
+const getSynergy = (player: Player, teamAggregation?: TeamAggregation): SynergyLevel => {
   if (!teamAggregation) return 'average';
   const primaryIdentity = getPrimaryTeamIdentity(teamAggregation);
-  if (player.archetypes[primaryIdentity] > 0.5) {
+  if ((player.archetypes[primaryIdentity]) ?? 0 > 0.5) {
     return 'great';
   }
-  if (player.archetypes[primaryIdentity] > 0.25) {
+  if ((player.archetypes[primaryIdentity]) ?? 0 > 0.25) {
     return 'good';
   }
   return 'poor';
@@ -166,9 +179,10 @@ export function DraftRecapPage() {
         {/* Team Rosters */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {draft.teams.map((team) => {
+            // 🆕 FIX: Use type guard to properly narrow Player type
             const roster = team.roster
               .map((pid) => allPlayers.find((p) => p.playerId === pid))
-              .filter((p) => p !== undefined);
+              .filter((p): p is Player => p !== undefined);
 
             return (
               <Card key={team.teamId} padding="none" className="overflow-hidden hover:shadow-xl transition-shadow">
@@ -191,6 +205,7 @@ export function DraftRecapPage() {
                 <div className="p-4 max-h-96 overflow-y-auto">
                   <div className="space-y-2">
                     {roster.map((player, idx) => {
+                      // 🆕 FIX: player is now guaranteed to be Player type
                       const ppg = player.rawStats.PTS / player.rawStats.GP;
                       const rpg = player.rawStats.REB / player.rawStats.GP;
                       const apg = player.rawStats.AST / player.rawStats.GP;

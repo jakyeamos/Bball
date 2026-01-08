@@ -1,6 +1,8 @@
 /**
  * Socket Manager
  * Orchestrates WebSocket connections and event routing
+ * 
+ * UPDATED: Emits SESSION_INFO on connection so client knows their userId
  */
 
 import { Server as HttpServer } from 'http';
@@ -99,6 +101,18 @@ export function initializeSocketServer(
 
     const userId = socket.data.userId;
     const displayName = socket.data.displayName;
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 🆕 EMIT SESSION INFO - Tell the client who they are
+    // ════════════════════════════════════════════════════════════════════════
+    socket.emit(WS_EVENTS.SESSION_INFO, {
+      payload: {
+        userId: userId,
+        displayName: displayName,
+      }
+    });
+    console.log(`📤 Sent SESSION_INFO to client: userId=${userId}`);
+    // ════════════════════════════════════════════════════════════════════════
 
     // CREATE_LOBBY
     socket.on(WS_EVENTS.CREATE_LOBBY, (payload: any) => {

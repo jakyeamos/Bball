@@ -364,6 +364,9 @@ export const WS_EVENTS = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
 
+  // Session events
+  SESSION_INFO: 'session:info',
+
   // Client → Server events (actions initiated by client)
   CREATE_LOBBY: 'create:lobby',
   JOIN_LOBBY: 'join:lobby',

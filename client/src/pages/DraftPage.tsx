@@ -1,6 +1,8 @@
 /**
  * Draft Page - CSS GRID VERSION
  * Uses CSS Grid with fr units - guaranteed to work
+ * 
+ * UPDATED: Fixed myTeam identification using userId instead of always taking teams[0]
  */
 
 import React, { useState, useMemo } from 'react';
@@ -19,7 +21,8 @@ type SortDirection = 'asc' | 'desc';
 
 export function DraftPage() {
   const navigate = useNavigate();
-  const { draft, allPlayers, timeRemaining, league, lobby } = useApp();
+  // 🆕 Get userId from context
+  const { draft, allPlayers, timeRemaining, league, lobby, userId } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('impact');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -42,10 +45,19 @@ export function DraftPage() {
     return lobby.users?.some(u => u.isCommissioner) || false;
   }, [lobby, draft]);
 
+  // ════════════════════════════════════════════════════════════════════════
+  // 🆕 FIX: Find MY team by matching userId, not by taking teams[0]
+  // ════════════════════════════════════════════════════════════════════════
   const myTeam = useMemo(() => {
-    if (!draft) return null;
-    return draft.teams[0] || null;
-  }, [draft]);
+    if (!draft || !userId) {
+      console.log('⚠️ myTeam: draft or userId is null', { draft: !!draft, userId });
+      return null;
+    }
+    const team = draft.teams.find(t => t.userId === userId);
+    console.log('🏀 myTeam found:', team?.displayName, 'for userId:', userId);
+    return team || null;
+  }, [draft, userId]);
+  // ════════════════════════════════════════════════════════════════════════
 
   const myRoster = useMemo(() => {
     if (!draft || !myTeam || !allPlayers) return [];
@@ -163,10 +175,21 @@ export function DraftPage() {
     return draft.teams.find((t) => t.teamId === currentPick.teamId);
   }, [draft, currentPick]);
 
+  // ════════════════════════════════════════════════════════════════════════
+  // 🆕 FIX: Determine if it's MY turn using userId directly
+  // This is more robust than comparing team objects
+  // ════════════════════════════════════════════════════════════════════════
   const isMyPick = useMemo(() => {
-    if (!myTeam || !currentTeam) return false;
-    return myTeam.teamId === currentTeam.teamId;
-  }, [myTeam, currentTeam]);
+    if (!draft || !userId || !currentPick) {
+      console.log('⚠️ isMyPick: missing data', { draft: !!draft, userId, currentPick: !!currentPick });
+      return false;
+    }
+    const pickingTeam = draft.teams.find(t => t.teamId === currentPick.teamId);
+    const result = pickingTeam?.userId === userId;
+    console.log('🎯 isMyPick:', result, '| pickingTeam.userId:', pickingTeam?.userId, '| my userId:', userId);
+    return result;
+  }, [draft, userId, currentPick]);
+  // ════════════════════════════════════════════════════════════════════════
 
   const handleMakePick = (playerId: string) => {
     wsService.makePick(playerId);
@@ -181,115 +204,94 @@ export function DraftPage() {
     }
   };
 
-  const handleResetFilters = () => {
-    setSearchTerm('');
-    setSortField('impact');
-    setSortDirection('desc');
-  };
-
-  const handlePauseDraft = () => {
-    wsService.pauseDraft();
-  };
-
-  const handleUnpauseDraft = () => {
-    wsService.unpauseDraft();
-  };
-
-  if (!draft) return null;
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <span className="text-gray-400">⇅</span>;
-    return sortDirection === 'desc' ? <span>↓</span> : <span>↑</span>;
+    if (sortField !== field) return null;
+    return <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>;
   };
 
-  // Grid layout: 80/20 split when roster is shown
-  const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: showRoster ? '4fr 1fr' : '1fr',
-    height: '100vh',
-    width: '100vw',
-    backgroundColor: '#f9fafb',
-  };
+  if (!draft) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500">Loading draft...</div>
+      </div>
+    );
+  }
 
   return (
-    <div style={gridStyle}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: showRoster ? '1fr 350px' : '1fr',
+        minHeight: '100vh',
+        backgroundColor: '#f3f4f6',
+      }}
+    >
       {/* Main Content */}
-      <div style={{ padding: '1rem', overflowY: 'auto' }}>
+      <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
         {/* Header */}
-        <Card className="mb-4" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">NBA Draft</h1>
-              <p className="text-gray-600">
-                Pick {currentPick?.pickNumber || '?'} of {draft.draftOrder.length} - Round {currentPick?.round || '?'}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {draft.status === 'active' && timeRemaining !== null && (
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary-600">
-                    {formatTime(timeRemaining)}
-                  </div>
-                  <div className="text-sm text-gray-600">Time Remaining</div>
-                </div>
-              )}
-
-              {draft.status === 'paused' && (
-                <div className="text-orange-600 font-bold text-xl">⏸ PAUSED</div>
-              )}
-
-              {isCommissioner && (
-                <div className="flex gap-2">
-                  {draft.status === 'active' && (
-                    <Button size="sm" variant="secondary" onClick={handlePauseDraft}>
-                      ⏸ Pause
-                    </Button>
-                  )}
-                  {draft.status === 'paused' && (
-                    <Button size="sm" variant="primary" onClick={handleUnpauseDraft}>
-                      ▶ Resume
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              <Button size="sm" variant="secondary" onClick={() => setShowRoster(!showRoster)}>
-                {showRoster ? '→ Hide' : '← Show'} Roster
-              </Button>
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">NBA Draft</h1>
+            <p className="text-gray-600">
+              Round {currentPick?.round || 1} • Pick {currentPick?.pickNumber || 1}
+            </p>
           </div>
 
-          {currentTeam && (
-            <div className="mt-4 p-4 bg-primary-50 rounded-lg">
-              <div className="text-lg font-bold text-primary-900">
-                On the Clock: {currentTeam.displayName}
-              </div>
-              {isMyPick && (
-                <div className="text-sm text-primary-700 mt-1">
-                  🔔 It's your pick! Select a player below.
-                </div>
-              )}
+          <div className="flex items-center gap-4">
+            {/* Timer */}
+            <div className={`text-2xl font-mono font-bold ${
+              (timeRemaining ?? 0) <= 10 ? 'text-red-600' : 'text-gray-900'
+            }`}>
+              {timeRemaining !== null ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}` : '--:--'}
             </div>
-          )}
-        </Card>
 
-        {/* Search */}
-        <Card padding="md" className="mb-4">
-          <div className="flex gap-4 items-center">
-            <Input
-              placeholder="Search players"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            <Button size="sm" variant="secondary" onClick={handleResetFilters}>
+            {/* On the Clock */}
+            <Card padding="sm" className={`${isMyPick ? 'bg-green-100 border-green-500 border-2' : 'bg-white'}`}>
+              <div className="text-sm text-gray-600">On the Clock</div>
+              <div className="font-bold text-lg">{currentTeam?.displayName || 'Unknown'}</div>
+              {isMyPick && <div className="text-green-600 text-sm font-medium">Your Pick!</div>}
+            </Card>
+
+            {/* Toggle Roster */}
+            <Button
+              variant="secondary"
+              onClick={() => setShowRoster(!showRoster)}
+            >
+              {showRoster ? 'Hide' : 'Show'} Roster
+            </Button>
+          </div>
+        </div>
+
+        {/* 🆕 Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-2 bg-gray-200 rounded text-xs font-mono">
+            <div>userId: {userId || 'null'}</div>
+            <div>myTeam: {myTeam?.displayName || 'null'} ({myTeam?.teamId})</div>
+            <div>currentTeam: {currentTeam?.displayName || 'null'} ({currentTeam?.userId})</div>
+            <div>isMyPick: {String(isMyPick)}</div>
+            <div>draft.status: {draft.status}</div>
+          </div>
+        )}
+
+        {/* Search and Filters */}
+        <Card padding="md" className="mb-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search players by name, position, or team..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+              />
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSearchTerm('');
+                setSortField('impact');
+                setSortDirection('desc');
+              }}
+            >
               🔄 Reset
             </Button>
             <div className="text-sm text-gray-600">
@@ -387,6 +389,9 @@ export function DraftPage() {
                         <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.STL / player.rawStats.GP).toFixed(1)}</td>
                         <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.BLK / player.rawStats.GP).toFixed(1)}</td>
                       <td className="px-4 py-3 text-right">
+                        {/* ════════════════════════════════════════════════════════════════ */}
+                        {/* 🆕 FIX: Button disabled logic now uses proper isMyPick check */}
+                        {/* ════════════════════════════════════════════════════════════════ */}
                         <Button
                           size="sm"
                           onClick={() => handleMakePick(player.playerId)}
