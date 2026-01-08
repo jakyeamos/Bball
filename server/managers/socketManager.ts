@@ -22,8 +22,10 @@ import {
   handleExecuteTrade,
   handleStartRegularSeason,
   handleStartPlayoffs,
+  handleCompleteLeague,
 } from '../services/handlers';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
+import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
 console.log('Server WS_EVENTS.CREATE_LOBBY:', WS_EVENTS.CREATE_LOBBY);
 
 /**
@@ -159,7 +161,7 @@ export function initializeSocketServer(
 
     // START_TRADE_WINDOW
     socket.on(WS_EVENTS.START_TRADE_WINDOW, () => {
-      handleStartTradeWindow(io, socket, userId);
+      handleStartTradeWindow(io, socket, userId, allPlayers);
     });
 
     // EXECUTE_TRADE
@@ -177,6 +179,11 @@ export function initializeSocketServer(
       handleStartPlayoffs(io, socket, userId, allPlayers);
     });
 
+    // COMPLETE_LEAGUE
+    socket.on(WS_EVENTS.COMPLETE_LEAGUE, () => {
+      handleCompleteLeague(io, socket, userId);
+    });
+
     // DISCONNECT
     socket.on(WS_EVENTS.DISCONNECT, () => {
       console.log(`Client disconnected: ${socket.id}`);
@@ -188,6 +195,7 @@ export function initializeSocketServer(
         if (!roomSockets || roomSockets.size === 0) {
           stopDraftTimer(lobbyId);
         }
+        stopTradeWindowTimer(lobbyId);
       }
     });
   });
@@ -196,12 +204,14 @@ export function initializeSocketServer(
   process.on('SIGTERM', () => {
     console.log('SIGTERM received, cleaning up...');
     stopAllTimers();
+    stopAllTradeTimers();
     io.close();
   });
 
   process.on('SIGINT', () => {
     console.log('SIGINT received, cleaning up...');
     stopAllTimers();
+    stopAllTradeTimers();
     io.close();
   });
 

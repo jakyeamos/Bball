@@ -1,73 +1,228 @@
 /**
- * Archetype Service - DOUBLE NORMALIZATION BUG FIX
- * The bug: Normalizes twice, making all values too small
+ * server/services/archetypes.ts
+ *
+ * UPDATED for Phase 2: Percentile-based caps and softmax temperature
  */
 
-import { ArchetypeProfile, PlayerFeatures, Player } from '@nba-draft-sim/shared';
-import { ARCHETYPE_WEIGHTS } from '@nba-draft-sim/shared';
+import {
+  ArchetypeProfile,
+  ARCHETYPE_WEIGHTS,
+  ARCHETYPE_CAPS,
+  ARCHETYPE_PARAMS,
+  ARCHETYPE_NAMES
+} from '@nba-draft-sim/shared';
+import { zScoreToPercentile } from './features';
 
-/**
- * Compute archetype profile for a player
- * FIXED: Only normalizes once
- */
-export function computeArchetypeProfile(features: PlayerFeatures | Record<string, number>): ArchetypeProfile {
-  const profile: Partial<Record<string, number>> = {};
-  let totalScore = 0;
+// ============================================================================
+// COMPUTE ARCHETYPE PROFILE
+// ============================================================================
 
-  // Calculate raw scores for each archetype
+export function computeArchetypeProfile(
+  zScores: Record<string, number>
+): ArchetypeProfile {
+
+  // Step 1: Convert z-scores to percentiles
+  const percentiles: Record<string, number> = {};
+  for (const feature in zScores) {
+    percentiles[feature] = zScoreToPercentile(zScores[feature]);
+  }
+
+  // Step 2: Calculate raw archetype scores
+  const rawScores: Record<string, number> = {};
+
   for (const archetype in ARCHETYPE_WEIGHTS) {
     let score = 0;
-    for (const feature in ARCHETYPE_WEIGHTS[archetype]) {
-      const featureValue = (features as any)[feature];
-      const weight = ARCHETYPE_WEIGHTS[archetype][feature];
-      if (featureValue !== undefined && weight !== undefined) {
-        score += featureValue * weight;
+    const weights = ARCHETYPE_WEIGHTS[archetype];
+
+    for (const feature in weights) {
+      const featureZScore = zScores[feature];
+      const weight = weights[feature];
+
+      if (featureZScore !== undefined && weight !== undefined) {
+        score += featureZScore * weight;
       }
     }
     
-    // Only consider positive scores
+    // Only keep positive scores
     if (score > 0) {
-      profile[archetype] = score;
-      totalScore += score;
+      rawScores[archetype] = score;
     }
   }
 
-  // Normalize scores to percentages (0-1) - ONLY ONCE!
-  if (totalScore > 0) {
-    for (const archetype in profile) {
-      const normalized = (profile[archetype] || 0) / totalScore;
-      // Keep only archetypes above 5% threshold
-      if (normalized >= 0.05) {
-        profile[archetype] = normalized;
+  // Step 3: Apply percentile-based caps
+  const cappedScores: Record<string, number> = {};
+
+  for (const archetype in rawScores) {
+    let finalScore = rawScores[archetype];
+
+    // Check if this archetype has caps
+    const caps = ARCHETYPE_CAPS[archetype];
+    if (caps && caps.length > 0) {
+      for (const cap of caps) {
+        const featurePercentile = percentiles[cap.feature];
+
+        // If feature percentile is below threshold, cap the archetype score
+        if (featurePercentile !== undefined && featurePercentile < cap.percentileThreshold) {
+          finalScore = Math.min(finalScore, cap.capValue);
+        }
       }
     }
-  } else {
-    console.warn('⚠️ Player has no positive archetype scores');
+
+    cappedScores[archetype] = finalScore;
   }
 
-  return profile as ArchetypeProfile;
+  // Step 4: Apply softmax with temperature
+  const profile = applySoftmaxWithTemperature(
+    cappedScores,
+    ARCHETYPE_PARAMS.SOFTMAX_TEMPERATURE
+  );
+
+  // Step 5: Filter out weak archetypes and renormalize
+  const filtered: Record<string, number> = {};
+  for (const archetype in profile) {
+    if (profile[archetype] >= ARCHETYPE_PARAMS.MIN_ARCHETYPE_SCORE) {
+      filtered[archetype] = profile[archetype];
+    }
+  }
+
+  // Renormalize so filtered archetypes sum to 1
+  const total = Object.values(filtered).reduce((sum, val) => sum + val, 0);
+  if (total > 0) {
+    for (const archetype in filtered) {
+      filtered[archetype] /= total;
+    }
+  }
+
+  return filtered as ArchetypeProfile;
 }
 
-/**
- * Aggregate archetype profiles for a team
- */
+// ============================================================================
+// SOFTMAX WITH TEMPERATURE
+// ============================================================================
+
+function applySoftmaxWithTemperature(
+  scores: Record<string, number>,
+  temperature: number
+): Record<string, number> {
+  // Scale scores by temperature
+  const scaled: Record<string, number> = {};
+  for (const key in scores) {
+    scaled[key] = scores[key] / temperature;
+  }
+
+  // Subtract max for numerical stability
+  const maxScore = Math.max(...Object.values(scaled));
+
+  // Compute exp and sum
+  const expScores: Record<string, number> = {};
+  let sumExp = 0;
+  for (const key in scaled) {
+    const expVal = Math.exp(scaled[key] - maxScore);
+    expScores[key] = expVal;
+    sumExp += expVal;
+  }
+
+  // Normalize
+  const result: Record<string, number> = {};
+  for (const key in expScores) {
+    result[key] = expScores[key] / sumExp;
+  }
+
+  return result;
+}
+
+// ============================================================================
+// AGGREGATE TEAM ARCHETYPE PROFILES
+// ============================================================================
+
 export function aggregateArchetypeProfiles(
-  profiles: ArchetypeProfile[],
-  weights: number[]
+  profiles: ArchetypeProfile[]
 ): ArchetypeProfile {
-  const teamProfile: Partial<Record<string, number>> = {};
+  const aggregated: Record<string, number> = {};
+  for (const name of ARCHETYPE_NAMES) {
+    aggregated[name] = 0;
+  }
+  if (profiles.length === 0) {
+    return aggregated as ArchetypeProfile;
+  }
 
-  profiles.forEach((profile, i) => {
+  // Sum up all archetype values
+  for (const profile of profiles) {
     for (const archetype in profile) {
-      if (!teamProfile[archetype]) {
-        teamProfile[archetype] = 0;
+      if (!aggregated[archetype]) {
+        aggregated[archetype] = 0;
       }
-      const profileValue = (profile as any)[archetype];
-      if (profileValue !== undefined) {
-        teamProfile[archetype] = (teamProfile[archetype] || 0) + profileValue * weights[i];
-      }
+      aggregated[archetype] += profile[archetype];
     }
-  });
+  }
 
-  return teamProfile as ArchetypeProfile;
+  // Normalize by number of players
+  for (const archetype in aggregated) {
+    aggregated[archetype] /= profiles.length;
+  }
+
+  return aggregated as ArchetypeProfile;
+}
+
+// ============================================================================
+// GET TOP ARCHETYPES
+// ============================================================================
+
+export function getTopArchetypes(
+  profile: ArchetypeProfile,
+  count: number = 3
+): Array<{ name: string; value: number }> {
+  const entries = Object.entries(profile)
+    .filter(([, value]) => value !== undefined)
+    .map(([name, value]) => ({ name, value: value as number }))
+    .sort((a, b) => b.value - a.value);
+
+  return entries.slice(0, count);
+}
+
+// ============================================================================
+// DEBUG ARCHETYPE PROFILE
+// ============================================================================
+
+export function debugArchetypeProfile(
+  profile: ArchetypeProfile,
+  playerName: string = 'Player'
+): void {
+  console.log(`\n📊 Archetype Profile for ${playerName}:`);
+
+  const sorted = Object.entries(profile)
+    .filter(([, value]) => value !== undefined)
+    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0));
+
+  for (const [archetype, value] of sorted) {
+    if (value && value >= 0.05) {
+      const percentage = (value * 100).toFixed(1);
+      const bar = '█'.repeat(Math.floor(value * 40));
+      console.log(`  ${archetype.padEnd(25)} ${bar} ${percentage}%`);
+    }
+  }
+
+  console.log('');
+}
+
+// ============================================================================
+// COMPUTE ARCHETYPE DIVERSITY
+// ============================================================================
+
+export function computeArchetypeDiversity(profile: ArchetypeProfile): number {
+  // Shannon entropy as diversity measure
+  const values = Object.values(profile).filter(v => v !== undefined) as number[];
+
+  if (values.length === 0) return 0;
+
+  let entropy = 0;
+  for (const value of values) {
+    if (value > 0) {
+      entropy -= value * Math.log2(value);
+    }
+  }
+
+  // Normalize to 0-1 (max entropy is log2(num_archetypes))
+  const maxEntropy = Math.log2(ARCHETYPE_NAMES.length);
+  return entropy / maxEntropy;
 }
