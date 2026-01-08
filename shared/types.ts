@@ -654,7 +654,7 @@ export const ARCHETYPE_WEIGHTS: Record<string, Record<string, number>> = {
     // Strong negatives
     TOV_RATE: -0.30,
     PF_RATE: -0.20,
-    USG: -0.10,
+    USG: -0.35,
   },
 };
 
