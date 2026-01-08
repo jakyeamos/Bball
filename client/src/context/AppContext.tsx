@@ -87,15 +87,15 @@ export function AppProvider({ children }: AppProviderProps) {
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_CREATED, (data: any) => {
         console.log('🔵 LOBBY_CREATED event received:', data);
-        setState((prev) => ({ ...prev, lobby: data.payload }));
+        setState((prev) => ({ ...prev, lobby: data }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_UPDATED, (data: any) => {
         console.log('🔵 LOBBY_UPDATED event received:', data);
-        setState((prev) => ({ ...prev, lobby: data.payload }));
-        const user = data.payload.users.find((u: any) => u.userId === wsService.socket?.id);
+        setState((prev) => ({ ...prev, lobby: data }));
+        const user = data.users.find((u: any) => u.userId === wsService.socket?.id);
         if (user) {
           localStorage.setItem('rejoinToken', user.rejoinToken);
         }
@@ -108,8 +108,8 @@ export function AppProvider({ children }: AppProviderProps) {
         console.log('🔵 DRAFT_STARTED event received:', data);
         setState((prev) => ({
           ...prev,
-          draft: data.payload,
-          timeRemaining: data.payload.timeRemaining,
+          draft: data,
+          timeRemaining: data.timeRemaining,
         }));
       })
     );
@@ -119,7 +119,7 @@ export function AppProvider({ children }: AppProviderProps) {
         console.log('🔵 DRAFT_UPDATED event received:', data);
         setState((prev) => ({
           ...prev,
-          draft: data.payload,
+          draft: data,
         }));
       })
     );
@@ -136,7 +136,7 @@ export function AppProvider({ children }: AppProviderProps) {
       wsService.on(WS_EVENTS.TIMER_TICK, (data: any) => {
         setState((prev) => ({
           ...prev,
-          timeRemaining: data.payload.timeRemaining,
+          timeRemaining: data.timeRemaining,
         }));
       })
     );
@@ -144,7 +144,7 @@ export function AppProvider({ children }: AppProviderProps) {
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_COMPLETED, (data: any) => {
         console.log('🔵 DRAFT_COMPLETED event received:', data);
-        setState((prev) => ({ ...prev, draft: data.payload }));
+        setState((prev) => ({ ...prev, draft: data }));
       })
     );
 
@@ -152,21 +152,21 @@ export function AppProvider({ children }: AppProviderProps) {
     unsubscribers.push(
       wsService.on(WS_EVENTS.LEAGUE_UPDATED, (data: any) => {
         console.log('🔵 LEAGUE_UPDATED event received:', data);
-        setState((prev) => ({ ...prev, league: data.payload }));
+        setState((prev) => ({ ...prev, league: data }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.REGULAR_SEASON_STARTED, (data: any) => {
         console.log('🔵 REGULAR_SEASON_STARTED event received:', data);
-        setState((prev) => ({ ...prev, regularSeasonResults: data.payload }));
+        setState((prev) => ({ ...prev, regularSeasonResults: data }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
         console.log('🔵 PLAYOFFS_STARTED event received:', data);
-        setState((prev) => ({ ...prev, playoffResults: data.payload }));
+        setState((prev) => ({ ...prev, playoffResults: data }));
       })
     );
 
@@ -174,7 +174,7 @@ export function AppProvider({ children }: AppProviderProps) {
     unsubscribers.push(
       wsService.on(WS_EVENTS.ERROR, (data: any) => {
         console.log('🔴 ERROR event received:', data);
-        setState((prev) => ({ ...prev, error: data.payload.message }));
+        setState((prev) => ({ ...prev, error: data.message }));
       })
     );
 
