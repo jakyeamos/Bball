@@ -16,7 +16,7 @@ import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../arc
 import { Player } from '@nba-draft-sim/shared';
 import { TeamIdentityUI } from '../features/team-composition/components/TeamIdentityUI';
 
-type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts' | 'threeP' | 'threePA' | 'ft' | 'usg' | 'stl' | 'blk';
+type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts' | 'threeP' | 'threePA' | 'ft' | 'stl' | 'blk';
 type SortDirection = 'asc' | 'desc';
 
 export function DraftPage() {
@@ -24,7 +24,7 @@ export function DraftPage() {
   // 🆕 Get userId from context
   const { draft, allPlayers, timeRemaining, league, lobby, userId } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('impact');
+  const [sortField, setSortField] = useState<SortField>('pts');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showRoster, setShowRoster] = useState(false);
 
@@ -139,10 +139,6 @@ export function DraftPage() {
         case 'ft':
           aVal = a.rawStats.FT_PCT;
           bVal = b.rawStats.FT_PCT;
-          break;
-        case 'usg':
-          aVal = a.features.USG;
-          bVal = b.features.USG;
           break;
         case 'stl':
             aVal = a.rawStats.STL / a.rawStats.GP;
@@ -328,14 +324,14 @@ export function DraftPage() {
               variant="secondary"
               onClick={() => {
                 setSearchTerm('');
-                setSortField('impact');
+                setSortField('pts');
                 setSortDirection('desc');
               }}
             >
               🔄 Reset
             </Button>
             <div className="text-sm text-gray-600">
-              Sorted by: <span className="font-medium">{sortField === 'impact' ? 'Impact' : sortField.toUpperCase()}</span>
+              Sorted by: <span className="font-medium">{sortField === 'pts' ? 'Pts' : sortField.toUpperCase()}</span>
             </div>
           </div>
         </Card>
@@ -370,9 +366,6 @@ export function DraftPage() {
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ft')}>
                     FT% <SortIcon field="ft" />
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('usg')}>
-                    USG% <SortIcon field="usg" />
                   </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('stl')}>
                     STL <SortIcon field="stl" />
