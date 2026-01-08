@@ -80,6 +80,14 @@ export function DraftRecapPage() {
             <div className="text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Ready to Begin?</h3>
               <div className="flex items-center justify-center gap-6">
+                <Button
+                  onClick={handleStartTradeWindow}
+                  variant="secondary"
+                  size="lg"
+                  disabled={startingTrade || startingSeason}
+                >
+                  {startingTrade ? '⏳ Opening...' : '🔄 Open Trade Window'}
+                </Button>
                 <Button 
                   onClick={handleStartSeason} 
                   variant="primary" 
