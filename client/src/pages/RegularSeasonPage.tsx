@@ -9,7 +9,7 @@ import { PageContainer } from '../components/PageContainer';
 import { Header } from '../components/Header';
 import { GameCard } from '../components/GameCard';
 import { StandingsTable } from '../components/StandingsTable';
-import { Button } from '../components/ui/button';
+import { Button } from '../components/Button';
 
 export const RegularSeasonPage: React.FC = () => {
   const { league } = useLeague();
@@ -53,7 +53,7 @@ export const RegularSeasonPage: React.FC = () => {
         )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {games.slice(0, revealedGames).map(game => (
+        {games.slice(0, revealedGames).map((game, index) => (
           <GameCard key={game.gameId} game={game} />
         ))}
       </div>

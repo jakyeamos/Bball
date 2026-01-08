@@ -35,24 +35,28 @@ export function aggregateTeam(
   );
 
   // Compute modifiers
-  const modifiers = computeTeamModifiers({
-    teamId,
-    features: teamFeatures,
-    archetypes: teamArchetypes,
-    modifiers: { 
-      total: 0, 
-      shootBonus: 0, 
-      creatorPen: 0, 
-      rimPen: 0,
-      offenseBonus: 0,
-      offensePenalty: 0,
-      defenseBonus: 0,
-      defensePenalty: 0,
-      variancePenalty: 0,
+  const modifiers = computeTeamModifiers(
+    {
+      teamId,
+      features: teamFeatures,
+      archetypes: teamArchetypes,
+      modifiers: {
+        total: 0,
+        shootBonus: 0,
+        creatorPen: 0,
+        rimPen: 0,
+        offenseBonus: 0,
+        offensePenalty: 0,
+        defenseBonus: 0,
+        defensePenalty: 0,
+        variancePenalty: 0,
+        homeCourtAdvantage: 0,
+      },
+      overallRating: 0,
+      rotation: [],
     },
-    overallRating: 0,
-    rotation: [],
-  });
+    roster
+  );
 
   // Calculate overall rating
   const baseRating = calculateBaseRating(rotation);
