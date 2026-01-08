@@ -7,13 +7,14 @@
 import { 
   TeamAggregation, 
   TeamModifiers, 
-  TEAM_MODIFIER_PARAMS 
+  TEAM_MODIFIER_PARAMS,
+  Player,
 } from '@nba-draft-sim/shared';
 
 /**
  * Compute team modifiers based on roster composition
  */
-export function computeTeamModifiers(team: TeamAggregation): TeamModifiers {
+export function computeTeamModifiers(team: TeamAggregation, roster: Player[]): TeamModifiers {
   const p = TEAM_MODIFIER_PARAMS;
   const arch = team.archetypes;
   const teamFeatures = team.features;
@@ -97,6 +98,32 @@ export function computeTeamModifiers(team: TeamAggregation): TeamModifiers {
   // Cap total
   total = Math.max(-p.MAX_TOTAL, Math.min(p.MAX_TOTAL, total));
 
+  // ============================================================================
+  // 7. HOME COURT ADVANTAGE
+  // ============================================================================
+  const teamCounts = new Map<string, number>();
+  for (const player of roster) {
+    teamCounts.set(player.team, (teamCounts.get(player.team) || 0) + 1);
+  }
+
+  let maxCount = 0;
+  for (const count of teamCounts.values()) {
+    if (count > maxCount) {
+      maxCount = count;
+    }
+  }
+
+  let homeCourtAdvantage = 0;
+  if (maxCount >= 5) {
+    homeCourtAdvantage = p.HCA_MAX_BONUS;
+  } else if (maxCount === 4) {
+    homeCourtAdvantage = p.HCA_MAX_BONUS * (2.5 / 3);
+  } else if (maxCount === 3) {
+    homeCourtAdvantage = p.HCA_MAX_BONUS * (2 / 3);
+  } else if (maxCount === 2) {
+    homeCourtAdvantage = p.HCA_MAX_BONUS * 0.5;
+  }
+
   return {
     total,
     shootBonus,
@@ -107,6 +134,7 @@ export function computeTeamModifiers(team: TeamAggregation): TeamModifiers {
     defenseBonus,
     defensePenalty,
     variancePenalty,
+    homeCourtAdvantage,
   };
 }
 
