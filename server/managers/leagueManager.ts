@@ -1,10 +1,8 @@
 /**
  * server/managers/leagueManager.ts
  *
- * UPDATED for:
- * - Phase 0: Phase validation for state transitions
- * - Phase 1: Pass team names to regular season for editorial
- * - Phase 3: Pass team names to playoffs for editorial
+ * FIXED: Implemented createLeague and transitionToDraftRecap functions
+ * that were previously throwing "Function not implemented" error
  */
 
 import { LeagueState, Player, TRADE_WINDOW_DURATION_MS, DraftState } from '@nba-draft-sim/shared';
@@ -13,6 +11,69 @@ import { runRegularSeason } from '../services/season';
 import { runPlayoffs } from '../services/playoffs';
 import { aggregateTeam } from '../services/aggregation';
 import { getTop4WithTiebreaker } from '../services/season';
+
+// ============================================================================
+// CREATE LEAGUE - FIXED IMPLEMENTATION
+// ============================================================================
+
+/**
+ * Creates a new league from a draft state
+ * Called when the draft starts
+ */
+export function createLeague(draftState: DraftState): LeagueState {
+  const now = new Date().toISOString();
+  
+  const league: LeagueState = {
+    leagueId: draftState.draftId, // Use lobbyId as leagueId for simplicity
+    phase: 'draft',
+    draftState: draftState,
+    regularSeasonResults: null,
+    playoffResults: null,
+    tradeWindowEndsAt: null,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // Store the league
+  leagueStore.set(league.leagueId, league);
+  
+  console.log(`✅ Created league ${league.leagueId} in 'draft' phase`);
+  
+  return league;
+}
+
+// ============================================================================
+// TRANSITION TO DRAFT RECAP - FIXED IMPLEMENTATION
+// ============================================================================
+
+/**
+ * Transitions a league from draft phase to draft_recap phase
+ * Called when the draft is completed
+ */
+export function transitionToDraftRecap(lobbyId: string): LeagueState {
+  const league = leagueStore.get(lobbyId);
+  
+  if (!league) {
+    throw new Error(`League not found: ${lobbyId}`);
+  }
+  
+  // Validate current phase - should be in draft phase
+  if (league.phase !== 'draft') {
+    throw new Error(`Invalid phase for draft recap transition. Current: ${league.phase}`);
+  }
+  
+  const updatedLeague = leagueStore.update(lobbyId, {
+    phase: 'draft_recap',
+  });
+  
+  if (!updatedLeague) {
+    throw new Error(`Failed to update league: ${lobbyId}`);
+  }
+  
+  console.log(`✅ Transitioned league ${lobbyId} to 'draft_recap' phase`);
+  
+  return updatedLeague;
+}
 
 // ============================================================================
 // START TRADE WINDOW
@@ -195,13 +256,4 @@ export function completeLeague(leagueId: string): LeagueState | undefined {
 
 export function getLeague(leagueId: string): LeagueState | undefined {
   return leagueStore.get(leagueId);
-}
-
-export function createLeague(draftState: DraftState): LeagueState {
-    throw new Error('Function not implemented.');
-}
-
-
-export function transitionToDraftRecap(lobbyId: string): LeagueState {
-    throw new Error('Function not implemented.');
 }
