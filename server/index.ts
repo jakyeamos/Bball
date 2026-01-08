@@ -47,7 +47,7 @@ app.use(cors({
     const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
 
     if (allowedOrigins.includes(origin) || isVercelPreview) {
-      callback(null, true);
+      callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
