@@ -195,6 +195,13 @@ class WebSocketService {
   }
 
   /**
+   * Complete league
+   */
+  completeLeague() {
+    this.emit(WS_EVENTS.COMPLETE_LEAGUE);
+  }
+
+  /**
    * Check if connected
    */
   isConnected(): boolean {

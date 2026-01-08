@@ -35,26 +35,21 @@ export function formatArchetypeName(name: string): string {
  * Get archetype color class
  */
 export function getArchetypeColor(name: string): string {
-  if (name.includes('Creator') || name.includes('Playmaking')) {
+  // Creation & Offense: blue
+  if (['PrimaryCreator', 'SecondaryPlaymaker', 'ShotMaker', 'AdvantageDriver', 'Connector'].includes(name)) {
     return 'bg-blue-100 text-blue-800 border-blue-300';
   }
-  if (name.includes('Shooter') || name.includes('Stretch') || name === 'ThreeAndD') {
+  // Shooters (VolumeSniper, EfficientSpacer): purple
+  if (['VolumeSniper', 'EfficientSpacer'].includes(name)) {
     return 'bg-purple-100 text-purple-800 border-purple-300';
   }
-  if (name.includes('Scorer') || name.includes('Slasher')) {
-    return 'bg-indigo-100 text-indigo-800 border-indigo-300';
-  }
-  if (name.includes('Defender') || name.includes('Stopper') || name.includes('Anchor')) {
+  // Defense (PointOfAttackMenace, Disruptor, RimDeterrent): red
+  if (['PointOfAttackMenace', 'Disruptor', 'RimDeterrent'].includes(name)) {
     return 'bg-red-100 text-red-800 border-red-300';
   }
-  if (name.includes('Rim') || name.includes('Protector')) {
-    return 'bg-orange-100 text-orange-800 border-orange-300';
-  }
-  if (name.includes('Utility') || name.includes('Connector') || name.includes('Roller')) {
+  // Activity (ReboundEnforcer, HustleEngine, LowMistakeRolePlayer): green
+  if (['ReboundEnforcer', 'HustleEngine', 'LowMistakeRolePlayer'].includes(name)) {
     return 'bg-green-100 text-green-800 border-green-300';
-  }
-  if (name.includes('Rebounder')) {
-    return 'bg-yellow-100 text-yellow-800 border-yellow-300';
   }
   return 'bg-gray-100 text-gray-800 border-gray-300';
 }

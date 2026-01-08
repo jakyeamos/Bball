@@ -8,7 +8,7 @@
 // ============================================================================
 
 export interface PlayerRawStats {
-  // Player identification
+  // Identification
   playerId: string;
   name: string;
   team: string;
@@ -16,81 +16,145 @@ export interface PlayerRawStats {
 
   // Displayed stats (UI)
   PTS: number;
-  REB: number;
+  REB: number;      // Total rebounds for display
   AST: number;
   STL: number;
   BLK: number;
   TS_PCT: number;
 
-  // Internal stats (simulation)
+  // Core stats
   MP_TOTAL: number;
   GP: number;
   FGA: number;
   FTA: number;
+  FTM: number;
   TOV: number;
   THREE_PA: number;
+  THREE_PM: number;
   THREE_P_PCT: number;
   FT_PCT: number;
-  ORB: number;
-  DRB: number;
+  ORB: number;      // Phase 2: Split rebounds for backend
+  DRB: number;      // Phase 2: Split rebounds for backend
   PF: number;
 
-  // Proxies (can be calculated or scraped)
+  // Phase 2: Shot selection detail
+  TWO_PA: number;
+  TWO_PM: number;
+  TWO_P_PCT: number;
+
+  // Phase 2: Playmaking detail (optional - if available from NBA API)
+  POTENTIAL_AST?: number;
+  SECONDARY_AST?: number;
+  PASSES_MADE?: number;
+  PASSES_RECEIVED?: number;
+
+  // Phase 2: Defensive detail (optional)
+  DEFLECTIONS?: number;
+  CHARGES_DRAWN?: number;
+  CONTESTED_SHOTS?: number;
+
+  // Phase 2: Advanced stats (optional, can be computed)
+  POSSESSIONS?: number;
+  TOUCHES?: number;
+  SCREEN_ASSISTS?: number;
+
+  // Computed proxies (optional)
   USG_PROXY?: number;
   AST_PCT_PROXY?: number;
   TOV_PCT_PROXY?: number;
-  RIM_PRESSURE_PROXY?: number;
-  SHOOTING_GRAVITY_PROXY?: number;
-  DEF_PLAYMAKING_PROXY?: number;
-  RIM_PROTECT_PROXY?: number;
-  REB_RATE_PROXY?: number;
+  OREB_PCT?: number;
+  DREB_PCT?: number;
+  REB_PCT?: number;
 }
 
+// ============================================================================
+// PLAYER FEATURES - Phase 2 Expanded (30 features)
+// ============================================================================
+
 export interface PlayerFeatures {
-  R: number;  // Reliability factor
+  // Reliability
+  R: number;
+
+  // Shooting (9 features)
   TS: number;
-  AST: number;
-  TOV: number;
-  A2T: number;  // Assist to turnover ratio
+  THREE_P_PCT: number;
   THREE_PA_RATE: number;
+  TWO_P_PCT: number;
+  TWO_PA_RATE: number;
+  FT_PCT: number;
   FT_RATE: number;
-  BLK: number;
+  EFG: number;              // Effective FG%
+  THREE_P_VOLUME: number;   // 3PA per 36 minutes
+
+  // Playmaking (6 features)
+  AST: number;
+  AST_RATE: number;         // AST per 100 possessions
+  POTENTIAL_AST: number;
+  AST_TO_PASS_RATE: number;
+  SECONDARY_AST: number;
+  PAR: number;              // Pomeroy Assist Ratio
+
+  // Ball Security (3 features)
+  TOV: number;
+  TOV_RATE: number;         // TOV per 100 possessions
+  A2T: number;
+
+  // Defense (7 features)
   STL: number;
-  REB: number;
+  BLK: number;
+  STL_RATE: number;         // STL per 100 possessions
+  BLK_RATE: number;         // BLK per 100 possessions
+  DEFLECTIONS: number;
+  PF_RATE: number;          // PF per 36 minutes
+  CHARGES_DRAWN: number;
+
+  // Rebounding (3 features)
+  OREB_PCT: number;         // Offensive rebound percentage
+  DREB_PCT: number;         // Defensive rebound percentage
+  REB_TOTAL: number;        // Total rebounds (display only, not used in archetypes)
+
+  // Usage & Impact (2 features)
   USG: number;
-  PAR?: number;  // Pomeroy Assist Ratio
-  VI?: number;   // Versatility Index (positive-only)
+  VI: number;
+
+  // Allow indexing
   [key: string]: number | undefined;
 }
 
+
+// ============================================================================
+// ARCHETYPES - Phase 2 Positionless (13 total)
+// ============================================================================
+
 export type ArchetypeName =
+  // Creation & Offense (7)
   | 'PrimaryCreator'
-  | 'SecondaryCreator'
+  | 'SecondaryPlaymaker'
+  | 'VolumeSniper'
+  | 'EfficientSpacer'
+  | 'ShotMaker'
+  | 'AdvantageDriver'
   | 'Connector'
-  | 'OffBallShooter'
-  | 'MovementShooter'
-  | 'Slasher'
-  | 'PostScorer'
-  | 'PlaymakingBig'
-  | 'POAStopper'
-  | 'HelpDefender'
-  | 'RimProtector'
-  | 'DefAnchor'
-  | 'DefPlaymaker'
-  | 'ThreeAndD'
-  | 'StretchBig'
-  | 'VerticalRoller'
-  | 'Rebounder'
-  | 'UtilityWing'
-  | 'TransitionEngine'
-  | 'BenchMicrowave'
-  | 'LowUsageSniper'
-  | 'SwitchableBig'
-  | 'ScreenHub';
+  // Defense & Activity (6)
+  | 'PointOfAttackMenace'
+  | 'Disruptor'
+  | 'RimDeterrent'
+  | 'ReboundEnforcer'
+  | 'HustleEngine'
+  | 'LowMistakeRolePlayer';
+
 
 export interface ArchetypeProfile extends Record<ArchetypeName, number> {
   [key: string]: number | undefined;
 }
+
+// Phase 2: Archetype cap configuration
+export interface ArchetypeCap {
+  feature: string;
+  percentileThreshold: number;
+  capValue: number;
+}
+
 export interface Player {
   playerId: string;
   name: string;
@@ -221,11 +285,16 @@ export interface MatchupResult {
   drivers: MatchupDriver[];
 }
 
+// ============================================================================
+// REGULAR SEASON - Phase 1 with Editorial
+// ============================================================================
+
 export interface RegularSeasonGame {
   gameId: string;
   teamAId: string;
   teamBId: string;
   result: MatchupResult;
+  editorial: string;  // Phase 1: Added editorial text
 }
 
 export interface TeamRecord {
@@ -238,10 +307,11 @@ export interface TeamRecord {
 export interface RegularSeasonResults {
   standings: TeamRecord[];
   games: RegularSeasonGame[];
+  summary: string;  // Phase 1: Added season summary
 }
 
 // ============================================================================
-// PLAYOFFS TYPES
+// PLAYOFFS - Phase 3 with Editorial
 // ============================================================================
 
 export interface SeriesGame {
@@ -258,8 +328,10 @@ export interface PlayoffSeries {
   winsB: number;
   winner: string;
   games: SeriesGame[];
-  displayedSeriesLength: [number, number];  // e.g., [4, 2]
-  seriesPath: ('A' | 'B')[];  // For UI animation
+  displayedSeriesLength: [number, number];
+  seriesPath: ('A' | 'B')[];
+  seriesEditorial: string;      // Phase 3: Added series editorial
+  gameEditorials: string[];     // Phase 3: Added game editorials
 }
 
 export interface PlayoffResults {
@@ -267,10 +339,11 @@ export interface PlayoffResults {
   semiFinal2: PlayoffSeries;
   finals: PlayoffSeries;
   champion: string;
+  championshipEditorial: string;  // Phase 3: Added championship editorial
 }
 
 // ============================================================================
-// LEAGUE STATE
+// LEAGUE STATE - Phase 0 Updated
 // ============================================================================
 
 export type LeaguePhase =
@@ -288,6 +361,8 @@ export interface LeagueState {
   regularSeasonResults: RegularSeasonResults | null;
   playoffResults: PlayoffResults | null;
   tradeWindowEndsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================================================
@@ -322,31 +397,35 @@ export interface LobbyState {
 // ============================================================================
 
 export type ClientMessage =
-  | { type: 'CREATE_LOBBY'; payload: LobbyConfig }
+  | { type: 'CREATE_LOBBY'; payload: { config: LobbyConfig } }
   | { type: 'JOIN_LOBBY'; payload: { inviteCode: string; displayName: string } }
+  | { type: 'READY_UP' }
   | { type: 'START_DRAFT' }
   | { type: 'MAKE_PICK'; payload: { playerId: string } }
-  | { type: 'UPDATE_QUEUE'; payload: { queue: string[] } }
   | { type: 'PAUSE_DRAFT' }
   | { type: 'UNPAUSE_DRAFT' }
+  | { type: 'UPDATE_QUEUE'; payload: { pickQueue: string[] } }
   | { type: 'START_TRADE_WINDOW' }
   | { type: 'EXECUTE_TRADE'; payload: { teamAId: string; teamBId: string; playerAIds: string[]; playerBIds: string[] } }
   | { type: 'START_REGULAR_SEASON' }
-  | { type: 'START_PLAYOFFS' };
+  | { type: 'START_PLAYOFFS' }
+  | { type: 'COMPLETE_LEAGUE' };  // Phase 0: New event
 
 export type ServerMessage =
   | { type: 'LOBBY_CREATED'; payload: LobbyState }
   | { type: 'LOBBY_UPDATED'; payload: LobbyState }
   | { type: 'DRAFT_STARTED'; payload: DraftState }
   | { type: 'DRAFT_UPDATED'; payload: DraftState }
-  | { type: 'PICK_MADE'; payload: DraftPick }
-  | { type: 'TIMER_TICK'; payload: { timeRemaining: number } }
   | { type: 'DRAFT_COMPLETED'; payload: DraftState }
+  | { type: 'PICK_MADE'; payload: { pickNumber: number; teamId: string; playerId: string | null } }
+  | { type: 'TIMER_TICK'; payload: { timeRemaining: number } }
   | { type: 'TRADE_WINDOW_STARTED'; payload: { endsAt: string } }
-  | { type: 'TRADE_EXECUTED'; payload: DraftState }
+  | { type: 'TRADE_TIMER_TICK'; payload: { timeRemaining: number } }  // Phase 0: New event
+  | { type: 'TRADE_EXECUTED'; payload: LeagueState }
   | { type: 'REGULAR_SEASON_STARTED'; payload: RegularSeasonResults }
   | { type: 'PLAYOFFS_STARTED'; payload: PlayoffResults }
   | { type: 'LEAGUE_UPDATED'; payload: LeagueState }
+  | { type: 'LEAGUE_COMPLETED'; payload: LeagueState }  // Phase 0: New event
   | { type: 'ERROR'; payload: { message: string } };
 
 // ============================================================================
@@ -359,48 +438,54 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+// ============================================================================
+// WEBSOCKET EVENTS - Phase 0 Updated
+// ============================================================================
+
 export const WS_EVENTS = {
-  // Socket.io built-in events
+  // Connection
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
 
   // Session events
   SESSION_INFO: 'session:info',
 
-  // Client → Server events (actions initiated by client)
-  CREATE_LOBBY: 'create:lobby',
-  JOIN_LOBBY: 'join:lobby',
-  START_DRAFT: 'draft:start',
-  MAKE_PICK: 'draft:make_pick',
-  UPDATE_QUEUE: 'draft:update_queue',
-  PAUSE_DRAFT: 'draft:pause',
-  UNPAUSE_DRAFT: 'draft:unpause',
-  START_TRADE_WINDOW: 'trade:start_window',
-  EXECUTE_TRADE: 'trade:execute',
-  START_REGULAR_SEASON: 'season:start_regular',
-  START_PLAYOFFS: 'playoffs:start',
-
-  // Server → Client events (updates from server)
+  // Lobby
+  CREATE_LOBBY: 'lobby:create',
+  JOIN_LOBBY: 'lobby:join',
+  READY_UP: 'lobby:ready',
   LOBBY_CREATED: 'lobby:created',
   LOBBY_UPDATED: 'lobby:updated',
-  LOBBY_FULL: 'lobby:full',
-  MEMBER_JOINED: 'member:joined',
-  MEMBER_LEFT: 'member:left',
-  MEMBER_UPDATED: 'member:updated',
+
+  // Draft
+  START_DRAFT: 'draft:start',
+  MAKE_PICK: 'draft:pick',
+  PAUSE_DRAFT: 'draft:pause',
+  UNPAUSE_DRAFT: 'draft:unpause',
+  UPDATE_QUEUE: 'draft:update_queue',
   DRAFT_STARTED: 'draft:started',
   DRAFT_UPDATED: 'draft:updated',
-  DRAFT_COMPLETED: 'draft:completed',
   PICK_MADE: 'draft:pick_made',
-  PICK_AUTO: 'draft:pick_auto',
   TIMER_TICK: 'draft:timer_tick',
-  DRAFT_PAUSED: 'draft:paused',
-  DRAFT_RESUMED: 'draft:resumed',
-  DRAFT_FINISHED: 'draft:finished',
-  LEAGUE_UPDATED: 'league:updated',
+  DRAFT_COMPLETED: 'draft:completed',
+
+  // Trade
+  START_TRADE_WINDOW: 'trade:start_window',
+  EXECUTE_TRADE: 'trade:execute',
   TRADE_WINDOW_STARTED: 'trade:window_started',
-  REGULAR_SEASON_STARTED: 'season:regular_started',
-  PLAYOFFS_STARTED: 'playoffs:started',
   TRADE_EXECUTED: 'trade:executed',
+  TRADE_TIMER_TICK: 'trade:timer_tick',  // Phase 0: NEW
+
+  // League
+  START_REGULAR_SEASON: 'league:start_season',
+  START_PLAYOFFS: 'league:start_playoffs',
+  COMPLETE_LEAGUE: 'league:complete',  // Phase 0: NEW
+  REGULAR_SEASON_STARTED: 'league:season_started',
+  PLAYOFFS_STARTED: 'league:playoffs_started',
+  LEAGUE_UPDATED: 'league:updated',
+  LEAGUE_COMPLETED: 'league:completed',  // Phase 0: NEW
+
+  // Errors
   ERROR: 'error',
 } as const;
 
@@ -444,6 +529,14 @@ export interface RoleSummary {
  */
 
 // ============================================================================
+// TIMING CONSTANTS - Phase 0 Updated
+// ============================================================================
+
+export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+
+export const DRAFT_TIMER_DURATION_SECONDS = 90; // 90 seconds per pick
+
+// ============================================================================
 // RELIABILITY SHRINKAGE PARAMETERS
 // ============================================================================
 
@@ -457,143 +550,190 @@ export const RELIABILITY_PARAMS = {
 } as const;
 
 // ============================================================================
-// ARCHETYPES
+// ARCHETYPE WEIGHTS - Phase 2 Complete Rewrite
 // ============================================================================
 
-export const ARCHETYPE_NAMES: ArchetypeName[] = [
-  'PrimaryCreator',
-  'SecondaryCreator',
-  'Connector',
-  'OffBallShooter',
-  'MovementShooter',
-  'Slasher',
-  'PostScorer',
-  'PlaymakingBig',
-  'POAStopper',
-  'HelpDefender',
-  'RimProtector',
-  'DefAnchor',
-  'DefPlaymaker',
-  'ThreeAndD',
-  'StretchBig',
-  'VerticalRoller',
-  'Rebounder',
-  'UtilityWing',
-
-  // Extra archetypes (requested “more archetypes”)
-  'TransitionEngine',
-  'BenchMicrowave',
-  'LowUsageSniper',
-  'SwitchableBig',
-  'ScreenHub',
-] as unknown as ArchetypeName[];
-
-// NOTE: weights live in archetypes.ts in your project; constants here stay minimal.
-// Keep this export because other modules import it.
 export const ARCHETYPE_WEIGHTS: Record<string, Record<string, number>> = {
+  // ==========================================================================
+  // CREATION & OFFENSE (7 archetypes)
+  // ==========================================================================
+
   PrimaryCreator: {
-    AST: 0.4,
-    USG: 0.3,
-    TOV: -0.1,
-    TS: 0.2,
+    AST: 0.35,
+    AST_RATE: 0.25,
+    USG: 0.20,
+    PAR: 0.15,
+    TS: 0.10,
+    // Negatives
+    TOV_RATE: -0.15,
+    PF_RATE: -0.05,
   },
-  SecondaryCreator: {
-    AST: 0.3,
-    USG: 0.2,
-    TS: 0.2,
-    THREE_PA_RATE: 0.2,
-    TOV: -0.1,
+
+  SecondaryPlaymaker: {
+    AST: 0.25,
+    AST_RATE: 0.20,
+    TS: 0.20,
+    THREE_PA_RATE: 0.15,
+    PAR: 0.15,
+    // Negatives
+    TOV_RATE: -0.10,
+    USG: -0.15,
   },
+
+  VolumeSniper: {
+    THREE_PA_RATE: 0.35,
+    THREE_P_VOLUME: 0.30,
+    THREE_P_PCT: 0.25,
+    EFG: 0.10,
+  },
+
+  EfficientSpacer: {
+    THREE_P_PCT: 0.35,
+    TS: 0.25,
+    EFG: 0.20,
+    THREE_PA_RATE: 0.15,
+    // Negatives
+    USG: -0.10,
+  },
+
+  ShotMaker: {
+    USG: 0.30,
+    TWO_P_PCT: 0.20,
+    TS: 0.15,
+    FT_RATE: 0.20,
+    TWO_PA_RATE: 0.10,
+    // Negatives
+    TOV_RATE: -0.15,
+  },
+
+  AdvantageDriver: {
+    FT_RATE: 0.40,
+    USG: 0.25,
+    TWO_PA_RATE: 0.20,
+    TS: 0.10,
+    // Negatives
+    THREE_PA_RATE: -0.15,
+  },
+
   Connector: {
-    AST: 0.2,
-    TS: 0.3,
-    THREE_PA_RATE: 0.2,
-    USG: -0.1,
+    TS: 0.25,
+    THREE_PA_RATE: 0.20,
+    AST_TO_PASS_RATE: 0.20,
+    PAR: 0.20,
+    VI: 0.10,
+    // Negatives
+    USG: -0.25,
+    TOV_RATE: -0.15,
   },
-  OffBallShooter: {
-    THREE_PA_RATE: 0.4,
-    TS: 0.3,
-    USG: -0.2,
+
+  // ==========================================================================
+  // DEFENSE & ACTIVITY (6 archetypes)
+  // ==========================================================================
+
+  PointOfAttackMenace: {
+    STL_RATE: 0.35,
+    DEFLECTIONS: 0.30,
+    STL: 0.20,
+    VI: 0.15,
+    // Negatives
+    PF_RATE: -0.20,
   },
-  MovementShooter: {
-    THREE_PA_RATE: 0.3,
-    TS: 0.3,
-    VI: 0.2,
-    USG: -0.1,
+
+  Disruptor: {
+    STL_RATE: 0.30,
+    BLK_RATE: 0.20,
+    DEFLECTIONS: 0.25,
+    VI: 0.15,
+    STL: 0.10,
   },
-  Slasher: {
-    FT_RATE: 0.3,
-    TS: 0.2,
-    USG: 0.2,
-    THREE_PA_RATE: -0.2,
+
+  RimDeterrent: {
+    BLK_RATE: 0.45,
+    BLK: 0.25,
+  DREB_PCT: 0.20,
+    PF_RATE: 0.10,
   },
-  PostScorer: {
-    USG: 0.3,
-    TS: 0.2,
-    FT_RATE: 0.2,
-    THREE_PA_RATE: -0.3,
+
+  ReboundEnforcer: {
+    OREB_PCT: 0.40,
+    DREB_PCT: 0.40,
+    VI: 0.10,
+    REB_TOTAL: 0.10,
   },
-  PlaymakingBig: {
-    AST: 0.3,
-    REB: 0.2,
-    USG: 0.2,
-    THREE_PA_RATE: -0.2,
+
+  HustleEngine: {
+    OREB_PCT: 0.30,
+    STL_RATE: 0.25,
+    DEFLECTIONS: 0.20,
+    CHARGES_DRAWN: 0.15,
+    VI: 0.10,
   },
-  ThreeAndD: {
-    THREE_PA_RATE: 0.3,
-    STL: 0.2,
-    BLK: 0.1,
-    USG: -0.1,
-  },
-  POAStopper: {
-    STL: 0.4,
-    VI: 0.3,
-    USG: -0.1,
-  },
-  HelpDefender: {
-    STL: 0.2,
-    BLK: 0.2,
-    REB: 0.2,
-    VI: 0.2,
-  },
-  RimProtector: {
-    BLK: 0.5,
-    REB: 0.2,
-    THREE_PA_RATE: -0.2,
-  },
-  DefAnchor: {
-    BLK: 0.3,
-    REB: 0.3,
-    VI: 0.2,
-    THREE_PA_RATE: -0.2,
-  },
-  DefPlaymaker: {
-    STL: 0.3,
-    VI: 0.3,
-    AST: 0.2,
-  },
-  StretchBig: {
-    THREE_PA_RATE: 0.3,
-    REB: 0.2,
-    BLK: 0.2,
-  },
-  VerticalRoller: {
-    FT_RATE: 0.2,
-    REB: 0.2,
-    BLK: 0.2,
-    THREE_PA_RATE: -0.3,
-  },
-  Rebounder: {
-    REB: 0.5,
-    BLK: 0.1,
-  },
-  UtilityWing: {
-    TS: 0.2,
-    STL: 0.2,
-    REB: 0.2,
-    AST: 0.1,
+
+  LowMistakeRolePlayer: {
+    PAR: 0.30,
+    TS: 0.20,
+    VI: 0.25,
+    // Strong negatives
+    TOV_RATE: -0.30,
+    PF_RATE: -0.20,
+    USG: -0.10,
   },
 };
+
+// ============================================================================
+// ARCHETYPE NAMES - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_NAMES: string[] = [
+  // Creation & Offense
+  'PrimaryCreator',
+  'SecondaryPlaymaker',
+  'VolumeSniper',
+  'EfficientSpacer',
+  'ShotMaker',
+  'AdvantageDriver',
+  'Connector',
+  // Defense & Activity
+  'PointOfAttackMenace',
+  'Disruptor',
+  'RimDeterrent',
+  'ReboundEnforcer',
+  'HustleEngine',
+  'LowMistakeRolePlayer',
+];
+
+// ============================================================================
+// ARCHETYPE CAPS - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_CAPS: Record<string, Array<{ feature: string; percentileThreshold: number; capValue: number }>> = {
+  VolumeSniper: [
+    { feature: 'THREE_P_PCT', percentileThreshold: 0.25, capValue: 0.10 }
+  ],
+  EfficientSpacer: [
+    { feature: 'THREE_P_PCT', percentileThreshold: 0.25, capValue: 0.15 }
+  ],
+  ShotMaker: [
+    { feature: 'TS', percentileThreshold: 0.30, capValue: 0.10 }
+  ],
+  RimDeterrent: [
+    { feature: 'BLK_RATE', percentileThreshold: 0.30, capValue: 0.10 }
+  ],
+  AdvantageDriver: [
+    { feature: 'FT_RATE', percentileThreshold: 0.25, capValue: 0.10 }
+  ],
+};
+
+// ============================================================================
+// ARCHETYPE PARAMS - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_PARAMS = {
+  SOFTMAX_TEMPERATURE: 0.7,
+  MIN_ARCHETYPE_SCORE: 0.05,
+  USE_PERCENTILES: true,
+} as const;
+
 
 // ============================================================================
 // IMPACT RATING (autopick + rotation selection)
@@ -621,29 +761,35 @@ export const IMPACT_WEIGHTS = {
 export const ROTATION_SIZE = 10 as const;
 
 // ============================================================================
-// TEAM MODIFIERS (anti-domination, floors, diminishing returns)
+// TEAM MODIFIER PARAMS
 // ============================================================================
 
 export const TEAM_MODIFIER_PARAMS = {
-  // Targets in "archetype percent" space (0..100)
-  CREATOR_TARGET: 45,           // too many creators → redundancy
-  SPACING_TARGET: 35,           // want meaningful spacing presence
-  RIMPROT_MIN: 18,              // floor to avoid no-center cheese
+  // Creator redundancy
+  CREATOR_THRESHOLD: 0.45,
+  CREATOR_PENALTY: -0.03,
 
-  // Caps (modifiers should not dominate outcomes)
-  MAX_TOTAL: 0.07,              // +/- 7% equivalent impact in ratings-space
+  // Spacing bonus
+  SPACING_WEIGHT_3PA: 0.35,
+  SPACING_WEIGHT_SHOOTER: 0.65,
+  SPACING_THRESHOLD: 0.45,
+  SPACING_BONUS_MULT: 0.06,
+
+  // Rim protection
+  RIM_THRESHOLD: 0.18,
+  RIM_PENALTY: -0.04,
+
+  // Versatility
+  VI_THRESHOLD: 0.45,
+  VI_PENALTY_MULT: 0.05,
+
+  // Composition bonus
+  COMP_BONUS_BASE: 0.02,
+  COMP_BONUS_THRESHOLD: 0.60,
+
+  // Caps
+  MAX_TOTAL: 0.07,
   MAX_COMPONENT: 0.06,
-
-  // Diminishing return curves
-  DIMINISH_K: 0.05,
-
-  // Penalty/bonus strengths (these are applied to ratings, not win-prob directly)
-  CREATOR_REDUNDANCY_CAP: 0.06,
-  SPACING_BONUS_CAP: 0.05,
-  RIM_HOLE_CAP: 0.06,
-
-  // NEW: stability controls
-  LOW_VI_PEN_CAP: 0.03,
 } as const;
 
 // ============================================================================
@@ -667,54 +813,48 @@ export const STRENGTH_WEIGHTS = {
 } as const;
 
 // ============================================================================
-// SIMULATION PARAMETERS (ratings + score simulation)
+// SIMULATION PARAMS
 // ============================================================================
 
-export const SIM_PARAMS = {
-  SIMS_PER_MATCHUP: 100,
+export const SIMULATION_PARAMS = {
+  NUM_SIMULATIONS: 100,
+  BASE_PACE: 99,
+  BASE_ORTG: 113,
+  BASE_DRTG: 113,
 
-  // Ratings
-  LEAGUE_ORtg: 115,        // baseline points / 100 possessions
-  LEAGUE_DRtg: 115,
-  BASE_PACE: 99,           // possessions per game (fixed v1)
+  // Multipliers
+  ORTG_TS_MULT: 30,
+  ORTG_AST_MULT: 2.5,
+  ORTG_PAR_MULT: 1.5,
+  ORTG_3PA_MULT: 15,
+  ORTG_FT_MULT: 8,
+  ORTG_TOV_MULT: -3,
+  ORTG_USAGE_MULT: 1.0,
 
-  // Convert feature deltas -> ORtg/DRtg deltas
-  ORTG_TS_MULT: 18.0,      // TS difference around league avg
-  ORTG_AST_MULT: 1.2,      // AST per game scaled /10 in code
-  ORTG_PAR_MULT: 6.0,      // PAR shift matters
-  ORTG_3PA_MULT: 4.0,
-  ORTG_FT_MULT: 3.0,
-  ORTG_TOV_MULT: -6.0,     // turnover hurts ORtg
+  DRTG_BLK_MULT: 5,
+  DRTG_STL_MULT: 3,
+  DRTG_REB_MULT: 2,
 
-  DRTG_BLK_MULT: 0.6,
-  DRTG_STL_MULT: 0.6,
-  DRTG_REB_MULT: 0.3,
+  // Variance
+  SIGMA_BASE: 5.5,
+  SIGMA_THREES: 2.0,
+  SIGMA_TOV: 1.5,
+  SIGMA_VI_PENALTY: 3.0,
 
-  // Offense vs defense interaction strength
-  DEF_INTERACTION: 0.55,
-
-  // Score variance controls (to make series look different)
-  BASE_SIGMA: 11.5,
-  SIGMA_THREES: 6.0,
-  SIGM_TOV: 1.5,
-  SIGMA_VI: 4.0,
-
-  // Optional matchup knobs (v1 lightweight)
-  MATCHUP_RIM_ALPHA: 1.0,
-  MATCHUP_TOV_ALPHA: 0.8,
-  MATCHUP_SHOOT_ALPHA: 0.7,
-
-  // Legacy fields (kept so other imports don't break)
-  STRENGTH_SCALE: 1.0,
-  SHOOT_SIGMA: 0.35,
-  TOV_SIGMA: 0.35,
-  GAME_SIGMA: 0.35,
+  // Matchup advantages
+  MATCHUP_ADV_TS: 0.6,
+  MATCHUP_ADV_PAR: 0.4,
+  MATCHUP_ADV_THREE: 0.5,
+  MATCHUP_ADV_VI: 0.3,
 } as const;
 
 export const PLAYOFF_PARAMS = {
-  TOP_TEAMS: 1,
-  WINS_NEEDED: 3, // best-of-5
+  TOP_TEAMS: 4,
+  WINS_NEEDED: 3, // Best-of-5 for finals
+  SEMIFINALS_WINS_NEEDED: 2, // Phase 3: Best-of-3 for semifinals
+  FINALS_WINS_NEEDED: 3, // Phase 3: Best-of-5 for finals
 } as const;
+
 
 // Series visual mapping thresholds (UI-only)
 export const SERIES_LENGTH_THRESHOLDS = [
@@ -734,17 +874,36 @@ export const SERIES_PATH_PARAMS = {
 
 // Feature names (used for standardization / debugging)
 export const FEATURE_NAMES = [
+  'R',
   'TS',
-  'AST',
-  'TOV',
-  'A2T',
+  'THREE_P_PCT',
   'THREE_PA_RATE',
+  'TWO_P_PCT',
+  'TWO_PA_RATE',
+  'FT_PCT',
   'FT_RATE',
-  'BLK',
-  'STL',
-  'REB',
-  'USG',
+  'EFG',
+  'THREE_P_VOLUME',
+  'AST',
+  'AST_RATE',
+  'POTENTIAL_AST',
+  'AST_TO_PASS_RATE',
+  'SECONDARY_AST',
   'PAR',
+  'TOV',
+  'TOV_RATE',
+  'A2T',
+  'STL',
+  'BLK',
+  'STL_RATE',
+  'BLK_RATE',
+  'DEFLECTIONS',
+  'PF_RATE',
+  'CHARGES_DRAWN',
+  'OREB_PCT',
+  'DREB_PCT',
+  'REB_TOTAL',
+  'USG',
   'VI',
 ] as const;
 
@@ -756,5 +915,3 @@ export const POSITION_TO_ROLE: Record<string, RoleCategory> = {
   PF: 'B',
   C: 'B',
 };
-
-export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000; // 10 minutes
