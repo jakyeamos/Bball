@@ -11,7 +11,7 @@ import {
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 class WebSocketService {
   socket: Socket | null = null;
