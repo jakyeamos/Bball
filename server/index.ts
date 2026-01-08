@@ -12,6 +12,7 @@ import { LeagueSnapshot } from '@nba-draft-sim/shared';
 import { initializeSocketServer } from './managers/socketManager';
 import { fetchPlayerData } from '../scripts/scraper';
 import { createLeagueSnapshot } from './services/snapshot';
+import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 
 // Load environment variables
@@ -78,6 +79,29 @@ app.get('/api/players', (req, res) => {
   }
 
   res.json({ players: leagueSnapshot.players });
+});
+
+// Aggregate team data
+app.post('/api/team/aggregate', (req, res) => {
+  const { playerIds, teamId } = req.body;
+
+  if (!leagueSnapshot) {
+    return res.status(503).json({ error: 'League snapshot not ready' });
+  }
+  if (!playerIds || !Array.isArray(playerIds) || !teamId) {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
+
+  const players = leagueSnapshot.players.filter((p) =>
+    playerIds.includes(p.playerId)
+  );
+
+  if (players.length !== playerIds.length) {
+    return res.status(404).json({ error: 'One or more players not found' });
+  }
+
+  const aggregation = aggregateTeam(players, teamId);
+  res.json(aggregation);
 });
 
 // Session endpoint (creates/retrieves session)

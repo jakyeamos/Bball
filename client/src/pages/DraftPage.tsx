@@ -12,6 +12,7 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
 import { Player } from '@nba-draft-sim/shared';
+import { TeamIdentityUI } from '../features/team-composition/components/TeamIdentityUI';
 
 type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts' | 'threeP' | 'threePA' | 'ft' | 'usg' | 'stl' | 'blk';
 type SortDirection = 'asc' | 'desc';
@@ -70,15 +71,7 @@ export function DraftPage() {
       });
     });
 
-    const composition = Object.entries(archetypeCounts)
-      .map(([name, total]) => ({
-        name,
-        percentage: totalPercentage > 0 ? (total / totalPercentage) * 100 : 0
-      }))
-      .sort((a, b) => b.percentage - a.percentage)
-      .slice(0, 5);
-
-    return composition;
+    return null;
   }, [myRoster]);
 
   const availablePlayers = useMemo(() => {
@@ -422,23 +415,9 @@ export function DraftPage() {
               </p>
             </div>
 
-            {teamComposition && teamComposition.length > 0 && (
-              <div className="mt-4">
-                <Card padding="sm" className="bg-gray-50">
-                  <h3 className="font-bold text-sm text-gray-900 mb-3">Team Composition</h3>
-                  <div className="space-y-2">
-                    {teamComposition.map((comp) => (
-                      <div key={comp.name} className="flex items-center justify-between">
-                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-md border whitespace-nowrap ${getArchetypeColor(comp.name)}`}>
-                          {formatArchetypeName(comp.name)}
-                        </span>
-                        <span className="text-sm font-semibold text-gray-700">{comp.percentage.toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            )}
+            <div className="mt-4">
+              <TeamIdentityUI roster={myRoster} />
+            </div>
 
             <div className="mt-4 space-y-2">
               {myRoster.length > 0 ? (

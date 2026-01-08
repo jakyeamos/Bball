@@ -183,3 +183,18 @@ export function getCompositionMessage(
   }
   return '';
 }
+
+/**
+ * Get primary team identity from aggregation
+ */
+export function getPrimaryTeamIdentity(aggregation: {
+  archetypes: ArchetypeProfile;
+}): string {
+  const archetypes = aggregation.archetypes;
+  if (!archetypes || Object.keys(archetypes).length === 0) {
+    return 'Balanced';
+  }
+  return Object.keys(archetypes).reduce((a, b) =>
+    (archetypes[a] ?? 0) > (archetypes[b] ?? 0) ? a : b
+  );
+}
