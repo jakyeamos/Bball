@@ -18,7 +18,6 @@ import {
   handleUpdateQueue,
   handlePauseDraft,
   handleUnpauseDraft,
-  handleStartTradeWindow,
   handleExecuteTrade,
   handleStartRegularSeason,
   handleStartPlayoffs,
@@ -157,11 +156,6 @@ export function initializeSocketServer(
     // UNPAUSE_DRAFT
     socket.on(WS_EVENTS.UNPAUSE_DRAFT, () => {
       handleUnpauseDraft(io, socket, userId);
-    });
-
-    // START_TRADE_WINDOW
-    socket.on(WS_EVENTS.START_TRADE_WINDOW, () => {
-      handleStartTradeWindow(io, socket, userId, allPlayers);
     });
 
     // EXECUTE_TRADE

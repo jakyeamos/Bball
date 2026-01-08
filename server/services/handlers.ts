@@ -31,7 +31,6 @@ import {
 import {
   createLeague,
   transitionToDraftRecap,
-  startTradeWindow,
   executeTrade,
   startRegularSeason,
   startPlayoffs,
@@ -340,43 +339,6 @@ export function handleUnpauseDraft(
     drafts.set(lobbyId, unpausedDraft);
 
     emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: unpausedDraft });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
-  }
-}
-
-export function handleStartTradeWindow(
-  io: SocketServer,
-  socket: Socket,
-  userId: string,
-  allPlayers: Player[]
-) {
-  try {
-    const lobbyId = socket.data.lobbyId;
-    if (!lobbyId) {
-      throw new Error('Not in a lobby');
-    }
-
-    const lobby = lobbies.get(lobbyId);
-    if (!lobby || lobby.commissionerId !== userId) {
-      throw new Error('Only commissioner can start trade window');
-    }
-
-    const updatedLeague = startTradeWindow(lobbyId);
-    if (!updatedLeague) {
-      throw new Error('Failed to start trade window');
-    }
-
-    startTradeWindowTimer(io, lobbyId, allPlayers);
-
-    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_WINDOW_STARTED, {
-      type: 'TRADE_WINDOW_STARTED',
-      payload: { endsAt: updatedLeague.tradeWindowEndsAt ?? String(Date.now()) },
-    });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, {
-      type: 'LEAGUE_UPDATED',
-      payload: updatedLeague
-    });
   } catch (error: any) {
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }

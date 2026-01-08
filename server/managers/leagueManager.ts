@@ -1,11 +1,11 @@
 /**
  * server/managers/leagueManager.ts
  *
- * FIXED: Implemented createLeague and transitionToDraftRecap functions
- * that were previously throwing "Function not implemented" error
+ * SIMPLIFIED: Removed Trade Window phase and Timer.
+ * Trades are now allowed directly in 'draft_recap'.
  */
 
-import { LeagueState, Player, TRADE_WINDOW_DURATION_MS, DraftState } from '@nba-draft-sim/shared';
+import { LeagueState, Player, DraftState } from '@nba-draft-sim/shared';
 import { leagueStore } from '../stores/leagueStore';
 import { runRegularSeason } from '../services/season';
 import { runPlayoffs } from '../services/playoffs';
@@ -13,43 +13,32 @@ import { aggregateTeam } from '../services/aggregation';
 import { getTop4WithTiebreaker } from '../services/season';
 
 // ============================================================================
-// CREATE LEAGUE - FIXED IMPLEMENTATION
+// CREATE LEAGUE
 // ============================================================================
 
-/**
- * Creates a new league from a draft state
- * Called when the draft starts
- */
 export function createLeague(draftState: DraftState): LeagueState {
   const now = new Date().toISOString();
   
   const league: LeagueState = {
-    leagueId: draftState.draftId, // Use lobbyId as leagueId for simplicity
+    leagueId: draftState.draftId,
     phase: 'draft',
     draftState: draftState,
     regularSeasonResults: null,
     playoffResults: null,
-    tradeWindowEndsAt: null,
+    tradeWindowEndsAt: null, // No longer used, but kept for type safety
     createdAt: now,
     updatedAt: now,
   };
 
-  // Store the league
   leagueStore.set(league.leagueId, league);
-  
   console.log(`✅ Created league ${league.leagueId} in 'draft' phase`);
-  
   return league;
 }
 
 // ============================================================================
-// TRANSITION TO DRAFT RECAP - FIXED IMPLEMENTATION
+// TRANSITION TO DRAFT RECAP
 // ============================================================================
 
-/**
- * Transitions a league from draft phase to draft_recap phase
- * Called when the draft is completed
- */
 export function transitionToDraftRecap(lobbyId: string): LeagueState {
   const league = leagueStore.get(lobbyId);
   
@@ -57,7 +46,6 @@ export function transitionToDraftRecap(lobbyId: string): LeagueState {
     throw new Error(`League not found: ${lobbyId}`);
   }
   
-  // Validate current phase - should be in draft phase
   if (league.phase !== 'draft') {
     throw new Error(`Invalid phase for draft recap transition. Current: ${league.phase}`);
   }
@@ -71,32 +59,11 @@ export function transitionToDraftRecap(lobbyId: string): LeagueState {
   }
   
   console.log(`✅ Transitioned league ${lobbyId} to 'draft_recap' phase`);
-  
   return updatedLeague;
 }
 
 // ============================================================================
-// START TRADE WINDOW
-// ============================================================================
-
-export function startTradeWindow(leagueId: string): LeagueState | undefined {
-  const league = leagueStore.get(leagueId);
-
-  // Phase 0: Validate current phase
-  if (!league || league.phase !== 'draft_recap') {
-    throw new Error(`Invalid phase for trade window. Current: ${league?.phase}`);
-  }
-
-  const endsAt = new Date(Date.now() + TRADE_WINDOW_DURATION_MS).toISOString();
-
-  return leagueStore.update(leagueId, {
-    phase: 'trade_window',
-    tradeWindowEndsAt: endsAt,
-  });
-}
-
-// ============================================================================
-// EXECUTE TRADE
+// EXECUTE TRADE (UPDATED)
 // ============================================================================
 
 export function executeTrade(
@@ -108,11 +75,11 @@ export function executeTrade(
 ): LeagueState | undefined {
   const league = leagueStore.get(leagueId);
 
-  if (!league || league.phase !== 'trade_window' || !league.draftState) {
-    throw new Error('Invalid league state for trade');
+  // FIXED: Allow trades specifically during 'draft_recap'
+  if (!league || league.phase !== 'draft_recap' || !league.draftState) {
+    throw new Error('Invalid league state for trade. Trades only allowed in Draft Recap.');
   }
 
-  // Find teams
   const teamA = league.draftState.teams.find(t => t.teamId === teamAId);
   const teamB = league.draftState.teams.find(t => t.teamId === teamBId);
 
@@ -132,9 +99,11 @@ export function executeTrade(
     }
   }
 
-  // Execute trade
+  // Execute trade logic
   teamA.roster = teamA.roster.filter(p => !playerAIds.includes(p)).concat(playerBIds);
   teamB.roster = teamB.roster.filter(p => !playerBIds.includes(p)).concat(playerAIds);
+
+  console.log(`✅ Trade executed in league ${leagueId} between ${teamAId} and ${teamBId}`);
 
   return leagueStore.update(leagueId, {
     draftState: league.draftState,
@@ -151,8 +120,8 @@ export function startRegularSeason(
 ): LeagueState | undefined {
   const league = leagueStore.get(leagueId);
 
-  // Phase 0: Validate current phase
-  if (!league || (league.phase !== 'trade_window' && league.phase !== 'draft_recap')) {
+  // Validate phase: Can start season directly from draft_recap
+  if (!league || league.phase !== 'draft_recap') {
     throw new Error(`Invalid phase for regular season. Current: ${league?.phase}`);
   }
 
@@ -160,9 +129,8 @@ export function startRegularSeason(
     throw new Error('No draft state found');
   }
 
-  // Build team aggregations
   const teamAggregations = new Map();
-  const teamNames = new Map<string, string>(); // Phase 1: Build team names map
+  const teamNames = new Map<string, string>(); 
 
   for (const team of league.draftState.teams) {
     const roster = team.roster
@@ -175,11 +143,12 @@ export function startRegularSeason(
 
     const aggregation = aggregateTeam(roster, team.teamId);
     teamAggregations.set(team.teamId, aggregation);
-    teamNames.set(team.teamId, team.displayName); // Phase 1: Store team name
+    teamNames.set(team.teamId, team.displayName);
   }
 
-  // Phase 1: Pass team names to runRegularSeason for editorial generation
   const regularSeasonResults = runRegularSeason(teamAggregations, teamNames);
+
+  console.log(`✅ Regular Season started for league ${leagueId}`);
 
   return leagueStore.update(leagueId, {
     phase: 'regular_season',
@@ -197,7 +166,6 @@ export function startPlayoffs(
 ): LeagueState | undefined {
   const league = leagueStore.get(leagueId);
 
-  // Phase 0: Validate current phase
   if (!league || league.phase !== 'regular_season') {
     throw new Error(`Invalid phase for playoffs. Current: ${league?.phase}`);
   }
@@ -206,12 +174,9 @@ export function startPlayoffs(
     throw new Error('Regular season not completed');
   }
 
-  // Get top 4 teams
   const top4Seeds = getTop4WithTiebreaker(league.regularSeasonResults);
-
-  // Build team aggregations
   const teamAggregations = new Map();
-  const teamNames = new Map<string, string>(); // Phase 3: Build team names map
+  const teamNames = new Map<string, string>(); 
 
   for (const team of league.draftState.teams) {
     const roster = team.roster
@@ -222,10 +187,9 @@ export function startPlayoffs(
 
     const aggregation = aggregateTeam(roster, team.teamId);
     teamAggregations.set(team.teamId, aggregation);
-    teamNames.set(team.teamId, team.displayName); // Phase 3: Store team name
+    teamNames.set(team.teamId, team.displayName);
   }
 
-  // Phase 3: Pass team names to runPlayoffs for editorial generation
   const playoffResults = runPlayoffs(top4Seeds, teamAggregations, teamNames);
 
   return leagueStore.update(leagueId, {
@@ -235,7 +199,7 @@ export function startPlayoffs(
 }
 
 // ============================================================================
-// COMPLETE LEAGUE (Phase 0: New function)
+// COMPLETE LEAGUE
 // ============================================================================
 
 export function completeLeague(leagueId: string): LeagueState | undefined {
@@ -249,10 +213,6 @@ export function completeLeague(leagueId: string): LeagueState | undefined {
     phase: 'complete',
   });
 }
-
-// ============================================================================
-// GET LEAGUE
-// ============================================================================
 
 export function getLeague(leagueId: string): LeagueState | undefined {
   return leagueStore.get(leagueId);

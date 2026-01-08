@@ -75,6 +75,8 @@ export const TeamAnalysis: React.FC<TeamAnalysisProps> = ({ aggregation }) => {
     return 'poor';
   };
 
+  const scale = (val?: number) => (val || 0) * 100;
+
   return (
     <>
       <TeamNarrative aggregation={aggregation} />
@@ -84,18 +86,18 @@ export const TeamAnalysis: React.FC<TeamAnalysisProps> = ({ aggregation }) => {
         </h4>
         <TraitBar
           label="Ball Handling"
-          score={aggregation.archetypes.PrimaryCreator || 0}
-          tier={getTier(aggregation.archetypes.PrimaryCreator || 0)}
+          score={scale(aggregation.archetypes.PrimaryCreator)}
+          tier={getTier(scale(aggregation.archetypes.PrimaryCreator || 0))}
         />
         <TraitBar
           label="Shooting"
-          score={aggregation.archetypes.OffBallShooter || 0}
-          tier={getTier(aggregation.archetypes.OffBallShooter || 0)}
+          score={scale(aggregation.archetypes.OffBallShooter)}
+          tier={getTier(scale(aggregation.archetypes.OffBallShooter || 0))}
         />
         <TraitBar
           label="Rim Protection"
-          score={aggregation.archetypes.RimProtector || 0}
-          tier={getTier(aggregation.archetypes.RimProtector || 0)}
+          score={scale(aggregation.archetypes.RimProtector)}
+          tier={getTier(scale(aggregation.archetypes.RimProtector || 0))}
         />
       </div>
     </>

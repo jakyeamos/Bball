@@ -416,7 +416,6 @@ export function DraftPage() {
                       <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.THREE_P_PCT * 100).toFixed(1)}%</td>
                       <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.THREE_PA / player.rawStats.GP).toFixed(1)}</td>
                       <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.FT_PCT * 100).toFixed(1)}%</td>
-                        <td className="px-4 py-3 text-sm text-right font-medium">{(player.features.USG * 100).toFixed(1)}%</td>
                         <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.STL / player.rawStats.GP).toFixed(1)}</td>
                         <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.BLK / player.rawStats.GP).toFixed(1)}</td>
                       <td className="px-4 py-3 text-right">
