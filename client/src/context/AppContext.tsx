@@ -86,14 +86,14 @@ export function AppProvider({ children }: AppProviderProps) {
     // Lobby events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_CREATED, (data: any) => {
-        console.log('🔵 LOBBY_CREATED event received:', data.payload);
+        console.log('🔵 LOBBY_CREATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_UPDATED, (data: any) => {
-        console.log('🔵 LOBBY_UPDATED event received:', data.payload);
+        console.log('🔵 LOBBY_UPDATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
         const user = data.payload.users.find((u: any) => u.userId === wsService.socket?.id);
         if (user) {
@@ -105,7 +105,7 @@ export function AppProvider({ children }: AppProviderProps) {
     // Draft events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_STARTED, (data: any) => {
-        console.log('🔵 DRAFT_STARTED event received:', data.payload);
+        console.log('🔵 DRAFT_STARTED event received:', data);
         setState((prev) => ({
           ...prev,
           draft: data.payload,
@@ -116,7 +116,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_UPDATED, (data: any) => {
-        console.log('🔵 DRAFT_UPDATED event received:', data.payload);
+        console.log('🔵 DRAFT_UPDATED event received:', data);
         setState((prev) => ({
           ...prev,
           draft: data.payload,
@@ -126,7 +126,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.PICK_MADE, (data: any) => {
-        console.log('🔵 PICK_MADE event received:', data.payload);
+        console.log('🔵 PICK_MADE event received:', data);
         // Pick is already in draft state, just trigger re-render
         setState((prev) => ({ ...prev }));
       })
@@ -143,7 +143,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_COMPLETED, (data: any) => {
-        console.log('🔵 DRAFT_COMPLETED event received:', data.payload);
+        console.log('🔵 DRAFT_COMPLETED event received:', data);
         setState((prev) => ({ ...prev, draft: data.payload }));
       })
     );
@@ -151,21 +151,21 @@ export function AppProvider({ children }: AppProviderProps) {
     // League events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.LEAGUE_UPDATED, (data: any) => {
-        console.log('🔵 LEAGUE_UPDATED event received:', data.payload);
+        console.log('🔵 LEAGUE_UPDATED event received:', data);
         setState((prev) => ({ ...prev, league: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.REGULAR_SEASON_STARTED, (data: any) => {
-        console.log('🔵 REGULAR_SEASON_STARTED event received:', data.payload);
+        console.log('🔵 REGULAR_SEASON_STARTED event received:', data);
         setState((prev) => ({ ...prev, regularSeasonResults: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
-        console.log('🔵 PLAYOFFS_STARTED event received:', data.payload);
+        console.log('🔵 PLAYOFFS_STARTED event received:', data);
         setState((prev) => ({ ...prev, playoffResults: data.payload }));
       })
     );
@@ -173,7 +173,7 @@ export function AppProvider({ children }: AppProviderProps) {
     // Error events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.ERROR, (data: any) => {
-        console.log('🔴 ERROR event received:', data.payload);
+        console.log('🔴 ERROR event received:', data);
         setState((prev) => ({ ...prev, error: data.payload.message }));
       })
     );
@@ -190,7 +190,7 @@ export function AppProvider({ children }: AppProviderProps) {
     fetch(`${import.meta.env.VITE_API_URL}/api/players`)
       .then((res) => res.json())
       .then((data) => {
-        setState((prev) => ({ ...prev, allPlayers: data.payload.players }));
+        setState((prev) => ({ ...prev, allPlayers: data.players }));
       })
       .catch((error) => {
         setState((prev) => ({ ...prev, error: error.message }));
