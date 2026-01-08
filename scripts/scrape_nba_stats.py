@@ -62,7 +62,10 @@ def fetch_player_stats(season: str = "2025-26") -> List[Dict[str, Any]]:
                 "TOV": float(row["TOV"]),
                 "ORB": float(row["OREB"]),
                 "DRB": float(row["DREB"]),
-                "PF": float(row["PF"])
+                "PF": float(row["PF"]),
+                "TWO_PA": float(row["FGA"]) - float(row["FG3A"]),
+                "TWO_PM": float(row["FGM"]) - float(row["FG3M"]),
+                "TWO_P_PCT": (float(row["FGM"]) - float(row["FG3M"])) / (float(row["FGA"]) - float(row["FG3A"])) if (float(row["FGA"]) - float(row["FG3A"])) > 0 else 0,
             }
             player_data.append(player)
 

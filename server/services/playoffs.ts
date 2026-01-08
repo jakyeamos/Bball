@@ -1,95 +1,76 @@
 /**
- * Playoffs Simulation - FIXED
- * Key fixes: Use 'wins' instead of 'seriesLength', use MIN_PROB/MAX_PROB, use WINS_NEEDED
+ * server/services/playoffs.ts
+ *
+ * UPDATED for Phase 3: Editorial text generation and flexible series lengths
  */
 
-import { TeamAggregation, PlayoffResults, PlayoffSeries, SeriesGame } from '@nba-draft-sim/shared';
-import { PLAYOFF_PARAMS, SERIES_LENGTH_THRESHOLDS, SERIES_PATH_PARAMS } from '@nba-draft-sim/shared';
-import { simulateSeries } from './simulation';
-import { clamp } from '../utils/utils';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  PlayoffResults,
+  PlayoffSeries,
+  SeriesGame,
+  TeamAggregation,
+  PLAYOFF_PARAMS
+} from '@nba-draft-sim/shared';
+import { simulateSeries } from './simulation';
+import {
+  generateSeriesEditorial,
+  generatePlayoffGameEditorial,
+  generateChampionshipEditorial
+} from './playoffEditorial'; // Phase 3: Import editorial
 
-/**
- * Map win percentage to displayed series length (for UI)
- */
-function mapWinPctToSeriesLength(winPctFavorite: number): [number, number] {
-  for (const threshold of SERIES_LENGTH_THRESHOLDS) {
-    if (winPctFavorite >= threshold.minWinPct) {
-      return threshold.wins as [number, number]; // ← FIXED: Use 'wins' not 'seriesLength'
-    }
-  }
-  return [4, 3]; // Default
-}
+// ============================================================================
+// SIMULATE PLAYOFF SERIES
+// ============================================================================
 
-/**
- * Generate randomized series path that ends at correct result
- */
-function generateSeriesPath(
-  winsA: number,
-  winsB: number,
-  winPctA: number
-): ('A' | 'B')[] {
-  const { BIAS_STRENGTH, MIN_EARLY_P, MAX_EARLY_P } = SERIES_PATH_PARAMS; // ← FIXED: These exist now
-
-  // Determine who wins last game
-  const lastWinner = winsA > winsB ? 'A' : 'B';
-  const totalGames = winsA + winsB;
-
-  // Remaining wins to distribute (excluding last game)
-  let remainingA = lastWinner === 'A' ? winsA - 1 : winsA;
-  let remainingB = lastWinner === 'B' ? winsB - 1 : winsB;
-
-  const path: ('A' | 'B')[] = [];
-
-  // Generate games before the final one
-  for (let i = 0; i < totalGames - 1; i++) {
-    // Calculate bias based on win percentage
-    const bias = clamp(-1, 1, (winPctA - 0.5) * 2);
-    const probA = clamp(MIN_EARLY_P, MAX_EARLY_P, 0.5 + BIAS_STRENGTH * bias);
-
-    // Decide winner of this game
-    const wantA = Math.random() < probA;
-
-    if (wantA && remainingA > 0) {
-      path.push('A');
-      remainingA--;
-    } else if (remainingB > 0) {
-      path.push('B');
-      remainingB--;
-    } else {
-      // Forced to pick A (B is exhausted)
-      path.push('A');
-      remainingA--;
-    }
-  }
-
-  // Add final game
-  path.push(lastWinner);
-
-  return path;
-}
-
-/**
- * Simulate a best-of-3 playoff series with UI presentation data
- */
 function simulatePlayoffSeries(
   seriesId: string,
   teamAId: string,
   teamBId: string,
+  teamAName: string, // Phase 3: Added parameter
+  teamBName: string, // Phase 3: Added parameter
   teamA: TeamAggregation,
-  teamB: TeamAggregation
+  teamB: TeamAggregation,
+  winsNeeded: number, // Phase 3: Flexible series length
+  isUpset: boolean = false
 ): PlayoffSeries {
-  // Run the actual simulation (best of 3)
-  const result = simulateSeries(teamA, teamB, PLAYOFF_PARAMS.WINS_NEEDED); // ← FIXED: Use WINS_NEEDED not SERIES_WINS_NEEDED
+  // Run the actual simulation
+  const result = simulateSeries(teamA, teamB, winsNeeded);
 
-  // Convert games to SeriesGame format
-  const games: SeriesGame[] = result.games.map((game, index) => ({
-    gameNumber: index + 1,
-    winner: game.winner,
-    result: game,
-  }));
+  // Phase 3: Generate game editorials
+  const gameEditorials: string[] = [];
+  let currentWinsA = 0;
+  let currentWinsB = 0;
 
-  // Determine favorite (team with higher win percentage)
+  const games: SeriesGame[] = result.games.map((game, index) => {
+    // Update current wins
+    if (game.winner === 'A') currentWinsA++;
+    else currentWinsB++;
+
+    // Generate editorial for this game
+    const editorial = generatePlayoffGameEditorial(
+      teamAName,
+      teamBName,
+      {
+        gameNumber: index + 1,
+        winner: game.winner,
+        result: game,
+      },
+      currentWinsA,
+      currentWinsB,
+      winsNeeded
+    );
+
+    gameEditorials.push(editorial);
+
+    return {
+      gameNumber: index + 1,
+      winner: game.winner,
+      result: game,
+    };
+  });
+
+  // Determine favorite for UI display
   const favoriteIsA = result.games[0].winPctA >= 0.5;
   const favWinPct = favoriteIsA ? result.games[0].winPctA : (1 - result.games[0].winPctA);
 
@@ -98,6 +79,26 @@ function simulatePlayoffSeries(
 
   // Generate series path for UI
   const seriesPath = generateSeriesPath(result.winsA, result.winsB, result.games[0].winPctA);
+
+  // Phase 3: Generate series-level editorial
+  const seriesEditorial = generateSeriesEditorial(
+    teamAName,
+    teamBName,
+    {
+      seriesId,
+      teamAId,
+      teamBId,
+      winsA: result.winsA,
+      winsB: result.winsB,
+      winner: result.winner === 'A' ? teamAId : teamBId,
+      games,
+      displayedSeriesLength: displayedLength,
+      seriesPath,
+      seriesEditorial: '', // Will be set below
+      gameEditorials: [], // Will be set below
+    },
+    isUpset
+  );
 
   return {
     seriesId,
@@ -109,15 +110,19 @@ function simulatePlayoffSeries(
     games,
     displayedSeriesLength: displayedLength,
     seriesPath,
+    seriesEditorial, // Phase 3: Add editorial
+    gameEditorials, // Phase 3: Add game editorials
   };
 }
 
-/**
- * Run complete playoffs bracket (top 4 teams, best-of-3)
- */
+// ============================================================================
+// RUN PLAYOFFS
+// ============================================================================
+
 export function runPlayoffs(
   topFourSeeds: string[],
-  teams: Map<string, TeamAggregation>
+  teams: Map<string, TeamAggregation>,
+  teamNames: Map<string, string> // Phase 3: Added parameter for editorial
 ): PlayoffResults {
   if (topFourSeeds.length !== 4) {
     throw new Error('Playoffs require exactly 4 teams');
@@ -125,48 +130,123 @@ export function runPlayoffs(
 
   const [seed1, seed2, seed3, seed4] = topFourSeeds;
 
-  // Semi-final 1: 1 vs 4
+  // Semi-final 1: #1 vs #4 (Best-of-3, need 2 wins)
   const semi1 = simulatePlayoffSeries(
     uuidv4(),
     seed1,
     seed4,
+    teamNames.get(seed1) || seed1,
+    teamNames.get(seed4) || seed4,
     teams.get(seed1)!,
-    teams.get(seed4)!
+    teams.get(seed4)!,
+    2, // Phase 3: Best-of-3 for semifinals
+    false
   );
 
-  // Semi-final 2: 2 vs 3
+  // Semi-final 2: #2 vs #3 (Best-of-3, need 2 wins)
   const semi2 = simulatePlayoffSeries(
     uuidv4(),
     seed2,
     seed3,
+    teamNames.get(seed2) || seed2,
+    teamNames.get(seed3) || seed3,
     teams.get(seed2)!,
-    teams.get(seed3)!
+    teams.get(seed3)!,
+    2, // Phase 3: Best-of-3 for semifinals
+    false
   );
 
   // Determine finalists
   const finalistA = semi1.winner;
   const finalistB = semi2.winner;
 
-  // Finals
+  // Check for upset (lower seed made finals)
+  const isUpset = (finalistA === seed4 || finalistA === seed3) &&
+                  (finalistB === seed4 || finalistB === seed3);
+
+  // Finals (Best-of-5, need 3 wins)
   const finals = simulatePlayoffSeries(
     uuidv4(),
     finalistA,
     finalistB,
+    teamNames.get(finalistA) || finalistA,
+    teamNames.get(finalistB) || finalistB,
     teams.get(finalistA)!,
-    teams.get(finalistB)!
+    teams.get(finalistB)!,
+    3, // Phase 3: Best-of-5 for finals
+    isUpset
   );
+
+  // Phase 3: Generate championship editorial
+  const championName = teamNames.get(finals.winner) || finals.winner;
+  const championshipEditorial = generateChampionshipEditorial(championName, finals);
 
   return {
     semiFinal1: semi1,
     semiFinal2: semi2,
     finals,
     champion: finals.winner,
+    championshipEditorial, // Phase 3: Add championship editorial
   };
 }
 
-/**
- * Validate playoff bracket structure
- */
-export function validatePlayoffSeeds(seeds: string[]): boolean {
-  return seeds.length === 4 && new Set(seeds).size === 4;
+// ============================================================================
+// MAP WIN PCT TO SERIES LENGTH (UI Display)
+// ============================================================================
+
+const SERIES_LENGTH_THRESHOLDS = [
+  { minWinPct: 0.80, wins: [4, 0] },
+  { minWinPct: 0.70, wins: [4, 1] },
+  { minWinPct: 0.60, wins: [4, 2] },
+  { minWinPct: 0.50, wins: [4, 3] },
+  { minWinPct: 0.00, wins: [3, 4] },
+] as const;
+
+function mapWinPctToSeriesLength(winPctFavorite: number): [number, number] {
+  for (const threshold of SERIES_LENGTH_THRESHOLDS) {
+    if (winPctFavorite >= threshold.minWinPct) {
+      return threshold.wins as [number, number];
+    }
+  }
+  return [4, 3];
+}
+
+// ============================================================================
+// GENERATE SERIES PATH (UI Animation)
+// ============================================================================
+
+const SERIES_PATH_PARAMS = {
+  MIN_PROB: 0.45,
+  MAX_PROB: 0.95,
+} as const;
+
+function generateSeriesPath(
+  winsA: number,
+  winsB: number,
+  winPctA: number
+): ('A' | 'B')[] {
+  const path: ('A' | 'B')[] = [];
+  let currentWinsA = 0;
+  let currentWinsB = 0;
+  const winsNeeded = Math.max(winsA, winsB);
+
+  // Clamp win probability
+  const clampedWinPct = Math.max(
+    SERIES_PATH_PARAMS.MIN_PROB,
+    Math.min(SERIES_PATH_PARAMS.MAX_PROB, winPctA)
+  );
+
+  // Simulate path
+  while (currentWinsA < winsNeeded && currentWinsB < winsNeeded) {
+    const rand = Math.random();
+    if (rand < clampedWinPct) {
+      path.push('A');
+      currentWinsA++;
+    } else {
+      path.push('B');
+      currentWinsB++;
+    }
+  }
+
+  return path;
 }
