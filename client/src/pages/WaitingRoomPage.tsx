@@ -131,28 +131,18 @@ export function WaitingRoomPage() {
             </div>
           </div>
 
-          <div className="mt-8">
-            {isCommissioner ? (
+          {isCommissioner && lobby.canStart && (
+            <div className="mt-8">
               <Button
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={!lobby.canStart}
                 onClick={handleStartDraft}
               >
                 Start Draft
               </Button>
-            ) : (
-              <Button
-                variant="secondary" // or "outline" to make it look passive
-                size="lg"
-                fullWidth
-                disabled // This makes the button unclickable
-              >
-                Waiting on Commissioner
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           {!lobby.canStart && (
             <div className="mt-8 text-center text-gray-600">
