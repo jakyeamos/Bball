@@ -129,6 +129,11 @@ export function startRegularSeason(
     throw new Error('No draft state found');
   }
 
+  const { config: lobbyConfig, draftOrder } = league.draftState;
+  if (!lobbyConfig || !draftOrder) {
+    throw new Error('Draft state is missing config or draft order');
+  }
+
   const teamAggregations = new Map();
   const teamNames = new Map<string, string>(); 
 
@@ -146,7 +151,12 @@ export function startRegularSeason(
     teamNames.set(team.teamId, team.displayName);
   }
 
-  const regularSeasonResults = runRegularSeason(teamAggregations, teamNames);
+  const regularSeasonResults = runRegularSeason(
+    teamAggregations,
+    teamNames,
+    lobbyConfig.seasonFormat,
+    draftOrder
+  );
 
   console.log(`✅ Regular Season started for league ${leagueId}`);
 

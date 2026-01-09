@@ -5,9 +5,16 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { RegularSeasonResults, RegularSeasonGame, TeamRecord, TeamAggregation } from '@nba-draft-sim/shared';
+import {
+  RegularSeasonResults,
+  RegularSeasonGame,
+  TeamRecord,
+  TeamAggregation,
+  SeasonFormat,
+  DraftOrder,
+} from '@nba-draft-sim/shared';
 import { simulateMatchup } from './simulation';
-import { generateGameEditorial, generateSeasonSummary } from './editorial'; // Phase 1: Import editorial
+import { generateGameEditorial, generateSeasonSummary } from './editorial';
 
 // ============================================================================
 // RUN REGULAR SEASON
@@ -15,14 +22,39 @@ import { generateGameEditorial, generateSeasonSummary } from './editorial'; // P
 
 export function runRegularSeason(
   teams: Map<string, TeamAggregation>,
-  teamNames: Map<string, string> // Phase 1: Added parameter for editorial
+  teamNames: Map<string, string>,
+  seasonFormat: SeasonFormat,
+  draftOrder: DraftOrder[] // Needed for playoffs_only
 ): RegularSeasonResults {
   const teamIds = Array.from(teams.keys());
+
+  // Handle playoffs-only mode separately
+  if (seasonFormat === 'playoffs_only') {
+    // Seed teams based on reverse draft order. Last pick is #1 seed.
+    const uniqueTeamIdsInDraftOrder = [
+      ...new Set(draftOrder.map((pick) => pick.teamId)),
+    ];
+    const seededTeamIds = [...uniqueTeamIdsInDraftOrder].reverse();
+
+    const standings = seededTeamIds.map((teamId) => ({
+      teamId,
+      wins: 0,
+      losses: 0,
+      winPct: 0,
+    }));
+
+    return {
+      standings,
+      games: [],
+      summary: 'The regular season was skipped. Seeding is based on reverse draft order.',
+    };
+  }
+
   const standings = initializeStandings(teamIds);
   const games: RegularSeasonGame[] = [];
 
-  // Generate round-robin schedule
-  const schedule = generateRoundRobinSchedule(teamIds);
+  // Generate schedule based on format
+  const schedule = generateSchedule(teamIds, seasonFormat);
 
   // Simulate each matchup
   for (const match of schedule) {
@@ -117,18 +149,48 @@ function updateStandings(
 }
 
 // ============================================================================
-// GENERATE ROUND-ROBIN SCHEDULE
+// SCHEDULE GENERATION
 // ============================================================================
 
-function generateRoundRobinSchedule(teamIds: string[]): Array<{ home: string; away: string }> {
-  const schedule: Array<{ home: string; away: string }> = [];
+function generateSchedule(
+  teamIds: string[],
+  seasonFormat: SeasonFormat
+): Array<{ home: string; away: string }> {
+  switch (seasonFormat) {
+    case 'single_round_robin':
+      return generateSingleRoundRobinSchedule(teamIds);
+    case 'double_round_robin':
+    default: // Fallback for old configs or undefined
+      return generateDoubleRoundRobinSchedule(teamIds);
+  }
+}
 
-  // Double round-robin (each team plays every other team twice)
+function generateSingleRoundRobinSchedule(
+  teamIds: string[]
+): Array<{ home: string; away: string }> {
+  const schedule: Array<{ home: string; away: string }> = [];
   for (let i = 0; i < teamIds.length; i++) {
     for (let j = i + 1; j < teamIds.length; j++) {
-      // Game 1: i is home, j is away
+      // Each pair plays once. Alternate home team for fairness.
+      if ((i + j) % 2 === 0) {
+        schedule.push({ home: teamIds[i], away: teamIds[j] });
+      } else {
+        schedule.push({ home: teamIds[j], away: teamIds[i] });
+      }
+    }
+  }
+  return schedule;
+}
+
+function generateDoubleRoundRobinSchedule(
+  teamIds: string[]
+): Array<{ home: string; away: string }> {
+  const schedule: Array<{ home: string; away: string }> = [];
+
+  // Each team plays every other team twice (home and away)
+  for (let i = 0; i < teamIds.length; i++) {
+    for (let j = i + 1; j < teamIds.length; j++) {
       schedule.push({ home: teamIds[i], away: teamIds[j] });
-      // Game 2: j is home, i is away
       schedule.push({ home: teamIds[j], away: teamIds[i] });
     }
   }
