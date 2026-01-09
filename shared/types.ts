@@ -664,4 +664,383 @@ export const POSITION_TO_ROLE: Record<string, RoleCategory> = {
   C: 'B',
 };
 
-// ... (rest of existing constants - RELIABILITY_PARAMS, ARCHETYPE_WEIGHTS, etc. - unchanged)
+// ============================================================================
+// RELIABILITY SHRINKAGE PARAMETERS
+// ============================================================================
+
+export const RELIABILITY_PARAMS = {
+  MP_MIDPOINT: 1000,
+  MP_SCALE: 300,
+  GP_MIDPOINT: 50,
+  GP_SCALE: 15,
+  MP_WEIGHT: 0.75,
+  GP_WEIGHT: 0.25,
+} as const;
+
+// ============================================================================
+// ARCHETYPE WEIGHTS - Phase 2 Complete Rewrite
+// ============================================================================
+
+export const ARCHETYPE_WEIGHTS: Record<string, Record<string, number>> = {
+  // ==========================================================================
+  // CREATION & OFFENSE (7 archetypes)
+  // ==========================================================================
+
+  PrimaryCreator: {
+    AST: 0.35,
+    AST_RATE: 0.25,
+    USG: 0.20,
+    PAR: 0.15,
+    TS: 0.10,
+    // Negatives
+    TOV_RATE: -0.15,
+    PF_RATE: -0.05,
+  },
+
+  SecondaryPlaymaker: {
+    AST: 0.25,
+    AST_RATE: 0.20,
+    TS: 0.20,
+    THREE_PA_RATE: 0.15,
+    PAR: 0.15,
+    // Negatives
+    TOV_RATE: -0.10,
+    USG: -0.15,
+  },
+
+  VolumeSniper: {
+    THREE_PA_RATE: 0.35,
+    THREE_P_VOLUME: 0.30,
+    THREE_P_PCT: 0.25,
+    EFG: 0.10,
+  },
+
+  EfficientSpacer: {
+    THREE_P_PCT: 0.35,
+    TS: 0.25,
+    EFG: 0.20,
+    THREE_PA_RATE: 0.15,
+    // Negatives
+    USG: -0.10,
+  },
+
+  ShotMaker: {
+    USG: 0.30,
+    TWO_P_PCT: 0.20,
+    TS: 0.15,
+    FT_RATE: 0.20,
+    TWO_PA_RATE: 0.10,
+    // Negatives
+    TOV_RATE: -0.15,
+  },
+
+  AdvantageDriver: {
+    FT_RATE: 0.40,
+    USG: 0.25,
+    TWO_PA_RATE: 0.20,
+    TS: 0.10,
+    // Negatives
+    THREE_PA_RATE: -0.15,
+  },
+
+  Connector: {
+    TS: 0.25,
+    THREE_PA_RATE: 0.20,
+    AST_TO_PASS_RATE: 0.20,
+    PAR: 0.20,
+    VI: 0.10,
+    // Negatives
+    USG: -0.25,
+    TOV_RATE: -0.15,
+  },
+
+  // ==========================================================================
+  // DEFENSE & ACTIVITY (6 archetypes)
+  // ==========================================================================
+
+  PointOfAttackMenace: {
+    STL_RATE: 0.35,
+    DEFLECTIONS: 0.30,
+    STL: 0.20,
+    VI: 0.15,
+    // Negatives
+    PF_RATE: -0.20,
+  },
+
+  Disruptor: {
+    STL_RATE: 0.30,
+    BLK_RATE: 0.20,
+    DEFLECTIONS: 0.25,
+    VI: 0.15,
+    STL: 0.10,
+  },
+
+  RimDeterrent: {
+    BLK_RATE: 0.45,
+    BLK: 0.25,
+  DREB_PCT: 0.20,
+    PF_RATE: 0.10,
+  },
+
+  ReboundEnforcer: {
+    OREB_PCT: 0.40,
+    DREB_PCT: 0.40,
+    VI: 0.10,
+    REB_TOTAL: 0.10,
+  },
+
+  HustleEngine: {
+    OREB_PCT: 0.30,
+    STL_RATE: 0.25,
+    DEFLECTIONS: 0.20,
+    CHARGES_DRAWN: 0.15,
+    VI: 0.10,
+  },
+
+  WinDriver: {
+    PAR: 0.30,
+    TS: 0.20,
+    VI: 0.25,
+    // Strong negatives
+    TOV_RATE: -0.30,
+    PF_RATE: -0.20,
+    USG: -0.35,
+  },
+};
+
+// ============================================================================
+// ARCHETYPE NAMES - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_NAMES: string[] = [
+  // Creation & Offense
+  'PrimaryCreator',
+  'SecondaryPlaymaker',
+  'VolumeSniper',
+  'EfficientSpacer',
+  'ShotMaker',
+  'AdvantageDriver',
+  'Connector',
+  // Defense & Activity
+  'PointOfAttackMenace',
+  'Disruptor',
+  'RimDeterrent',
+  'ReboundEnforcer',
+  'HustleEngine',
+  'WinDriver',
+];
+
+// ============================================================================
+// ARCHETYPE CAPS - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_CAPS: Record<string, Array<{ feature: string; percentileThreshold: number; capValue: number }>> = {
+  VolumeSniper: [
+    { feature: 'THREE_P_PCT', percentileThreshold: 0.25, capValue: 0.10 }
+  ],
+  EfficientSpacer: [
+    { feature: 'THREE_P_PCT', percentileThreshold: 0.25, capValue: 0.15 }
+  ],
+  ShotMaker: [
+    { feature: 'TS', percentileThreshold: 0.30, capValue: 0.10 }
+  ],
+  RimDeterrent: [
+    { feature: 'BLK_RATE', percentileThreshold: 0.30, capValue: 0.10 }
+  ],
+  AdvantageDriver: [
+    { feature: 'FT_RATE', percentileThreshold: 0.25, capValue: 0.10 }
+  ],
+};
+
+// ============================================================================
+// ARCHETYPE PARAMS - Phase 2
+// ============================================================================
+
+export const ARCHETYPE_PARAMS = {
+  SOFTMAX_TEMPERATURE: 0.7,
+  MIN_ARCHETYPE_SCORE: 0.05,
+  USE_PERCENTILES: true,
+} as const;
+
+
+// ============================================================================
+// IMPACT RATING (autopick + rotation selection)
+// ============================================================================
+
+export const IMPACT_WEIGHTS = {
+  // Offense
+  TS: 0.32,
+  AST: 0.12,
+  PAR: 0.18,              // NEW (Pomeroy Assist Ratio)
+  THREE_PA_RATE: 0.10,
+  FT_RATE: 0.06,
+  USG: 0.04,
+
+  // Defense
+  STL: 0.09,
+  BLK: 0.06,
+  REB: 0.05,
+
+  // Stability
+  VI: 0.10,               // NEW (Versatility Index; positive-only entropy)
+  TOV: -0.12,
+} as const;
+
+export const ROTATION_SIZE = 10 as const;
+
+// ============================================================================
+// TEAM MODIFIER PARAMS
+// ============================================================================
+
+export const TEAM_MODIFIER_PARAMS = {
+  // Creator redundancy
+  CREATOR_THRESHOLD: 0.45,
+  CREATOR_PENALTY: -0.03,
+
+  // Spacing bonus
+  SPACING_WEIGHT_3PA: 0.35,
+  SPACING_WEIGHT_SHOOTER: 0.65,
+  SPACING_THRESHOLD: 0.45,
+  SPACING_BONUS_MULT: 0.06,
+
+  // Rim protection
+  RIM_THRESHOLD: 0.18,
+  RIM_PENALTY: -0.04,
+
+  // Versatility
+  VI_THRESHOLD: 0.45,
+  VI_PENALTY_MULT: 0.05,
+
+  // Composition bonus
+  COMP_BONUS_BASE: 0.02,
+  COMP_BONUS_THRESHOLD: 0.60,
+
+  // Caps
+  MAX_TOTAL: 0.07,
+  MAX_COMPONENT: 0.06,
+
+  // Home court advantage
+  HCA_MAX_BONUS: 0.03,
+} as const;
+
+// ============================================================================
+// (Legacy) TEAM STRENGTH WEIGHTS
+// Kept for compatibility; newer sim uses ratings-based engine.
+// ============================================================================
+
+export const STRENGTH_WEIGHTS = {
+  OFFENSE: {
+    TS: 0.40,
+    AST: 0.20,
+    THREE_PA_RATE: 0.15,
+    FT_RATE: 0.10,
+    TOV: -0.15,
+  },
+  DEFENSE: {
+    BLK: 0.25,
+    STL: 0.25,
+    REB: 0.20,
+  },
+} as const;
+
+// ============================================================================
+// SIMULATION PARAMS
+// ============================================================================
+
+export const SIMULATION_PARAMS = {
+  NUM_SIMULATIONS: 100,
+  BASE_PACE: 99,
+  BASE_ORTG: 113,
+  BASE_DRTG: 113,
+
+  // Multipliers
+  ORTG_TS_MULT: 30,
+  ORTG_AST_MULT: 2.5,
+  ORTG_PAR_MULT: 1.5,
+  ORTG_3PA_MULT: 15,
+  ORTG_FT_MULT: 8,
+  ORTG_TOV_MULT: -3,
+  ORTG_USAGE_MULT: 1.0,
+
+  DRTG_BLK_MULT: 5,
+  DRTG_STL_MULT: 3,
+  DRTG_REB_MULT: 2,
+
+  // Variance
+  SIGMA_BASE: 5.5,
+  SIGMA_THREES: 2.0,
+  SIGMA_TOV: 1.5,
+  SIGMA_VI_PENALTY: 3.0,
+  SIGMA_IMPACT_STDEV_MULT: 1.5, // For player noise approximation
+
+  // Randomness
+  TEAM_PERF_VARIANCE_CLAMP: 0.05,
+  STAT_SHOOTING_VARIANCE_CLAMP: 0.04,
+  STAT_REBOUNDING_VARIANCE_CLAMP: 0.06,
+  STAT_TURNOVER_VARIANCE_CLAMP: 0.08,
+
+  // Matchup advantages
+  MATCHUP_ADV_TS: 0.6,
+  MATCHUP_ADV_PAR: 0.4,
+  MATCHUP_ADV_THREE: 0.5,
+  MATCHUP_ADV_VI: 0.3,
+} as const;
+
+export const PLAYOFF_PARAMS = {
+  TOP_TEAMS: 4,
+  WINS_NEEDED: 3, // Best-of-5 for finals
+  SEMIFINALS_WINS_NEEDED: 2, // Phase 3: Best-of-3 for semifinals
+  FINALS_WINS_NEEDED: 3, // Phase 3: Best-of-5 for finals
+} as const;
+
+
+// Series visual mapping thresholds (UI-only)
+export const SERIES_LENGTH_THRESHOLDS = [
+  { minWinPct: 0.80, wins: [4, 0] },
+  { minWinPct: 0.70, wins: [4, 1] },
+  { minWinPct: 0.60, wins: [4, 2] },
+  { minWinPct: 0.50, wins: [4, 3] },
+] as const;
+
+export const SERIES_PATH_PARAMS = {
+  MIN_EARLY_P: 0.35,
+  MAX_EARLY_P: 0.65,
+  BIAS_STRENGTH: 0.15,
+  MIN_PROB: 0.35,
+  MAX_PROB: 0.65,
+} as const;
+
+// Feature names (used for standardization / debugging)
+export const FEATURE_NAMES = [
+  'R',
+  'TS',
+  'THREE_P_PCT',
+  'THREE_PA_RATE',
+  'TWO_P_PCT',
+  'TWO_PA_RATE',
+  'FT_PCT',
+  'FT_RATE',
+  'EFG',
+  'THREE_P_VOLUME',
+  'AST',
+  'AST_RATE',
+  'POTENTIAL_AST',
+  'AST_TO_PASS_RATE',
+  'SECONDARY_AST',
+  'PAR',
+  'TOV',
+  'TOV_RATE',
+  'A2T',
+  'STL',
+  'BLK',
+  'STL_RATE',
+  'BLK_RATE',
+  'DEFLECTIONS',
+  'PF_RATE',
+  'CHARGES_DRAWN',
+  'OREB_PCT',
+  'DREB_PCT',
+  'REB_TOTAL',
+  'USG',
+  'VI',
+] as const;
