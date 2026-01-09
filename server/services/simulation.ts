@@ -5,8 +5,7 @@
 
 import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver } from '@nba-draft-sim/shared';
 import { SIMULATION_PARAMS } from '@nba-draft-sim/shared';
-import { randomNormal } from '../utils/utils';
-import { computeTeamModifiers } from './modifiers';
+import { randomNormal, clamp } from '../utils/utils';
 
 function getMod(mods: TeamModifiers, key: string): number {
   return (mods as any)[key] ?? 0;
@@ -27,26 +26,42 @@ function computeTeamRatings(team: TeamAggregation, mods: TeamModifiers) {
   const defenseBonus = getMod(mods, 'defenseBonus');
   const defensePenalty = getMod(mods, 'defensePenalty');
 
+  // Tier 1 Randomness: Per-game team variance
+  const teamPerformanceNoise = randomNormal(0, P.TEAM_PERF_VARIANCE_CLAMP / 2);
+  const clampedTeamNoise = clamp(-P.TEAM_PERF_VARIANCE_CLAMP, P.TEAM_PERF_VARIANCE_CLAMP, teamPerformanceNoise);
+
+  // Tier 1 Randomness: Stat-channel variance
+  const shootingNoise = randomNormal(0, P.STAT_SHOOTING_VARIANCE_CLAMP / 2);
+  const reboundingNoise = randomNormal(0, P.STAT_REBOUNDING_VARIANCE_CLAMP / 2);
+  const turnoverNoise = randomNormal(0, P.STAT_TURNOVER_VARIANCE_CLAMP / 2);
+
   // ORtg from your allowed inputs + PAR/VI internally
   const ORtg =
     P.LEAGUE_ORtg +
-    P.ORTG_TS_MULT * (team.features.TS - 0.56) +
+    P.ORTG_TS_MULT * (team.features.TS - 0.56 + shootingNoise) +
     P.ORTG_AST_MULT * (team.features.AST / 10) +
     P.ORTG_PAR_MULT * (par - 0.60) +
     P.ORTG_3PA_MULT * (team.features.THREE_PA_RATE - 0.35) +
     P.ORTG_FT_MULT * (team.features.FT_RATE - 0.25) +
-    P.ORTG_TOV_MULT * (team.features.TOV / 5) +   // turnover sensitivity
+    P.ORTG_TOV_MULT * (team.features.TOV / 5 + turnoverNoise) +
     offenseBonus -
-    offensePenalty;
+    offensePenalty +
+    clampedTeamNoise;
 
   // DRtg (lower is better)
   const DRtg =
-  P.LEAGUE_DRtg -
-  P.DRTG_BLK_MULT * (team.features.BLK ?? 0) -
-  P.DRTG_STL_MULT * (team.features.STL ?? 0) -
-  P.DRTG_REB_MULT * (team.features.REB_TOTAL ?? 0) +
-  defensePenalty -
-  defenseBonus;
+    P.LEAGUE_DRtg -
+    P.DRTG_BLK_MULT * (team.features.BLK ?? 0) -
+    P.DRTG_STL_MULT * (team.features.STL ?? 0) -
+    P.DRTG_REB_MULT * (team.features.REB_TOTAL ?? 0 + reboundingNoise) +
+    defensePenalty -
+    defenseBonus -
+    clampedTeamNoise;
+
+  // Tier 1 Randomness: Player-specific noise (approximated)
+  const impactRatings = team.rotation.map(p => p.impactRating);
+  const meanImpact = impactRatings.reduce((a, b) => a + b, 0) / impactRatings.length;
+  const stdevImpact = Math.sqrt(impactRatings.map(x => Math.pow(x - meanImpact, 2)).reduce((a, b) => a + b, 0) / impactRatings.length);
 
   // Score variance (series looks different even with same mapped series length)
   const sigma =
@@ -54,7 +69,8 @@ function computeTeamRatings(team: TeamAggregation, mods: TeamModifiers) {
     P.SIGMA_THREES * team.features.THREE_PA_RATE +
     P.SIGMA_TOV * (team.features.TOV / 5) -
     P.SIGMA_VI * vi +
-    getMod(mods, 'variancePenalty') * 10;
+    getMod(mods, 'variancePenalty') * 10 +
+    stdevImpact * P.SIGMA_IMPACT_STDEV_MULT;
 
   return { ORtg, DRtg, sigma };
 }
@@ -102,19 +118,27 @@ function generateMatchupDrivers(
 export function simulateMatchup(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
+  homeTeam: 'A' | 'B' | null = null,
   numSims: number = SIMULATION_PARAMS.NUM_SIMULATIONS
 ): MatchupResult {
   const P = SIMULATION_PARAMS as any;
 
-  const modsA = computeTeamModifiers(teamA);
-  const modsB = computeTeamModifiers(teamB);
+  const modsA = teamA.modifiers;
+  const modsB = teamB.modifiers;
 
   const rA = computeTeamRatings(teamA, modsA);
   const rB = computeTeamRatings(teamB, modsB);
 
   // Offense vs opponent defense interaction
-  const ORtgA_vs_B = rA.ORtg - P.DEF_INTERACTION * (rB.DRtg - P.LEAGUE_DRtg);
-  const ORtgB_vs_A = rB.ORtg - P.DEF_INTERACTION * (rA.DRtg - P.LEAGUE_DRtg);
+  let ORtgA_vs_B = rA.ORtg - P.DEF_INTERACTION * (rB.DRtg - P.LEAGUE_DRtg);
+  let ORtgB_vs_A = rB.ORtg - P.DEF_INTERACTION * (rA.DRtg - P.LEAGUE_DRtg);
+
+  // Apply home court advantage
+  if (homeTeam === 'A') {
+    ORtgA_vs_B += modsA.homeCourtAdvantage;
+  } else if (homeTeam === 'B') {
+    ORtgB_vs_A += modsB.homeCourtAdvantage;
+  }
 
   const pace = P.BASE_PACE;
 
@@ -146,12 +170,19 @@ export function simulateSeries(
   let winsA = 0;
   let winsB = 0;
   const games: MatchupResult[] = [];
+  let gameNum = 0;
+
+  const homeCourtSchedule = winsNeeded === 2
+    ? ['A', 'A', 'B'] // Best-of-3: H-H-A
+    : ['A', 'A', 'B', 'A', 'B']; // Best-of-5: H-H-A-H-A
 
   while (winsA < winsNeeded && winsB < winsNeeded) {
-    const gameResult = simulateMatchup(teamA, teamB);
+    const homeTeam = homeCourtSchedule[gameNum];
+    const gameResult = simulateMatchup(teamA, teamB, homeTeam as 'A' | 'B');
     games.push(gameResult);
     if (gameResult.winner === 'A') winsA++;
     else winsB++;
+    gameNum++;
   }
 
   return { winsA, winsB, winner: winsA >= winsNeeded ? 'A' : 'B', games };

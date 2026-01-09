@@ -25,28 +25,32 @@ export function runRegularSeason(
   const schedule = generateRoundRobinSchedule(teamIds);
 
   // Simulate each matchup
-  for (const [teamAId, teamBId] of schedule) {
-    const teamA = teams.get(teamAId)!;
-    const teamB = teams.get(teamBId)!;
+  for (const match of schedule) {
+    const homeTeamId = match.home;
+    const awayTeamId = match.away;
+    const homeTeam = teams.get(homeTeamId)!;
+    const awayTeam = teams.get(awayTeamId)!;
 
-    const result = simulateMatchup(teamA, teamB);
+    // In the context of simulateMatchup, teamA is the home team
+    const result = simulateMatchup(homeTeam, awayTeam, 'A');
 
     // Phase 1: Generate editorial for this game
-    const teamAName = teamNames.get(teamAId) || teamAId;
-    const teamBName = teamNames.get(teamBId) || teamBId;
-    const editorial = generateGameEditorial(teamAName, teamBName, result);
+    const homeTeamName = teamNames.get(homeTeamId) || homeTeamId;
+    const awayTeamName = teamNames.get(awayTeamId) || awayTeamId;
+    const editorial = generateGameEditorial(homeTeamName, awayTeamName, result);
 
     // Record game with editorial
     games.push({
       gameId: uuidv4(),
-      teamAId,
-      teamBId,
+      teamAId: homeTeamId,
+      teamBId: awayTeamId,
+      homeTeam: 'A',
       result,
       editorial, // Phase 1: Add editorial
     });
 
     // Update standings
-    updateStandings(standings, teamAId, teamBId, result.winner);
+    updateStandings(standings, homeTeamId, awayTeamId, result.winner === 'A' ? 'A' : 'B');
   }
 
   // Sort standings
@@ -116,20 +120,16 @@ function updateStandings(
 // GENERATE ROUND-ROBIN SCHEDULE
 // ============================================================================
 
-function generateRoundRobinSchedule(teamIds: string[]): Array<[string, string]> {
-  const schedule: Array<[string, string]> = [];
+function generateRoundRobinSchedule(teamIds: string[]): Array<{ home: string; away: string }> {
+  const schedule: Array<{ home: string; away: string }> = [];
 
   // Double round-robin (each team plays every other team twice)
-  for (let round = 0; round < 2; round++) {
-    for (let i = 0; i < teamIds.length; i++) {
-      for (let j = i + 1; j < teamIds.length; j++) {
-        if (round === 0) {
-          schedule.push([teamIds[i], teamIds[j]]);
-        } else {
-          // Reverse home/away for second round
-          schedule.push([teamIds[j], teamIds[i]]);
-        }
-      }
+  for (let i = 0; i < teamIds.length; i++) {
+    for (let j = i + 1; j < teamIds.length; j++) {
+      // Game 1: i is home, j is away
+      schedule.push({ home: teamIds[i], away: teamIds[j] });
+      // Game 2: j is home, i is away
+      schedule.push({ home: teamIds[j], away: teamIds[i] });
     }
   }
 

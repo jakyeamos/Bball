@@ -262,6 +262,7 @@ export interface TeamModifiers {
   defenseBonus: number;
   defensePenalty: number;
   variancePenalty: number;
+  homeCourtAdvantage: number;
 }
 
 export interface MatchupDriver {
@@ -286,6 +287,7 @@ export interface RegularSeasonGame {
   gameId: string;
   teamAId: string;
   teamBId: string;
+  homeTeam: 'A' | 'B';
   result: MatchupResult;
   editorial: string;  // Phase 1: Added editorial text
 }
@@ -768,6 +770,9 @@ export const TEAM_MODIFIER_PARAMS = {
   // Caps
   MAX_TOTAL: 0.07,
   MAX_COMPONENT: 0.06,
+
+  // Home court advantage
+  HCA_MAX_BONUS: 0.03,
 } as const;
 
 // ============================================================================
@@ -818,6 +823,13 @@ export const SIMULATION_PARAMS = {
   SIGMA_THREES: 2.0,
   SIGMA_TOV: 1.5,
   SIGMA_VI_PENALTY: 3.0,
+  SIGMA_IMPACT_STDEV_MULT: 1.5, // For player noise approximation
+
+  // Randomness
+  TEAM_PERF_VARIANCE_CLAMP: 0.05,
+  STAT_SHOOTING_VARIANCE_CLAMP: 0.04,
+  STAT_REBOUNDING_VARIANCE_CLAMP: 0.06,
+  STAT_TURNOVER_VARIANCE_CLAMP: 0.08,
 
   // Matchup advantages
   MATCHUP_ADV_TS: 0.6,
