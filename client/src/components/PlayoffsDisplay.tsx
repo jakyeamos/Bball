@@ -1,13 +1,15 @@
 import React from 'react';
-import { PlayoffResults, Team } from '@nba-draft-sim/shared';
+// FIXED: Changed 'Team' to 'DraftTeam' - Team type doesn't exist in shared types
+import { PlayoffResults, DraftTeam } from '@nba-draft-sim/shared';
 import { Card } from './Card';
 
 interface PlayoffsDisplayProps {
   playoffResults: PlayoffResults;
-  teams: Team[];
+  teams: DraftTeam[];  // FIXED: Changed Team[] to DraftTeam[]
 }
 
-const getTeamName = (teamId: string, teams: Team[]) => {
+// FIXED: Changed Team[] to DraftTeam[]
+const getTeamName = (teamId: string, teams: DraftTeam[]) => {
   return teams.find(t => t.teamId === teamId)?.displayName || teamId;
 };
 

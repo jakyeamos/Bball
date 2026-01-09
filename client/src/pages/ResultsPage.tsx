@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { TeamRecord } from '@nba-draft-sim/shared';
+import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
 
 // ------------------------------------------------------------------
-// 1. CONFIG & HELPER LOGIC (Moved inside or outside component)
+// 1. CONFIG & HELPER LOGIC
 // ------------------------------------------------------------------
 
 const SERIES_LENGTH_THRESHOLDS = [
@@ -28,10 +29,12 @@ export function ResultsPage() {
   // --- STATE ---
   const [playbackQueue, setPlaybackQueue] = useState<any[]>([]);
   const [displayedGames, setDisplayedGames] = useState<any[]>([]);
-  const [currentMatchupIdx, setCurrentMatchupIdx] = useState(0); // For "Matchup 1/X"
   const [isSimulating, setIsSimulating] = useState(false);
-  const [simSpeed, setSimSpeed] = useState(500); // Slower default for readability
+  const [simSpeed, setSimSpeed] = useState(500);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // 🆕 FIX: Use ref to track if we've initialized to prevent double-init
+  const hasInitialized = useRef(false);
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
 
@@ -40,47 +43,69 @@ export function ResultsPage() {
     if (!league) navigate('/');
   }, [league, navigate]);
 
-  // When results arrive, build the "Animation Queue"
+  // 🆕 FIX: Better initialization logic with guard against re-init
   useEffect(() => {
-    if (regularSeasonResults && !playoffResults && playbackQueue.length === 0) {
+    // Only initialize once when regularSeasonResults arrives
+    if (regularSeasonResults && !playoffResults && !hasInitialized.current) {
+      console.log('🔵 Initializing regular season animation with', regularSeasonResults.games.length, 'games');
+      hasInitialized.current = true;
       setPlaybackQueue(regularSeasonResults.games);
+      setDisplayedGames([]);
       setIsSimulating(true);
     } 
-    // If Playoffs exist, skip logic
+    // If playoffs exist, show final state
     else if (playoffResults) {
-        setIsSimulating(false);
-        // Force full display
-        // (Simplified for brevity: in real app, you'd reconstruct the whole state here too)
+      setIsSimulating(false);
+      // Show all regular season games immediately
+      if (regularSeasonResults && displayedGames.length === 0) {
+        setDisplayedGames(regularSeasonResults.games);
+      }
     }
   }, [regularSeasonResults, playoffResults]);
 
+  // 🆕 FIX: Reset init flag when navigating away
+  useEffect(() => {
+    return () => {
+      hasInitialized.current = false;
+    };
+  }, []);
 
   // --- ANIMATION LOOP ---
+  // 🆕 FIX: Use useCallback and proper state updates to avoid stale closures
   useEffect(() => {
     if (!isSimulating || playbackQueue.length === 0) return;
 
     const timer = setTimeout(() => {
-      // Move one game from Queue to Display
-      const nextGame = playbackQueue[0];
-      const remaining = playbackQueue.slice(1);
-
-      setDisplayedGames(prev => [...prev, nextGame]);
-      setPlaybackQueue(remaining);
-      setCurrentMatchupIdx(displayedGames.length + 1);
-
-      if (remaining.length === 0) {
-        setIsSimulating(false);
-      }
-
-      // Scroll to bottom
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
-
+      setPlaybackQueue(prevQueue => {
+        if (prevQueue.length === 0) return prevQueue;
+        
+        const [nextGame, ...remaining] = prevQueue;
+        
+        // Update displayed games
+        setDisplayedGames(prevDisplayed => {
+          const newDisplayed = [...prevDisplayed, nextGame];
+          
+          // Scroll to bottom after state update
+          setTimeout(() => {
+            if (scrollRef.current) {
+              scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }
+          }, 50);
+          
+          return newDisplayed;
+        });
+        
+        // Stop simulating if no more games
+        if (remaining.length === 0) {
+          setIsSimulating(false);
+        }
+        
+        return remaining;
+      });
     }, simSpeed);
 
     return () => clearTimeout(timer);
-  }, [isSimulating, playbackQueue, simSpeed]);
+  }, [isSimulating, playbackQueue.length, simSpeed]);
 
 
   // --- DERIVED STATE: LIVE STANDINGS ---
@@ -91,11 +116,13 @@ export function ResultsPage() {
     draft.teams.forEach(t => records[t.teamId] = { teamId: t.teamId, wins: 0, losses: 0, winPct: 0 });
 
     displayedGames.forEach(game => {
+      if (!game?.result) return; // 🆕 FIX: Guard against malformed game data
+      
       const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
       const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
        
-       if (records[winnerId]) records[winnerId].wins++;
-       if (records[loserId]) records[loserId].losses++;
+      if (records[winnerId]) records[winnerId].wins++;
+      if (records[loserId]) records[loserId].losses++;
     });
 
     return Object.values(records)
@@ -107,13 +134,21 @@ export function ResultsPage() {
   }, [displayedGames, draft]);
 
   // --- HANDLERS ---
-  const handleSkip = () => {
-    setDisplayedGames(prev => [...prev, ...playbackQueue]);
-    setPlaybackQueue([]);
+  const handleSkip = useCallback(() => {
+    setPlaybackQueue(prevQueue => {
+      setDisplayedGames(prevDisplayed => [...prevDisplayed, ...prevQueue]);
+      return [];
+    });
     setIsSimulating(false);
-  };
+  }, []);
 
-  const getTeamName = (tid: string) => draft?.teams.find(t => t.teamId === tid)?.displayName || tid;
+  const getTeamName = useCallback((tid: string) => {
+    return draft?.teams.find(t => t.teamId === tid)?.displayName || tid;
+  }, [draft]);
+
+  // 🆕 FIX: Calculate current matchup index from displayed games length
+  const currentMatchupIdx = displayedGames.length;
+  const totalGames = regularSeasonResults?.games.length || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -121,22 +156,28 @@ export function ResultsPage() {
         
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             {playoffResults ? "League History" : "Season Simulation"}
-            </h1>
-            
-            {isSimulating && (
-                <div className="flex gap-2 mt-4 md:mt-0">
-                    <div className="bg-white px-3 py-1 rounded border shadow-sm text-sm font-mono">
-                        Matchup {currentMatchupIdx} / {regularSeasonResults?.games.length || '?'}
-                    </div>
-                    <Button size="sm" variant="secondary" onClick={() => setSimSpeed(50)}>Turbo</Button>
-                    <Button size="sm" variant="primary" onClick={handleSkip}>Skip</Button>
-                </div>
-            )}
+          </h1>
+          
+          {isSimulating && (
+            <div className="flex gap-2 mt-4 md:mt-0">
+              <div className="bg-white px-3 py-1 rounded border shadow-sm text-sm font-mono">
+                Matchup {currentMatchupIdx} / {totalGames}
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setSimSpeed(50)}>Turbo</Button>
+              <Button size="sm" variant="primary" onClick={handleSkip}>Skip</Button>
+            </div>
+          )}
         </div>
 
-import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
+        {/* 🆕 DEBUG: Show if no results */}
+        {!regularSeasonResults && !playoffResults && (
+          <Card padding="lg" className="mb-4 text-center">
+            <p className="text-gray-500">Waiting for season results...</p>
+            <p className="text-sm text-gray-400 mt-2">League phase: {league?.phase || 'unknown'}</p>
+          </Card>
+        )}
 
         {playoffResults && draft ? (
           <PlayoffsDisplay playoffResults={playoffResults} teams={draft.teams} />
@@ -147,40 +188,47 @@ import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
               <Card padding="lg">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Live Standings</h2>
                 <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-100 border-b">
-                      <th className="px-4 py-3 text-left">Rank</th>
-                      <th className="px-4 py-3 text-left">Team</th>
-                      <th className="px-4 py-3 text-center">W</th>
-                      <th className="px-4 py-3 text-center">L</th>
-                      <th className="px-4 py-3 text-center">Pct</th>
-                      <th className="px-4 py-3 text-center">Status</th> {/* NEW COLUMN */}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {liveStandings.map((record, index) => (
-                      <tr key={record.teamId} className={`border-b ${index < 4 ? 'bg-green-50/30' : ''}`}>
-                        <td className="px-4 py-3 font-medium text-gray-500">{index + 1}</td>
-                        <td className="px-4 py-3 font-semibold">{getTeamName(record.teamId)}</td>
-                        <td className="px-4 py-3 text-center text-green-700">{record.wins}</td>
-                        <td className="px-4 py-3 text-center text-red-600">{record.losses}</td>
-                        <td className="px-4 py-3 text-center text-gray-600">{(record.winPct * 100).toFixed(1)}%</td>
-                        <td className="px-4 py-3 text-center">
-                            {/* CLINCH STATUS LOGIC */}
-                            {!isSimulating && index < 4 ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                    CLINCHED
-                                </span>
-                            ) : (
-                                <span className="text-gray-300">-</span>
-                            )}
-                        </td>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-100 border-b">
+                        <th className="px-4 py-3 text-left">Rank</th>
+                        <th className="px-4 py-3 text-left">Team</th>
+                        <th className="px-4 py-3 text-center">W</th>
+                        <th className="px-4 py-3 text-center">L</th>
+                        <th className="px-4 py-3 text-center">Pct</th>
+                        <th className="px-4 py-3 text-center">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {liveStandings.length > 0 ? (
+                        liveStandings.map((record, index) => (
+                          <tr key={record.teamId} className={`border-b ${index < 4 ? 'bg-green-50/30' : ''}`}>
+                            <td className="px-4 py-3 font-medium text-gray-500">{index + 1}</td>
+                            <td className="px-4 py-3 font-semibold">{getTeamName(record.teamId)}</td>
+                            <td className="px-4 py-3 text-center text-green-700">{record.wins}</td>
+                            <td className="px-4 py-3 text-center text-red-600">{record.losses}</td>
+                            <td className="px-4 py-3 text-center text-gray-600">{(record.winPct * 100).toFixed(1)}%</td>
+                            <td className="px-4 py-3 text-center">
+                              {!isSimulating && index < 4 ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                  CLINCHED
+                                </span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                            {draft?.teams ? 'No games played yet...' : 'Loading teams...'}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* COMMISSIONER BUTTON */}
                 {!isSimulating && !playoffResults && league?.phase === 'regular_season' && (
@@ -194,57 +242,72 @@ import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
                     )}
                   </div>
                 )}
-            </Card>
-          </div>
+              </Card>
+            </div>
 
-          {/* RIGHT: MATCHUP TICKER */}
-          <div className="lg:col-span-1">
-            <Card padding="none" className="h-[600px] flex flex-col bg-gray-900 text-white border-gray-800">
-              <div className="p-4 border-b border-gray-700 bg-gray-800 rounded-t-lg">
-                <h3 className="font-bold text-white">Live Game Feed</h3>
-                <div className="text-xs text-gray-400 mt-1">Matchup Results & Analysis</div>
-              </div>
-              
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-                {displayedGames.map((game, idx) => {
-                  const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
-                  const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
+            {/* RIGHT: MATCHUP TICKER */}
+            <div className="lg:col-span-1">
+              <Card padding="none" className="h-[600px] flex flex-col bg-gray-900 text-white border-gray-800">
+                <div className="p-4 border-b border-gray-700 bg-gray-800 rounded-t-lg">
+                  <h3 className="font-bold text-white">Live Game Feed</h3>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {isSimulating ? `Playing game ${currentMatchupIdx + 1}...` : 'Matchup Results & Analysis'}
+                  </div>
+                </div>
+                
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {displayedGames.map((game, idx) => {
+                    // 🆕 FIX: Guard against missing game data
+                    if (!game?.result) {
+                      return null;
+                    }
+                    
+                    const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
+                    const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
 
-                  return (
-                    <div key={idx} className="bg-gray-800 p-3 rounded border border-gray-700 text-sm animate-in slide-in-from-right-4 fade-in duration-300">
-                      <div className="flex justify-between items-center text-xs text-gray-400 mb-2 uppercase tracking-wide">
-                        <span>Matchup {idx + 1}</span>
-                      </div>
-                      
-                      {/* SCOREBOARD */}
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex flex-col text-green-400 font-bold">
+                    return (
+                      <div key={idx} className="bg-gray-800 p-3 rounded border border-gray-700 text-sm animate-in slide-in-from-right-4 fade-in duration-300">
+                        <div className="flex justify-between items-center text-xs text-gray-400 mb-2 uppercase tracking-wide">
+                          <span>Matchup {idx + 1}</span>
+                          {/* 🆕 Show win probability */}
+                          <span className="text-gray-500">
+                            {game.result.winPctA !== undefined && 
+                              `${(game.result.winPctA * 100).toFixed(0)}% - ${((1 - game.result.winPctA) * 100).toFixed(0)}%`
+                            }
+                          </span>
+                        </div>
+                        
+                        {/* SCOREBOARD */}
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="flex flex-col text-green-400 font-bold">
                             <span>{getTeamName(winnerId).substring(0, 15)}</span>
-                        </div>
-                        <div className="text-gray-600 px-2">defeats</div>
-                        <div className="flex flex-col items-end text-gray-300">
+                          </div>
+                          <div className="text-gray-600 px-2">defeats</div>
+                          <div className="flex flex-col items-end text-gray-300">
                             <span>{getTeamName(loserId).substring(0, 15)}</span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* KEY DRIVER */}
-                      <div className="pt-2 border-t border-gray-700 text-xs text-blue-300">
-                        <p>{game.editorial}</p>
+                        {/* KEY DRIVER */}
+                        {game.editorial && (
+                          <div className="pt-2 border-t border-gray-700 text-xs text-blue-300">
+                            <p>{game.editorial}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
 
-                {displayedGames.length === 0 && (
+                  {displayedGames.length === 0 && (
                     <div className="text-center text-gray-600 py-12 italic">
-                        Initializing Season...
+                      {isSimulating ? 'Starting season...' : 'Initializing Season...'}
                     </div>
-                )}
-              </div>
-            </Card>
-          </div>
+                  )}
+                </div>
+              </Card>
+            </div>
 
-        </div>
+          </div>
         )}
       </div>
     </div>

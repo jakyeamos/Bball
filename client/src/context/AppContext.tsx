@@ -2,7 +2,10 @@
  * App Context
  * Global state management for the NBA Draft Simulator
  * 
- * UPDATED: Added userId tracking via SESSION_INFO event
+ * FIXED: 
+ * - Added TRADE_EXECUTED handler
+ * - Sync draft state when league updates (trades update league.draftState)
+ * - Added userId tracking via SESSION_INFO event
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -21,7 +24,7 @@ interface AppState {
   // Connection
   isConnected: boolean;
   
-  // 🆕 User Identity - Track who the current user is
+  // User Identity - Track who the current user is
   userId: string | null;
 
   // Player data
@@ -57,7 +60,7 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [state, setState] = useState<AppState>({
     isConnected: false,
-    userId: null,  // 🆕 Initialize userId as null
+    userId: null,
     allPlayers: [],
     lobby: null,
     draft: null,
@@ -88,9 +91,9 @@ export function AppProvider({ children }: AppProviderProps) {
       })
     );
 
-    // ════════════════════════════════════════════════════════════════════════
-    // 🆕 SESSION INFO - Receive userId from server
-    // ════════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    // SESSION INFO - Receive userId from server
+    // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.SESSION_INFO, (data: any) => {
         console.log('🔵 SESSION_INFO received:', data);
@@ -99,7 +102,6 @@ export function AppProvider({ children }: AppProviderProps) {
         console.log('✅ userId set to:', userId);
       })
     );
-    // ════════════════════════════════════════════════════════════════════════
 
     // Lobby events - EXTRACT PAYLOAD
     unsubscribers.push(
@@ -166,11 +168,40 @@ export function AppProvider({ children }: AppProviderProps) {
       })
     );
 
-    // League events - EXTRACT PAYLOAD
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🆕 FIX: TRADE_EXECUTED handler - sync draft state from league
+    // ═══════════════════════════════════════════════════════════════════════
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.TRADE_EXECUTED, (data: any) => {
+        console.log('🔵 TRADE_EXECUTED event received:', data);
+        const updatedLeague = data.payload as LeagueState;
+        
+        // Update both league AND draft state (draft contains team rosters)
+        setState((prev) => ({
+          ...prev,
+          league: updatedLeague,
+          // 🆕 CRITICAL: Sync draft state from league.draftState
+          draft: updatedLeague.draftState || prev.draft,
+        }));
+        console.log('✅ Trade executed - draft and league state synced');
+      })
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🆕 FIX: LEAGUE_UPDATED - also sync draft state from league.draftState
+    // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.LEAGUE_UPDATED, (data: any) => {
         console.log('🔵 LEAGUE_UPDATED event received:', data);
-        setState((prev) => ({ ...prev, league: data.payload }));
+        const updatedLeague = data.payload as LeagueState;
+        
+        setState((prev) => ({
+          ...prev,
+          league: updatedLeague,
+          // 🆕 CRITICAL: Keep draft in sync with league.draftState
+          // This ensures trades and other updates reflect correctly
+          draft: updatedLeague.draftState || prev.draft,
+        }));
       })
     );
 
@@ -185,6 +216,21 @@ export function AppProvider({ children }: AppProviderProps) {
       wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
         console.log('🔵 PLAYOFFS_STARTED event received:', data);
         setState((prev) => ({ ...prev, playoffResults: data.payload }));
+      })
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🆕 FIX: LEAGUE_COMPLETED handler
+    // ═══════════════════════════════════════════════════════════════════════
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.LEAGUE_COMPLETED, (data: any) => {
+        console.log('🔵 LEAGUE_COMPLETED event received:', data);
+        const updatedLeague = data.payload as LeagueState;
+        setState((prev) => ({
+          ...prev,
+          league: updatedLeague,
+          draft: updatedLeague.draftState || prev.draft,
+        }));
       })
     );
 
