@@ -188,12 +188,19 @@ export interface LeagueSnapshot {
 // DRAFT TYPES
 // ============================================================================
 
+// ============================================================================
+// SEASON FORMAT
+// ============================================================================
+
+export type SeasonFormat = 'single_round_robin' | 'double_round_robin' | 'playoffs_only';
+
 export type PickTimer = 60 | 120 | 300;  // 1, 2, or 5 minutes in seconds
 
 export interface LobbyConfig {
   teamCount: number;  // 4-12
   rosterSize: number;  // 10-15
   pickTimer: PickTimer;
+  seasonFormat: SeasonFormat;
 }
 
 export interface DraftPick {

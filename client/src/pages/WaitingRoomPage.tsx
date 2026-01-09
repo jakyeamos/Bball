@@ -32,6 +32,46 @@ export function WaitingRoomPage() {
 
   if (!lobby) return null;
 
+  // Calculate season details
+  const seasonDetails = React.useMemo(() => {
+    if (!lobby.config) {
+      return { format: 'N/A', matchups: 0, runtime: 'N/A' };
+    }
+
+    const { teamCount, seasonFormat } = lobby.config;
+    const n = teamCount;
+    let matchups = 0;
+    let formatText = '';
+
+    switch (seasonFormat) {
+      case 'single_round_robin':
+        matchups = (n * (n - 1)) / 2;
+        formatText = 'Single Round Robin';
+        break;
+      case 'double_round_robin':
+        matchups = n * (n - 1);
+        formatText = 'Double Round Robin';
+        break;
+      case 'playoffs_only':
+        matchups = (n * (n - 1)) / 2;
+        formatText = 'Playoffs Only';
+        break;
+      default:
+        // Fallback for older lobby configs
+        matchups = n * (n - 1);
+        formatText = 'Double Round Robin';
+        break;
+    }
+
+    // Estimate runtime: ~20s per game + draft time
+    const draftTime = lobby.config.rosterSize * n * (lobby.config.pickTimer / 60);
+    const seasonTime = Math.ceil((matchups * 20) / 60);
+    const totalMinutes = Math.ceil(draftTime + seasonTime);
+    const runtime = `~${totalMinutes} min`;
+
+    return { format: formatText, matchups, runtime };
+  }, [lobby.config]);
+
   // Safe access with optional chaining
   const isCommissioner = lobby?.users?.some(
     (u) => u.isCommissioner && u.isConnected
@@ -127,6 +167,30 @@ export function WaitingRoomPage() {
                   {(lobby.config?.pickTimer || 0) / 60}m
                 </div>
                 <div className="text-sm text-gray-600">Pick Timer</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 mt-6 pt-6">
+            <h3 className="font-bold text-gray-900 mb-2">Season Details</h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-lg font-bold text-primary-600 truncate px-2">
+                  {seasonDetails.format}
+                </div>
+                <div className="text-sm text-gray-600">Format</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-primary-600">
+                  {seasonDetails.matchups}
+                </div>
+                <div className="text-sm text-gray-600">Total Games</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-primary-600">
+                  {seasonDetails.runtime}
+                </div>
+                <div className="text-sm text-gray-600">Est. Runtime</div>
               </div>
             </div>
           </div>

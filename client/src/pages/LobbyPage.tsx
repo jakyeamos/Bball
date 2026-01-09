@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LobbyConfig } from '@nba-draft-sim/shared';
+import { LobbyConfig, SeasonFormat } from '@nba-draft-sim/shared';
 import { DRAFT_CONSTRAINTS } from '@nba-draft-sim/shared';
 import { wsService } from '../services/websocket';
 import { useApp } from '../context/AppContext';
@@ -27,6 +27,7 @@ export function LobbyPage() {
   const [teamCount, setTeamCount] = useState(6);
   const [rosterSize, setRosterSize] = useState(12);
   const [pickTimer, setPickTimer] = useState<60 | 120 | 300>(120);
+  const [seasonFormat, setSeasonFormat] = useState<SeasonFormat>('double_round_robin');
 
   // Join lobby form
   const [inviteCode, setInviteCode] = useState('');
@@ -57,6 +58,7 @@ export function LobbyPage() {
         teamCount,
         rosterSize,
         pickTimer,
+        seasonFormat,
       };
 
       console.log('🔵 Calling createLobby with config:', config);
@@ -229,6 +231,21 @@ export function LobbyPage() {
                 <option value={60}>1 minute</option>
                 <option value={120}>2 minutes</option>
                 <option value={300}>5 minutes</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Season Format
+              </label>
+              <select
+                value={seasonFormat}
+                onChange={(e) => setSeasonFormat(e.target.value as SeasonFormat)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="double_round_robin">Double Round Robin (Standard)</option>
+                <option value="single_round_robin">Single Round Robin (Faster)</option>
+                <option value="playoffs_only">Playoffs Only (Fastest)</option>
               </select>
             </div>
 
