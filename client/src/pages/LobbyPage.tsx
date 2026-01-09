@@ -1,6 +1,7 @@
 /**
- * Lobby Page - FIXED VERSION
- * Entry point - create or join a lobby
+ * Lobby Page - UPDATED FOR V2
+ * Phase 1A: Added isPublic checkbox, Browse Public Lobbies button
+ * Phase 2: Added rotation depth slider (5 to rosterSize)
  */
 
 import React, { useState } from 'react';
@@ -12,22 +13,22 @@ import { useApp } from '../context/AppContext';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
-import { WS_EVENTS } from '@nba-draft-sim/shared';
-console.log('Client WS_EVENTS.CREATE_LOBBY:', WS_EVENTS.CREATE_LOBBY);
 
 export function LobbyPage() {
   const navigate = useNavigate();
-  const { lobby, isConnected } = useApp(); // ← Get connection status
+  const { lobby, isConnected } = useApp();
 
   const [mode, setMode] = useState<'select' | 'create' | 'join'>('select');
   const [displayName, setDisplayName] = useState('');
-  const [error, setError] = useState<string>(''); // ← Add local error state
+  const [error, setError] = useState<string>('');
 
   // Create lobby form
   const [teamCount, setTeamCount] = useState(6);
   const [rosterSize, setRosterSize] = useState(12);
   const [pickTimer, setPickTimer] = useState<60 | 120 | 300>(120);
   const [seasonFormat, setSeasonFormat] = useState<SeasonFormat>('double_round_robin');
+  const [rotationDepth, setRotationDepth] = useState(8); // Phase 2
+  const [isPublic, setIsPublic] = useState(false); // Phase 1A
 
   // Join lobby form
   const [inviteCode, setInviteCode] = useState('');
@@ -39,17 +40,27 @@ export function LobbyPage() {
     }
   }, [lobby, navigate]);
 
+  // Update rotation depth when roster size changes
+  React.useEffect(() => {
+    // Keep rotation within valid range (5 to rosterSize)
+    if (rotationDepth > rosterSize) {
+      setRotationDepth(rosterSize);
+    } else if (rotationDepth < DRAFT_CONSTRAINTS.ROTATION_MIN) {
+      setRotationDepth(DRAFT_CONSTRAINTS.ROTATION_MIN);
+    }
+  }, [rosterSize, rotationDepth]);
+
   const handleCreateLobby = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError('');
 
-    console.log('🔵 Create Lobby button clicked');
-    console.log('🔵 isConnected:', isConnected);
-
-    // Check if connected
     if (!isConnected) {
       setError('Not connected to server. Please wait and try again.');
-      console.error('🔴 Socket not connected!');
+      return;
+    }
+
+    if (!displayName.trim()) {
+      setError('Please enter a team name');
       return;
     }
 
@@ -59,37 +70,27 @@ export function LobbyPage() {
         rosterSize,
         pickTimer,
         seasonFormat,
+        rotationDepth,
       };
 
-      console.log('🔵 Calling createLobby with config:', config);
-      wsService.createLobby(config);
-      console.log('🔵 createLobby called successfully');
+      wsService.emit('lobby:create', { config, isPublic, displayName: displayName.trim() });
     } catch (err: any) {
-      console.error('🔴 Error creating lobby:', err);
       setError(err.message || 'Failed to create lobby');
     }
   };
 
   const handleJoinLobby = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError('');
 
-    console.log('🔵 Join Lobby button clicked');
-    console.log('🔵 isConnected:', isConnected);
-
-    // Check if connected
     if (!isConnected) {
       setError('Not connected to server. Please wait and try again.');
-      console.error('🔴 Socket not connected!');
       return;
     }
 
     try {
-      console.log('🔵 Calling joinLobby');
       wsService.joinLobby(inviteCode.toUpperCase(), displayName || 'Player');
-      console.log('🔵 joinLobby called successfully');
     } catch (err: any) {
-      console.error('🔴 Error joining lobby:', err);
       setError(err.message || 'Failed to join lobby');
     }
   };
@@ -103,20 +104,19 @@ export function LobbyPage() {
               NBA Draft Simulator
             </h1>
             <p className="text-gray-600">
-              Draft your team, simulate the season, win the championship
+              Draft your team, coach to victory, win the championship
             </p>
-            
+
             {/* Connection Status */}
             <div className="mt-4">
               {isConnected ? (
-                <span className="text-green-600 text-sm">✅ Connected</span>
+                <span className="text-green-600 text-sm">✓ Connected</span>
               ) : (
                 <span className="text-orange-600 text-sm">⏳ Connecting to server...</span>
               )}
             </div>
           </div>
 
-          {/* Error Display */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
@@ -129,7 +129,7 @@ export function LobbyPage() {
               size="lg"
               fullWidth
               onClick={() => setMode('create')}
-              disabled={!isConnected} // ← Disable if not connected
+              disabled={!isConnected}
             >
               Create Lobby
             </Button>
@@ -138,10 +138,20 @@ export function LobbyPage() {
               variant="secondary"
               size="lg"
               fullWidth
-              onClick={() => setMode('join')}
-              disabled={!isConnected} // ← Disable if not connected
+              onClick={() => navigate('/browse')}
+              disabled={!isConnected}
             >
-              Join Lobby
+              Browse Public Lobbies
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onClick={() => setMode('join')}
+              disabled={!isConnected}
+            >
+              Join with Code
             </Button>
           </div>
 
@@ -163,7 +173,7 @@ export function LobbyPage() {
   if (mode === 'create') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full" padding="lg">
+        <Card className="max-w-2xl w-full" padding="lg">
           <div className="mb-6">
             <button
               onClick={() => setMode('select')}
@@ -177,14 +187,35 @@ export function LobbyPage() {
             Create Lobby
           </h2>
 
-          {/* Error Display */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleCreateLobby} className="space-y-4">
+          <form onSubmit={handleCreateLobby} className="space-y-6">
+            {/* Phase 1A: Public/Private Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Public Lobby
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+              </label>
+            </div>
+
+            {/* Team Count Slider */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Number of Teams ({DRAFT_CONSTRAINTS.TEAMS_MIN}-{DRAFT_CONSTRAINTS.TEAMS_MAX})
@@ -202,6 +233,7 @@ export function LobbyPage() {
               </div>
             </div>
 
+            {/* Roster Size Slider */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Roster Size ({DRAFT_CONSTRAINTS.ROSTER_MIN}-{DRAFT_CONSTRAINTS.ROSTER_MAX})
@@ -219,6 +251,28 @@ export function LobbyPage() {
               </div>
             </div>
 
+            {/* Phase 2: Rotation Depth Slider (5 to rosterSize) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rotation Depth ({DRAFT_CONSTRAINTS.ROTATION_MIN}-{rosterSize})
+              </label>
+              <input
+                type="range"
+                min={DRAFT_CONSTRAINTS.ROTATION_MIN}
+                max={rosterSize}
+                value={rotationDepth}
+                onChange={(e) => setRotationDepth(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="text-center text-2xl font-bold text-primary-600 mt-2">
+                {rotationDepth} players
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Number of players you'll select for your rotation each round
+              </p>
+            </div>
+
+            {/* Pick Timer Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Pick Timer
@@ -234,6 +288,7 @@ export function LobbyPage() {
               </select>
             </div>
 
+            {/* Phase 1A: Season Format Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Season Format
@@ -247,15 +302,20 @@ export function LobbyPage() {
                 <option value="single_round_robin">Single Round Robin (Faster)</option>
                 <option value="playoffs_only">Playoffs Only (Fastest)</option>
               </select>
+              <p className="text-xs text-gray-500 mt-2">
+                {seasonFormat === 'double_round_robin' && 'Each team plays every other team twice'}
+                {seasonFormat === 'single_round_robin' && 'Each team plays every other team once'}
+                {seasonFormat === 'playoffs_only' && 'Skip straight to playoffs'}
+              </p>
             </div>
 
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                variant="primary" 
-                size="lg" 
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
                 fullWidth
-                disabled={!isConnected} // ← Disable if not connected
+                disabled={!isConnected || !displayName.trim()}
               >
                 Create Lobby
               </Button>
@@ -283,7 +343,6 @@ export function LobbyPage() {
           Join Lobby
         </h2>
 
-        {/* Error Display */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {error}
@@ -311,12 +370,12 @@ export function LobbyPage() {
           />
 
           <div className="pt-4">
-            <Button 
-              type="submit" 
-              variant="primary" 
-              size="lg" 
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
               fullWidth
-              disabled={!isConnected} // ← Disable if not connected
+              disabled={!isConnected}
             >
               Join Lobby
             </Button>

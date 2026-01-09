@@ -18,14 +18,17 @@ import {
   handleUpdateQueue,
   handlePauseDraft,
   handleUnpauseDraft,
-  handleExecuteTrade,
   handleStartRegularSeason,
   handleStartPlayoffs,
   handleCompleteLeague,
-} from '../services/handlers';
+  handleStartRound,
+  handleSubmitCoaching,
+  handleProposeTrade,
+  handleRespondToTrade,
+  handleCancelTrade,
+} from '../services/handlers-v2';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
 import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
-console.log('Server WS_EVENTS.CREATE_LOBBY:', WS_EVENTS.CREATE_LOBBY);
 
 /**
  * Initialize Socket.io server
@@ -158,14 +161,29 @@ export function initializeSocketServer(
       handleUnpauseDraft(io, socket, userId);
     });
 
-    // EXECUTE_TRADE
-    socket.on(WS_EVENTS.EXECUTE_TRADE, (payload: any) => {
-      handleExecuteTrade(io, socket, payload, userId);
-    });
-
     // START_REGULAR_SEASON
     socket.on(WS_EVENTS.START_REGULAR_SEASON, () => {
       handleStartRegularSeason(io, socket, userId, allPlayers);
+    });
+
+    socket.on(WS_EVENTS.START_ROUND, () => {
+      handleStartRound(io, socket, userId, allPlayers);
+    });
+
+    socket.on(WS_EVENTS.SUBMIT_COACHING_DECISION, (payload: any) => {
+      handleSubmitCoaching(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.PROPOSE_TRADE, (payload: any) => {
+      handleProposeTrade(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.RESPOND_TO_TRADE, (payload: any) => {
+      handleRespondToTrade(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.CANCEL_TRADE_PROPOSAL, (payload: any) => {
+      handleCancelTrade(io, socket, payload, userId);
     });
 
     // START_PLAYOFFS
