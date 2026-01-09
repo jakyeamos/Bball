@@ -20,6 +20,8 @@ import { apiService } from '../services/api';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { TeamAnalysis } from '../components/TeamAnalysis';
+import { TradeModal } from '../components/TradeModal';
+import { PlayerCard } from '../components/PlayerCard';
 import {
   getTopArchetypes,
   getArchetypeColor,
@@ -67,6 +69,7 @@ export function DraftRecapPage() {
   const navigate = useNavigate();
   const { draft, league, allPlayers, lobby } = useApp();
   const [startingTrade, setStartingTrade] = useState(false);
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [startingSeason, setStartingSeason] = useState(false);
   const tradeClickedRef = useRef(false);
   const seasonClickedRef = useRef(false);
@@ -154,10 +157,28 @@ export function DraftRecapPage() {
                 >
                   {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
                 </Button>
+                <Button
+                  onClick={() => setIsTradeModalOpen(true)}
+                  variant="secondary"
+                  size="lg"
+                  disabled={startingTrade || startingSeason}
+                >
+                  🔄 Propose Trade
+                </Button>
               </div>
             </div>
           </Card>
         )}
+
+        <TradeModal
+          teams={draft.teams}
+          allPlayers={allPlayers}
+          isOpen={isTradeModalOpen}
+          onClose={() => setIsTradeModalOpen(false)}
+          onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
+            wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
+          }}
+        />
 
         {/* Non-commissioner waiting message */}
         {!isCommissioner && league.phase === 'draft_recap' && (
@@ -196,71 +217,14 @@ export function DraftRecapPage() {
                 {/* Player List */}
                 <div className="p-4 max-h-96 overflow-y-auto">
                   <div className="space-y-2">
-                    {roster.map((player, idx) => {
-                      // 🆕 FIX: player is now guaranteed to be Player type
-                      const ppg = player.rawStats.PTS / player.rawStats.GP;
-                      const rpg = player.rawStats.REB / player.rawStats.GP;
-                      const apg = player.rawStats.AST / player.rawStats.GP;
-                      const topArch = getTopArchetypes(player.archetypes, 1)[0];
-
-                      return (
-                        <div
-                          key={player.playerId}
-                          className="p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              {/* Player Number and Name */}
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold">
-                                  {idx + 1}
-                                </span>
-                                <span className="font-bold text-sm text-gray-900 truncate">
-                                  {player.name}
-                                </span>
-                                <SynergyMark
-                                  synergy={getSynergy(
-                                    player,
-                                    teamAggregations[team.teamId]
-                                  )}
-                                />
-                              </div>
-
-                              {/* Position and Team */}
-                              <div className="text-xs text-gray-500 ml-8">
-                                {player.position} • {player.team}
-                              </div>
-
-                              {/* Top Archetype */}
-                              {topArch && (
-                                <div className="ml-8 mt-2">
-                                  <span
-                                    className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${getArchetypeColor(
-                                      topArch.name
-                                    )}`}
-                                  >
-                                    {formatArchetypeName(topArch.name)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Stats */}
-                            <div className="text-right flex-shrink-0">
-                              <div className="text-sm font-bold text-primary-600">
-                                {ppg.toFixed(1)} PPG
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {rpg.toFixed(1)} RPG
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {apg.toFixed(1)} APG
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {roster.map((player, idx) => (
+                      <PlayerCard
+                        key={player.playerId}
+                        player={player}
+                        playerIndex={idx}
+                        teamAggregation={teamAggregations[team.teamId]}
+                      />
+                    ))}
                   </div>
                 </div>
               </Card>

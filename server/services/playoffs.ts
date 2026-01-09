@@ -139,7 +139,7 @@ export function runPlayoffs(
     teamNames.get(seed4) || seed4,
     teams.get(seed1)!,
     teams.get(seed4)!,
-    2, // Phase 3: Best-of-3 for semifinals
+    PLAYOFF_PARAMS.SEMIFINALS_WINS_NEEDED,
     false
   );
 
@@ -152,7 +152,7 @@ export function runPlayoffs(
     teamNames.get(seed3) || seed3,
     teams.get(seed2)!,
     teams.get(seed3)!,
-    2, // Phase 3: Best-of-3 for semifinals
+    PLAYOFF_PARAMS.SEMIFINALS_WINS_NEEDED,
     false
   );
 
@@ -173,7 +173,7 @@ export function runPlayoffs(
     teamNames.get(finalistB) || finalistB,
     teams.get(finalistA)!,
     teams.get(finalistB)!,
-    3, // Phase 3: Best-of-5 for finals
+    PLAYOFF_PARAMS.FINALS_WINS_NEEDED,
     isUpset
   );
 
