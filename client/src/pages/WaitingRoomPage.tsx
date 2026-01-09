@@ -53,7 +53,7 @@ export function WaitingRoomPage() {
         formatText = 'Double Round Robin';
         break;
       case 'playoffs_only':
-        matchups = 0;
+        matchups = (n * (n - 1)) / 2;
         formatText = 'Playoffs Only';
         break;
       default:

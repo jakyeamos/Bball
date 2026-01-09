@@ -23,33 +23,9 @@ import { generateGameEditorial, generateSeasonSummary } from './editorial';
 export function runRegularSeason(
   teams: Map<string, TeamAggregation>,
   teamNames: Map<string, string>,
-  seasonFormat: SeasonFormat,
-  draftOrder: DraftOrder[] // Needed for playoffs_only
+  seasonFormat: SeasonFormat
 ): RegularSeasonResults {
   const teamIds = Array.from(teams.keys());
-
-  // Handle playoffs-only mode separately
-  if (seasonFormat === 'playoffs_only') {
-    // Seed teams based on reverse draft order. Last pick is #1 seed.
-    const uniqueTeamIdsInDraftOrder = [
-      ...new Set(draftOrder.map((pick) => pick.teamId)),
-    ];
-    const seededTeamIds = [...uniqueTeamIdsInDraftOrder].reverse();
-
-    const standings = seededTeamIds.map((teamId) => ({
-      teamId,
-      wins: 0,
-      losses: 0,
-      winPct: 0,
-    }));
-
-    return {
-      standings,
-      games: [],
-      summary: 'The regular season was skipped. Seeding is based on reverse draft order.',
-    };
-  }
-
   const standings = initializeStandings(teamIds);
   const games: RegularSeasonGame[] = [];
 
@@ -157,6 +133,7 @@ function generateSchedule(
   seasonFormat: SeasonFormat
 ): Array<{ home: string; away: string }> {
   switch (seasonFormat) {
+    case 'playoffs_only':
     case 'single_round_robin':
       return generateSingleRoundRobinSchedule(teamIds);
     case 'double_round_robin':
