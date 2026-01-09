@@ -11,6 +11,9 @@ import { WaitingRoomPage } from './pages/WaitingRoomPage';
 import { DraftPage } from './pages/DraftPage';
 import { DraftRecapPage } from './pages/DraftRecapPage';
 import { ResultsPage } from './pages/ResultsPage';
+import { LobbyBrowserPage } from './pages/LobbyBrowserPage';
+import { CoachingDecisionsPage } from './pages/CoachingDecisionsPage';
+import { RoundResultsPage } from './pages/RoundResultsPage';
 
 function App() {
   return (
@@ -18,10 +21,13 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LobbyPage />} />
+          <Route path="/browse" element={<LobbyBrowserPage />} />
+          <Route path="/coaching" element={<CoachingDecisionsPage />} />
           <Route path="/waiting-room" element={<WaitingRoomPage />} />
           <Route path="/draft" element={<DraftPage />} />
           <Route path="/draft-recap" element={<DraftRecapPage />} />
           <Route path="/results" element={<ResultsPage />} />
+          <Route path="/round-results" element={<RoundResultsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

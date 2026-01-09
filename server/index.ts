@@ -12,6 +12,7 @@ import { LeagueSnapshot } from '@nba-draft-sim/shared';
 import { initializeSocketServer } from './managers/socketManager';
 import { fetchPlayerData } from '../scripts/scraper';
 import { createLeagueSnapshot } from './services/snapshot';
+import lobbiesRouter from './routes/lobbies';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 
@@ -57,6 +58,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+app.use('/api', lobbiesRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

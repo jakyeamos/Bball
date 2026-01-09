@@ -5,7 +5,7 @@
  * FIXED: Corrected constant names to match SIMULATION_PARAMS
  */
 
-import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver } from '@nba-draft-sim/shared';
+import { TeamAggregation, TeamModifiers, MatchupResult, MatchupDriver, CoachingDecision } from '@nba-draft-sim/shared';
 import { SIMULATION_PARAMS } from '@nba-draft-sim/shared';
 import { randomNormal, clamp } from '../utils/utils';
 
@@ -130,10 +130,72 @@ function generateMatchupDrivers(
   return drivers.slice(0, 3);
 }
 
+interface CoachingModifiers {
+  ortgAdjust: number;
+  drtgAdjust: number;
+  sigmaAdjust: number;
+  paceAdjust: number;
+}
+
+function calculateCoachingModifiers(decision: CoachingDecision): CoachingModifiers {
+  let ortgAdjust = 0;
+  let drtgAdjust = 0;
+  let sigmaAdjust = 0;
+  let paceAdjust = 0;
+
+  // Lineup Strategy
+  switch (decision.lineupStrategy) {
+    case 'small_ball':
+      paceAdjust += 3;
+      ortgAdjust += 1.5;
+      drtgAdjust += 1; // Worse rebounding/defense
+      break;
+    case 'big_lineup':
+      paceAdjust -= 3;
+      drtgAdjust -= 1.5;
+      ortgAdjust -= 1;
+      break;
+    case 'offense_first':
+      ortgAdjust += 2.5;
+      drtgAdjust += 2;
+      break;
+    case 'defense_first':
+      drtgAdjust -= 2.5;
+      ortgAdjust -= 2;
+      break;
+  }
+
+  // Offensive Strategy
+  switch (decision.offensiveStrategy) {
+    case 'pace_and_space':
+      paceAdjust += 2;
+      sigmaAdjust += 1; // More 3s = more variance
+      break;
+    case 'inside_out':
+      paceAdjust -= 2;
+      sigmaAdjust -= 0.5;
+      break;
+  }
+
+  // Defensive Strategy
+  switch (decision.defensiveStrategy) {
+    case 'pressure_ball':
+      sigmaAdjust += 1.5; // Higher variance due to turnovers
+      break;
+    case 'protect_paint':
+      drtgAdjust -= 1;
+      break;
+  }
+
+  return { ortgAdjust, drtgAdjust, sigmaAdjust, paceAdjust };
+}
+
 export function simulateMatchup(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
   homeTeam: 'A' | 'B' | null = null,
+  coachingA?: CoachingDecision,
+  coachingB?: CoachingDecision,
   numSims: number = SIMULATION_PARAMS.NUM_SIMULATIONS
 ): MatchupResult {
   const P = SIMULATION_PARAMS as any;
@@ -143,6 +205,21 @@ export function simulateMatchup(
 
   const rA = computeTeamRatings(teamA, modsA);
   const rB = computeTeamRatings(teamB, modsB);
+
+  // Apply coaching modifiers
+  if (coachingA) {
+    const modsA = calculateCoachingModifiers(coachingA);
+    rA.ORtg += modsA.ortgAdjust;
+    rA.DRtg += modsA.drtgAdjust;
+    rA.sigma += modsA.sigmaAdjust;
+  }
+
+  if (coachingB) {
+    const modsB = calculateCoachingModifiers(coachingB);
+    rB.ORtg += modsB.ortgAdjust;
+    rB.DRtg += modsB.drtgAdjust;
+    rB.sigma += modsB.sigmaAdjust;
+  }
 
   // Offense vs opponent defense interaction
   // FIXED: Use local DEF_INTERACTION constant and P.BASE_DRTG
