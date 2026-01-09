@@ -1,235 +1,160 @@
-import React from 'react';
-import { Player, TeamAggregation } from '@nba-draft-sim/shared';
-import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
-
 /**
- * PlayerCard Component - Redesigned
- * Inspired by The Ringer's player card layout
+ * PlayerCard.tsx - V3 with Fit Indicator
+ * 
+ * Clean layout:
+ * - Player name and team
+ * - Stats inline: "31.9 PPG • 4.5 RPG • 6.4 APG"
+ * - Fit indicator (Great/Good/Avg/Poor)
+ * - Top 3 archetypes (no percentages)
  */
 
-// Position badge colors
-const getPositionColor = (position: string): string => {
-  switch (position) {
-    case 'PG':
-    case 'SG':
-      return 'bg-blue-600';
-    case 'SF':
-      return 'bg-green-600';
-    case 'PF':
-    case 'C':
-      return 'bg-orange-600';
-    default:
-      return 'bg-gray-600';
-  }
-};
+import React from 'react';
+import { Player, TeamAggregation } from '@nba-draft-sim/shared';
 
-// Synergy calculation
-type SynergyLevel = 'great' | 'good' | 'average' | 'poor';
+interface PlayerCardProps {
+  player: Player;
+  teamAggregation?: TeamAggregation;
+}
 
-const getSynergy = (player: Player, teamAggregation?: TeamAggregation): SynergyLevel => {
-  if (!teamAggregation) return 'average';
+// Calculate player fit with team
+type FitLevel = 'great' | 'good' | 'avg' | 'poor';
 
-  const teamArchetypes = teamAggregation.archetypes;
-  const playerArchetypes = player.archetypes;
+function calculateFit(player: Player, teamAgg?: TeamAggregation): FitLevel {
+  if (!teamAgg) return 'avg';
 
-  let synergyScore = 0;
+  const teamArch = teamAgg.archetypes;
+  const playerArch = player.archetypes;
+
+  // Score based on how much player's archetypes align with team's top archetypes
+  let score = 0;
   let totalWeight = 0;
 
-  for (const archetype in teamArchetypes) {
-    const teamValue = teamArchetypes[archetype] ?? 0;
-    if (teamValue > 0) {
-      const playerValue = playerArchetypes[archetype] ?? 0;
-      synergyScore += playerValue * teamValue;
+  for (const [archetype, teamValue] of Object.entries(teamArch)) {
+    if (teamValue && teamValue > 0.05) {
+      const playerValue = playerArch[archetype] ?? 0;
+      score += playerValue * teamValue;
       totalWeight += teamValue;
     }
   }
 
-  if (totalWeight === 0) return 'average';
+  const fitScore = totalWeight > 0 ? score / totalWeight : 0;
 
-  const finalScore = synergyScore / totalWeight;
-
-  if (finalScore > 0.6) return 'great';
-  if (finalScore > 0.35) return 'good';
-  if (finalScore > 0.15) return 'average';
+  if (fitScore > 0.25) return 'great';
+  if (fitScore > 0.15) return 'good';
+  if (fitScore > 0.08) return 'avg';
   return 'poor';
-};
-
-const getSynergyBadge = (synergy: SynergyLevel): { emoji: string; label: string; color: string } => {
-  switch (synergy) {
-    case 'great':
-      return { emoji: '🔥', label: 'Perfect Fit', color: 'text-green-600' };
-    case 'good':
-      return { emoji: '✓', label: 'Good Fit', color: 'text-blue-600' };
-    case 'poor':
-      return { emoji: '⚠', label: 'Poor Fit', color: 'text-orange-600' };
-    default:
-      return { emoji: '', label: '', color: '' };
-  }
-};
-
-interface PlayerCardProps {
-  player: Player;
-  playerIndex: number;
-  teamAggregation?: TeamAggregation;
-  compact?: boolean;
 }
 
-export const PlayerCard: React.FC<PlayerCardProps> = ({ 
-  player, 
-  playerIndex, 
-  teamAggregation,
-  compact = false 
-}) => {
-  const ppg = player.rawStats.PTS / player.rawStats.GP;
-  const rpg = player.rawStats.REB / player.rawStats.GP;
-  const apg = player.rawStats.AST / player.rawStats.GP;
-  const topArchetypes = getTopArchetypes(player.archetypes, 2);
-  const synergy = getSynergy(player, teamAggregation);
-  const synergyInfo = getSynergyBadge(synergy);
-
-  if (compact) {
-    // Compact view for smaller spaces
-    return (
-      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all">
-        {/* Rank Badge */}
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">{playerIndex + 1}</span>
-        </div>
-
-        {/* Player Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-900 truncate">{player.name}</span>
-            {synergy !== 'average' && (
-              <span className={`text-xs ${synergyInfo.color}`}>{synergyInfo.emoji}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className={`px-1.5 py-0.5 rounded text-white text-[10px] font-bold ${getPositionColor(player.position)}`}>
-              {player.position}
-            </span>
-            <span>{player.team}</span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex-shrink-0 text-right">
-          <div className="font-bold text-gray-900">{ppg.toFixed(1)}</div>
-          <div className="text-xs text-gray-500">PPG</div>
-        </div>
-      </div>
-    );
+function getFitStyle(fit: FitLevel): { bg: string; text: string; label: string } {
+  switch (fit) {
+    case 'great':
+      return { bg: 'bg-green-900/50', text: 'text-green-400', label: 'Great Fit' };
+    case 'good':
+      return { bg: 'bg-blue-900/50', text: 'text-blue-400', label: 'Good Fit' };
+    case 'avg':
+      return { bg: 'bg-yellow-900/50', text: 'text-yellow-400', label: 'Avg Fit' };
+    case 'poor':
+      return { bg: 'bg-red-900/50', text: 'text-red-400', label: 'Poor Fit' };
   }
+}
 
-  // Full card view
+// Format archetype name for display
+function formatArchetype(name: string): string {
+  const map: Record<string, string> = {
+    PrimaryCreator: 'Primary Creator',
+    SecondaryPlaymaker: 'Secondary Playmaker',
+    VolumeSniper: 'Volume Sniper',
+    EfficientSpacer: 'Efficient Spacer',
+    ShotMaker: 'Shot Maker',
+    AdvantageDriver: 'Advantage Driver',
+    Connector: 'Connector',
+    PointOfAttackMenace: 'POA Menace',
+    Disruptor: 'Disruptor',
+    RimDeterrent: 'Rim Deterrent',
+    ReboundEnforcer: 'Rebound Enforcer',
+    HustleEngine: 'Hustle Engine',
+    WinDriver: 'Win Driver',
+  };
+  return map[name] || name.replace(/([A-Z])/g, ' $1').trim();
+}
+
+// Get archetype color
+function getArchetypeColor(name: string): string {
+  // Creation & Offense = blue
+  if (['PrimaryCreator', 'SecondaryPlaymaker', 'ShotMaker', 'AdvantageDriver', 'Connector'].includes(name)) {
+    return 'bg-blue-900/50 text-blue-300 border-blue-700';
+  }
+  // Shooters = purple
+  if (['VolumeSniper', 'EfficientSpacer'].includes(name)) {
+    return 'bg-purple-900/50 text-purple-300 border-purple-700';
+  }
+  // Defense = red
+  if (['PointOfAttackMenace', 'Disruptor', 'RimDeterrent'].includes(name)) {
+    return 'bg-red-900/50 text-red-300 border-red-700';
+  }
+  // Activity = green
+  if (['ReboundEnforcer', 'HustleEngine', 'WinDriver'].includes(name)) {
+    return 'bg-green-900/50 text-green-300 border-green-700';
+  }
+  return 'bg-gray-800 text-gray-300 border-gray-600';
+}
+
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, teamAggregation }) => {
+  const gp = Math.max(1, player.rawStats.GP);
+  const ppg = (player.rawStats.PTS / gp).toFixed(1);
+  const rpg = (player.rawStats.REB / gp).toFixed(1);
+  const apg = (player.rawStats.AST / gp).toFixed(1);
+  const ts = (player.rawStats.TS_PCT * 100).toFixed(0);
+
+  // Calculate fit
+  const fit = calculateFit(player, teamAggregation);
+  const fitStyle = getFitStyle(fit);
+
+  // Get top 3 archetypes (no percentages needed)
+  const topArchetypes = Object.entries(player.archetypes)
+    .filter(([_, v]) => v !== undefined && v > 0.05)
+    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))
+    .slice(0, 3)
+    .map(([name]) => name);
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200">
-      {/* Header with rank and position */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-800 to-gray-900">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl font-black text-white">{String(playerIndex + 1).padStart(2, '0')}</span>
-          <div className="h-8 w-px bg-gray-600"></div>
-          <span className={`px-2 py-1 rounded text-white text-xs font-bold ${getPositionColor(player.position)}`}>
-            {player.position}
-          </span>
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+      {/* Header: Name, Team, and Fit */}
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="text-lg font-bold text-white">{player.name}</div>
+          <div className="text-sm text-gray-400">{player.team}</div>
         </div>
-        {synergy !== 'average' && (
-          <span className={`text-xs font-medium ${synergy === 'great' ? 'text-green-400' : synergy === 'good' ? 'text-blue-400' : 'text-orange-400'}`}>
-            {synergyInfo.emoji} {synergyInfo.label}
-          </span>
-        )}
+        {/* Fit Indicator */}
+        <span className={`text-xs font-semibold px-2 py-1 rounded ${fitStyle.bg} ${fitStyle.text}`}>
+          {fitStyle.label}
+        </span>
       </div>
 
-      {/* Player Info */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="text-lg font-black text-gray-900 leading-tight">{player.name}</h3>
-            <p className="text-sm text-gray-500">{player.team}</p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-black text-gray-900">{ppg.toFixed(1)}</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">PPG</div>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="flex items-center gap-4 mb-3 pb-3 border-b border-gray-100">
-          <div className="flex-1 text-center">
-            <div className="text-lg font-bold text-gray-800">{rpg.toFixed(1)}</div>
-            <div className="text-xs text-gray-500 uppercase">RPG</div>
-          </div>
-          <div className="flex-1 text-center">
-            <div className="text-lg font-bold text-gray-800">{apg.toFixed(1)}</div>
-            <div className="text-xs text-gray-500 uppercase">APG</div>
-          </div>
-          <div className="flex-1 text-center">
-            <div className="text-lg font-bold text-gray-800">{(player.rawStats.TS_PCT * 100).toFixed(0)}%</div>
-            <div className="text-xs text-gray-500 uppercase">TS%</div>
-          </div>
-        </div>
-
-        {/* Archetypes */}
-        {topArchetypes.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {topArchetypes.map((arch, index) => (
-              <span
-                key={arch.name}
-                className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-lg border ${getArchetypeColor(arch.name)}`}
-              >
-                {formatArchetypeName(arch.name)}
-                {index === 0 && (
-                  <span className="ml-1 opacity-60">({(arch.percentage * 100).toFixed(0)}%)</span>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
+      {/* Stats - INLINE */}
+      <div className="text-sm text-gray-300 mb-3">
+        <span className="text-white font-semibold">{ppg}</span> PPG
+        <span className="mx-2 text-gray-500">•</span>
+        <span className="text-white font-semibold">{rpg}</span> RPG
+        <span className="mx-2 text-gray-500">•</span>
+        <span className="text-white font-semibold">{apg}</span> APG
+        <span className="mx-2 text-gray-500">•</span>
+        <span className="text-white font-semibold">{ts}%</span> TS
       </div>
+
+      {/* Archetypes - just names, no percentages */}
+      {topArchetypes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {topArchetypes.map(arch => (
+            <span 
+              key={arch}
+              className={`text-xs px-2 py-1 rounded border ${getArchetypeColor(arch)}`}
+            >
+              {formatArchetype(arch)}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
-  );
-};
-
-// Export a simpler list item version for dense lists
-export const PlayerListItem: React.FC<PlayerCardProps> = ({ 
-  player, 
-  playerIndex, 
-  teamAggregation 
-}) => {
-  const ppg = player.rawStats.PTS / player.rawStats.GP;
-  const rpg = player.rawStats.REB / player.rawStats.GP;
-  const apg = player.rawStats.AST / player.rawStats.GP;
-  const topArch = getTopArchetypes(player.archetypes, 1)[0];
-  const synergy = getSynergy(player, teamAggregation);
-
-  return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <span className="w-6 h-6 rounded-full bg-gray-800 text-white text-xs font-bold flex items-center justify-center">
-            {playerIndex + 1}
-          </span>
-          <div>
-            <div className="font-semibold text-gray-900">{player.name}</div>
-            <div className="text-xs text-gray-500">{player.position} • {player.team}</div>
-          </div>
-        </div>
-      </td>
-      <td className="py-3 px-4">
-        {topArch && (
-          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${getArchetypeColor(topArch.name)}`}>
-            {formatArchetypeName(topArch.name)}
-          </span>
-        )}
-      </td>
-      <td className="py-3 px-4 text-right font-semibold">{ppg.toFixed(1)}</td>
-      <td className="py-3 px-4 text-right">{rpg.toFixed(1)}</td>
-      <td className="py-3 px-4 text-right">{apg.toFixed(1)}</td>
-      <td className="py-3 px-4 text-center">
-        {synergy === 'great' && <span className="text-green-500">🔥</span>}
-        {synergy === 'good' && <span className="text-blue-500">✓</span>}
-        {synergy === 'poor' && <span className="text-orange-500">⚠</span>}
-      </td>
-    </tr>
   );
 };

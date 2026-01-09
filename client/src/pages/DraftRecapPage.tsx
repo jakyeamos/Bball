@@ -1,57 +1,63 @@
 /**
- * Draft Recap Page - Redesigned with Tabs
+ * DraftRecapPage.tsx - COMPLETE REWRITE V3
  * 
- * Features:
- * - Tab-based team navigation (user's team shown first)
- * - Redesigned player cards
- * - Better team analysis with Phase 2 archetypes
+ * Changes:
+ * - Dropdown for team selection (not tabs)
+ * - Header: "TeamName (X team sim, Y man rosters)" 
+ * - NO separate "10 Players" line
+ * - Roster sorted by draft position (round, then pick)
  */
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { apiService } from '../services/api';
 import { Button } from '../components/Button';
-import { Card } from '../components/Card';
-import { TeamAnalysis } from '../components/TeamAnalysis';
 import { TradeModal } from '../components/TradeModal';
+import { TeamAnalysis } from '../components/TeamAnalysis';
 import { PlayerCard } from '../components/PlayerCard';
-import { TeamAggregation, Player, DraftTeam } from '@nba-draft-sim/shared';
+import { TeamAggregation, Player, DraftPick } from '@nba-draft-sim/shared';
 
 export function DraftRecapPage() {
   const navigate = useNavigate();
   const { draft, league, allPlayers, lobby, userId } = useApp();
-  const [startingTrade, setStartingTrade] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [startingSeason, setStartingSeason] = useState(false);
-  const tradeClickedRef = useRef(false);
-  const seasonClickedRef = useRef(false);
   const [teamAggregations, setTeamAggregations] = useState<Record<string, TeamAggregation>>({});
-  
-  // Tab state - track which team is being viewed
-  const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
 
-  // Find user's team and set it as initial active tab
-  const myTeam = useMemo(() => {
-    if (!draft || !userId) return null;
-    return draft.teams.find(t => t.userId === userId) || null;
-  }, [draft, userId]);
-
-  // Set initial active team to user's team
+  // Redirect if no draft
   useEffect(() => {
-    if (myTeam && !activeTeamId) {
-      setActiveTeamId(myTeam.teamId);
-    } else if (draft?.teams.length && !activeTeamId) {
-      setActiveTeamId(draft.teams[0].teamId);
+    if (!draft || !league) {
+      navigate('/');
     }
-  }, [myTeam, draft, activeTeamId]);
+  }, [draft, league, navigate]);
 
-  // Fetch team aggregations
+  // Redirect when season starts
+  useEffect(() => {
+    if (league?.phase === 'regular_season' || league?.phase === 'trade_window') {
+      navigate('/results');
+    }
+  }, [league, navigate]);
+
+  // Set initial selected team to user's team
+  useEffect(() => {
+    if (draft && userId && !selectedTeamId) {
+      const myTeam = draft.teams.find(t => t.userId === userId);
+      if (myTeam) {
+        setSelectedTeamId(myTeam.teamId);
+      } else if (draft.teams.length > 0) {
+        setSelectedTeamId(draft.teams[0].teamId);
+      }
+    }
+  }, [draft, userId, selectedTeamId]);
+
+  // Load team aggregations
   useEffect(() => {
     if (draft) {
       draft.teams.forEach((team) => {
-        if (team.roster.length > 0) {
+        if (team.roster.length > 0 && !teamAggregations[team.teamId]) {
           apiService
             .aggregateTeam(team.roster, team.teamId)
             .then((aggregation) => {
@@ -59,100 +65,166 @@ export function DraftRecapPage() {
                 ...prev,
                 [team.teamId]: aggregation,
               }));
-            });
+            })
+            .catch(console.error);
         }
       });
     }
+  }, [draft, teamAggregations]);
+
+  // Get selected team
+  const selectedTeam = useMemo(() => {
+    if (!draft || !selectedTeamId) return null;
+    return draft.teams.find(t => t.teamId === selectedTeamId) || null;
+  }, [draft, selectedTeamId]);
+
+  // Build pick map for sorting (playerId -> DraftPick)
+  const pickMap = useMemo(() => {
+    if (!draft) return new Map<string, DraftPick>();
+    const map = new Map<string, DraftPick>();
+    draft.picks.forEach(pick => {
+      if (pick.playerId) {
+        map.set(pick.playerId, pick);
+      }
+    });
+    return map;
   }, [draft]);
 
-  // Navigation guards
-  useEffect(() => {
-    if (!draft || !league) {
-      navigate('/');
-    }
-  }, [draft, league, navigate]);
+  // Get sorted roster by draft position
+  const sortedRoster = useMemo(() => {
+    if (!selectedTeam || !allPlayers) return [];
 
-  useEffect(() => {
-    if (league?.phase === 'regular_season' || league?.phase === 'trade_window') {
-      navigate('/results');
-    }
-  }, [league, navigate]);
+    const rosterPlayers = selectedTeam.roster
+      .map(pid => allPlayers.find(p => p.playerId === pid))
+      .filter((p): p is Player => p !== undefined);
 
-  if (!draft || !league) return null;
+    // Sort by draft position: round first, then pick number
+    return rosterPlayers.sort((a, b) => {
+      const pickA = pickMap.get(a.playerId);
+      const pickB = pickMap.get(b.playerId);
 
-  const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
+      // Players without picks go to end
+      if (!pickA && !pickB) return 0;
+      if (!pickA) return 1;
+      if (!pickB) return -1;
+
+      // Sort by round first
+      if (pickA.round !== pickB.round) {
+        return pickA.round - pickB.round;
+      }
+      // Then by pick number within round
+      return pickA.pickNumber - pickB.pickNumber;
+    });
+  }, [selectedTeam, allPlayers, pickMap]);
+
+  // Teams sorted: user's team first, then alphabetical
+  const sortedTeams = useMemo(() => {
+    if (!draft) return [];
+    return [...draft.teams].sort((a, b) => {
+      // User's team first
+      if (a.userId === userId) return -1;
+      if (b.userId === userId) return 1;
+      // Then alphabetical
+      return a.displayName.localeCompare(b.displayName);
+    });
+  }, [draft, userId]);
+
+  const isCommissioner = lobby?.users?.some(u => u.isCommissioner && u.userId === userId) || false;
 
   const handleStartSeason = () => {
-    if (seasonClickedRef.current || startingSeason) return;
-    seasonClickedRef.current = true;
+    if (startingSeason) return;
     setStartingSeason(true);
     wsService.startRegularSeason();
   };
 
-  // Get currently active team
-  const activeTeam = draft.teams.find(t => t.teamId === activeTeamId);
-  
-  // Get roster for active team
-  const activeRoster = useMemo(() => {
-    if (!activeTeam) return [];
-    return activeTeam.roster
-      .map((pid) => allPlayers.find((p) => p.playerId === pid))
-      .filter((p): p is Player => p !== undefined);
-  }, [activeTeam, allPlayers]);
+  if (!draft || !league) return null;
 
-  // Sort teams so user's team is first
-  const sortedTeams = useMemo(() => {
-    if (!draft) return [];
-    const teams = [...draft.teams];
-    if (myTeam) {
-      const myIndex = teams.findIndex(t => t.teamId === myTeam.teamId);
-      if (myIndex > 0) {
-        const [removed] = teams.splice(myIndex, 1);
-        teams.unshift(removed);
-      }
-    }
-    return teams;
-  }, [draft, myTeam]);
+  const leagueSettings = `${draft.teams.length} team sim, ${draft.config.rosterSize} man rosters`;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-8 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-black tracking-tight">🏀 Draft Complete!</h1>
-              <p className="text-gray-400 mt-1">Review rosters and prepare for the season</p>
-            </div>
-            
-            {/* Commissioner Controls */}
-            {isCommissioner && league.phase === 'draft_recap' && (
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={() => setIsTradeModalOpen(true)}
-                  variant="secondary"
-                  disabled={startingTrade || startingSeason}
-                >
-                  🔄 Propose Trade
-                </Button>
-                <Button 
-                  onClick={handleStartSeason} 
-                  variant="primary"
-                  disabled={startingTrade || startingSeason}
-                >
-                  {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
-                </Button>
-              </div>
-            )}
+      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">🏀 Draft Complete!</h1>
+            <p className="text-gray-400 text-sm">Review rosters and prepare for the season</p>
           </div>
-
-          {/* Non-commissioner message */}
-          {!isCommissioner && league.phase === 'draft_recap' && (
-            <p className="text-gray-400 mt-4 text-sm">
-              ⏳ Waiting for commissioner to start the season...
-            </p>
+          
+          {/* Commissioner Controls */}
+          {isCommissioner && league.phase === 'draft_recap' && (
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setIsTradeModalOpen(true)}
+                variant="secondary"
+                disabled={startingSeason}
+              >
+                🔄 Trade
+              </Button>
+              <Button
+                onClick={handleStartSeason}
+                variant="primary"
+                disabled={startingSeason}
+              >
+                {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
+              </Button>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Team Selector Dropdown */}
+        <div className="mb-6">
+          <select
+            value={selectedTeamId}
+            onChange={(e) => setSelectedTeamId(e.target.value)}
+            className="bg-gray-800 text-white border border-gray-600 rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            {sortedTeams.map(team => (
+              <option key={team.teamId} value={team.teamId}>
+                {team.displayName} {team.userId === userId ? '(You)' : ''} — {leagueSettings}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {selectedTeam && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Team Analysis */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                {teamAggregations[selectedTeam.teamId] ? (
+                  <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
+                ) : (
+                  <div className="text-gray-400 text-center py-8">
+                    Loading team analysis...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Player Grid */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sortedRoster.map(player => (
+                  <PlayerCard 
+                    key={player.playerId} 
+                    player={player} 
+                    teamAggregation={teamAggregations[selectedTeam.teamId]}
+                  />
+                ))}
+              </div>
+
+              {sortedRoster.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  No players on this roster yet
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Trade Modal */}
@@ -163,170 +235,9 @@ export function DraftRecapPage() {
         onClose={() => setIsTradeModalOpen(false)}
         onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
           wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
+          setIsTradeModalOpen(false);
         }}
       />
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Team Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200 bg-white rounded-t-lg">
-            <nav className="-mb-px flex overflow-x-auto" aria-label="Teams">
-              {sortedTeams.map((team, index) => {
-                const isActive = team.teamId === activeTeamId;
-                const isMyTeam = team.teamId === myTeam?.teamId;
-                
-                return (
-                  <button
-                    key={team.teamId}
-                    onClick={() => setActiveTeamId(team.teamId)}
-                    className={`
-                      whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors
-                      ${isActive 
-                        ? 'border-blue-600 text-blue-600 bg-blue-50' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }
-                      ${index === 0 ? 'rounded-tl-lg' : ''}
-                    `}
-                  >
-                    <span className="flex items-center gap-2">
-                      {isMyTeam && <span className="text-yellow-500">⭐</span>}
-                      {team.displayName}
-                      <span className={`
-                        px-2 py-0.5 rounded-full text-xs
-                        ${isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}
-                      `}>
-                        {team.roster.length}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
-
-        {/* Active Team Content */}
-        {activeTeam && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Team Analysis Sidebar */}
-            <div className="lg:col-span-1">
-              <Card padding="none" className="sticky top-6 overflow-hidden">
-                {/* Team Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    {activeTeam.teamId === myTeam?.teamId && (
-                      <span className="text-yellow-300">⭐</span>
-                    )}
-                    <h2 className="text-xl font-bold text-white">{activeTeam.displayName}</h2>
-                  </div>
-                  <p className="text-blue-100 text-sm mt-1">
-                    {activeRoster.length} Players
-                  </p>
-                </div>
-
-                {/* Team Analysis */}
-                {teamAggregations[activeTeam.teamId] ? (
-                  <TeamAnalysis aggregation={teamAggregations[activeTeam.teamId]} />
-                ) : (
-                  <div className="p-6 text-center text-gray-500">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    Loading analysis...
-                  </div>
-                )}
-
-                {/* Overall Rating */}
-                {teamAggregations[activeTeam.teamId] && (
-                  <div className="p-4 bg-gray-50 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">Overall Rating</span>
-                      <span className="text-2xl font-black text-gray-900">
-                        {(teamAggregations[activeTeam.teamId].overallRating * 10).toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Roster Grid */}
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeRoster.map((player, index) => (
-                  <PlayerCard
-                    key={player.playerId}
-                    player={player}
-                    playerIndex={index}
-                    teamAggregation={teamAggregations[activeTeam.teamId]}
-                  />
-                ))}
-              </div>
-
-              {activeRoster.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <div className="text-4xl mb-2">📋</div>
-                  <div className="text-sm">No players on this roster yet</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Team Comparison (collapsed by default) */}
-        <details className="mt-8">
-          <summary className="cursor-pointer text-lg font-bold text-gray-700 hover:text-gray-900 p-4 bg-white rounded-lg shadow-sm">
-            📊 Quick Team Comparison
-          </summary>
-          <div className="mt-4 bg-white rounded-lg shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Team</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Players</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Rating</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Top Player</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {sortedTeams.map((team) => {
-                  const roster = team.roster
-                    .map((pid) => allPlayers.find((p) => p.playerId === pid))
-                    .filter((p): p is Player => p !== undefined);
-                  const topPlayer = roster.sort((a, b) => b.impactRating - a.impactRating)[0];
-                  const agg = teamAggregations[team.teamId];
-                  
-                  return (
-                    <tr 
-                      key={team.teamId} 
-                      className={`hover:bg-gray-50 cursor-pointer ${team.teamId === activeTeamId ? 'bg-blue-50' : ''}`}
-                      onClick={() => setActiveTeamId(team.teamId)}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {team.teamId === myTeam?.teamId && <span className="text-yellow-500">⭐</span>}
-                          <span className="font-medium text-gray-900">{team.displayName}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-600">{roster.length}</td>
-                      <td className="px-4 py-3 text-center">
-                        {agg ? (
-                          <span className="font-bold text-gray-900">
-                            {(agg.overallRating * 10).toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-600">
-                        {topPlayer?.name || '-'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </details>
-      </div>
     </div>
   );
 }

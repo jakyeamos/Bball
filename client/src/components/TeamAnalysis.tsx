@@ -1,182 +1,170 @@
-import React from 'react';
-import { TeamAggregation } from '@nba-draft-sim/shared';
-
 /**
- * TeamAnalysis Component - Phase 2 Updated
- * Uses correct archetype names and better trait aggregation
+ * TeamAnalysis.tsx - COMPLETE REWRITE V3
+ * 
+ * Uses actual player feature values, not archetype percentages
  */
 
-interface TraitBarProps {
-  label: string;
-  value: number; // 0-100 scale
-  description?: string;
-}
-
-const getTierInfo = (value: number): { tier: string; color: string; bgColor: string } => {
-  if (value >= 80) return { tier: 'Elite', color: 'text-purple-400', bgColor: 'bg-purple-500' };
-  if (value >= 65) return { tier: 'Great', color: 'text-blue-400', bgColor: 'bg-blue-500' };
-  if (value >= 50) return { tier: 'Good', color: 'text-green-400', bgColor: 'bg-green-500' };
-  if (value >= 35) return { tier: 'Average', color: 'text-yellow-400', bgColor: 'bg-yellow-500' };
-  return { tier: 'Poor', color: 'text-red-400', bgColor: 'bg-red-500' };
-};
-
-const TraitBar: React.FC<TraitBarProps> = ({ label, value, description }) => {
-  const { tier, color, bgColor } = getTierInfo(value);
-  
-  return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-700">{label}</span>
-          <span className={`text-xs font-medium ${color}`}>{tier}</span>
-        </div>
-        <span className="text-sm font-bold text-gray-800">{value.toFixed(0)}</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-        <div
-          className={`h-2.5 rounded-full transition-all duration-500 ${bgColor}`}
-          style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-        />
-      </div>
-      {description && (
-        <p className="text-xs text-gray-500 mt-1">{description}</p>
-      )}
-    </div>
-  );
-};
+import React from 'react';
+import { TeamAggregation } from '@nba-draft-sim/shared';
 
 interface TeamAnalysisProps {
   aggregation: TeamAggregation;
 }
 
 export const TeamAnalysis: React.FC<TeamAnalysisProps> = ({ aggregation }) => {
+  const f = aggregation.features;
   const arch = aggregation.archetypes;
-  const feat = aggregation.features;
+  const mods = aggregation.modifiers;
 
-  // Calculate trait scores (0-100 scale) using Phase 2 archetypes
-  // Ball Handling / Playmaking: PrimaryCreator + SecondaryPlaymaker + Connector
-  const ballHandling = (
-    ((arch.PrimaryCreator ?? 0) * 1.2) +
-    ((arch.SecondaryPlaymaker ?? 0) * 1.0) +
-    ((arch.Connector ?? 0) * 0.8)
-  ) * 100 / 3;
+  // Calculate trait scores using ACTUAL FEATURE VALUES
+  // AST per 36 ranges from ~2-10 for good players
+  // TS% ranges from 0.50-0.70
+  // BLK/STL per 36 ranges from 0.5-3
+  
+  const playmaking = Math.min(100, Math.max(0,
+    ((f.AST ?? 0) * 12) +        // 6 AST/36 = 72
+    ((f.PAR ?? 0.5) * 25)        // 0.7 PAR = 17.5
+  ));
 
-  // Shooting / Spacing: VolumeSniper + EfficientSpacer + ShotMaker
-  const shooting = (
-    ((arch.VolumeSniper ?? 0) * 1.0) +
-    ((arch.EfficientSpacer ?? 0) * 1.2) +
-    ((arch.ShotMaker ?? 0) * 0.8)
-  ) * 100 / 3;
+  const shooting = Math.min(100, Math.max(0,
+    (((f.TS ?? 0.5) - 0.45) * 350) +     // 0.67 TS = 77
+    (((f.THREE_P_PCT ?? 0.3) - 0.25) * 150)  // 0.38 3P% = 19.5
+  ));
 
-  // Rim Protection / Interior Defense: RimDeterrent + ReboundEnforcer
-  const rimProtection = (
-    ((arch.RimDeterrent ?? 0) * 1.5) +
-    ((arch.ReboundEnforcer ?? 0) * 0.5)
-  ) * 100 / 2;
+  const rimProtection = Math.min(100, Math.max(0,
+    ((f.BLK ?? 0) * 40) +        // 2 BLK = 80
+    ((f.BLK_RATE ?? 0) * 10)
+  ));
 
-  // Perimeter Defense: PointOfAttackMenace + Disruptor
-  const perimeterDefense = (
-    ((arch.PointOfAttackMenace ?? 0) * 1.2) +
-    ((arch.Disruptor ?? 0) * 0.8)
-  ) * 100 / 2;
+  const perimeterDefense = Math.min(100, Math.max(0,
+    ((f.STL ?? 0) * 40) +        // 2 STL = 80
+    ((f.DEFLECTIONS ?? 0) * 3)
+  ));
 
-  // Athleticism / Hustle: HustleEngine + AdvantageDriver
-  const athleticism = (
-    ((arch.HustleEngine ?? 0) * 1.0) +
-    ((arch.AdvantageDriver ?? 0) * 1.0)
-  ) * 100 / 2;
+  const rebounding = Math.min(100, Math.max(0,
+    ((f.OREB_PCT ?? 0) * 300) +  // 0.10 = 30
+    ((f.DREB_PCT ?? 0) * 200) +  // 0.25 = 50
+    ((f.REB_TOTAL ?? 0) * 2)     // 8 = 16
+  ));
 
-  // Get team narrative based on strongest traits
-  const getTeamNarrative = (): string => {
-    const traits = [
-      { name: 'playmaking', value: ballHandling },
-      { name: 'shooting', value: shooting },
-      { name: 'rim protection', value: rimProtection },
-      { name: 'perimeter defense', value: perimeterDefense },
-      { name: 'athleticism', value: athleticism },
-    ];
-
-    const sorted = traits.sort((a, b) => b.value - a.value);
-    const strongest = sorted[0];
-    const secondStrong = sorted[1];
-
-    if (strongest.value >= 60) {
-      if (strongest.name === 'playmaking') {
-        return 'This team thrives on ball movement and creative playmaking.';
-      } else if (strongest.name === 'shooting') {
-        return 'This team stretches the floor with elite spacing and shooting.';
-      } else if (strongest.name === 'rim protection') {
-        return 'This team dominates the paint with imposing rim protection.';
-      } else if (strongest.name === 'perimeter defense') {
-        return 'This team locks down opponents on the perimeter.';
-      } else if (strongest.name === 'athleticism') {
-        return 'This team outworks opponents with relentless energy and athleticism.';
-      }
-    }
-
-    if (strongest.value >= 45 && secondStrong.value >= 40) {
-      return `This team balances ${strongest.name} with solid ${secondStrong.name}.`;
-    }
-
-    return 'This team is still developing its identity.';
+  const getTier = (score: number) => {
+    if (score >= 70) return { tier: 'Elite', bg: 'bg-purple-900', text: 'text-purple-300', bar: 'bg-purple-500' };
+    if (score >= 55) return { tier: 'Great', bg: 'bg-blue-900', text: 'text-blue-300', bar: 'bg-blue-500' };
+    if (score >= 40) return { tier: 'Good', bg: 'bg-green-900', text: 'text-green-300', bar: 'bg-green-500' };
+    if (score >= 25) return { tier: 'Avg', bg: 'bg-yellow-900', text: 'text-yellow-300', bar: 'bg-yellow-500' };
+    return { tier: 'Poor', bg: 'bg-red-900', text: 'text-red-300', bar: 'bg-red-500' };
   };
 
+  const traits = [
+    { name: 'Playmaking', score: playmaking },
+    { name: 'Shooting', score: shooting },
+    { name: 'Rim Protection', score: rimProtection },
+    { name: 'Perimeter D', score: perimeterDefense },
+    { name: 'Rebounding', score: rebounding },
+  ];
+
+  // Get team identity from top archetype
+  const topArchetypes = Object.entries(arch)
+    .filter(([_, v]) => v !== undefined && v > 0.08)
+    .sort(([, a], [, b]) => (b ?? 0) - (a ?? 0));
+
+  const identityMap: Record<string, string> = {
+    PrimaryCreator: 'Creator-Led',
+    SecondaryPlaymaker: 'Ball Movement',
+    VolumeSniper: 'Volume Shooting',
+    EfficientSpacer: 'Floor Spacing',
+    ShotMaker: 'Shot Creation',
+    AdvantageDriver: 'Drive & Kick',
+    Connector: 'Motion Offense',
+    PointOfAttackMenace: 'Perimeter Lock',
+    Disruptor: 'Disruptive D',
+    RimDeterrent: 'Paint Protection',
+    ReboundEnforcer: 'Glass Control',
+    HustleEngine: 'Hustle Squad',
+    WinDriver: 'Winning Culture',
+  };
+
+  const identity = topArchetypes.length > 0 
+    ? (identityMap[topArchetypes[0][0]] || 'Balanced')
+    : 'Balanced';
+
+  // Composition effects
+  const effects: { label: string; positive: boolean }[] = [];
+  if ((mods.shootBonus ?? 0) > 0.01) effects.push({ label: 'Spacing Bonus', positive: true });
+  if ((mods.creatorPen ?? 0) < -0.01) effects.push({ label: 'Creator Redundancy', positive: false });
+  if ((mods.rimPen ?? 0) < -0.01) effects.push({ label: 'Rim Vulnerability', positive: false });
+  if ((mods.variancePenalty ?? 0) > 0.02) effects.push({ label: 'High Variance', positive: false });
+
   return (
-    <div className="border-b border-gray-200">
-      {/* Team Narrative */}
-      <div className="p-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-        <h4 className="text-sm font-bold text-gray-700 mb-1">Team Identity</h4>
-        <p className="text-sm text-gray-600 italic">{getTeamNarrative()}</p>
+    <div className="space-y-4">
+      {/* Team Identity */}
+      <div>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+          Team Identity
+        </div>
+        <div className="text-xl font-bold text-white">
+          {identity}
+        </div>
       </div>
 
-      {/* Team Analysis Bars */}
-      <div className="p-4 bg-white">
-        <h4 className="text-sm font-bold text-gray-700 mb-4">Team Analysis</h4>
-        
-        <TraitBar 
-          label="Playmaking" 
-          value={ballHandling} 
-        />
-        <TraitBar 
-          label="Shooting" 
-          value={shooting} 
-        />
-        <TraitBar 
-          label="Rim Protection" 
-          value={rimProtection} 
-        />
-        <TraitBar 
-          label="Perimeter Defense" 
-          value={perimeterDefense} 
-        />
-        <TraitBar 
-          label="Athleticism" 
-          value={athleticism} 
-        />
+      {/* Trait Bars */}
+      <div>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+          Team Analysis
+        </div>
+        <div className="space-y-3">
+          {traits.map(trait => {
+            const t = getTier(trait.score);
+            return (
+              <div key={trait.name}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm text-gray-300">{trait.name}</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded ${t.bg} ${t.text}`}>
+                    {t.tier}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${t.bar}`}
+                    style={{ width: `${Math.max(5, trait.score)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Team Modifiers Summary */}
-      {aggregation.modifiers && (
-        <div className="px-4 pb-4 bg-white">
+      {/* Composition Effects */}
+      {effects.length > 0 && (
+        <div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            Composition
+          </div>
           <div className="flex flex-wrap gap-2">
-            {aggregation.modifiers.shootBonus > 0.01 && (
-              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                📈 Spacing Bonus
+            {effects.map((e, i) => (
+              <span 
+                key={i} 
+                className={`text-xs px-2 py-1 rounded ${
+                  e.positive 
+                    ? 'bg-green-900/50 text-green-400' 
+                    : 'bg-red-900/50 text-red-400'
+                }`}
+              >
+                {e.positive ? '↑' : '↓'} {e.label}
               </span>
-            )}
-            {aggregation.modifiers.creatorPen < -0.01 && (
-              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
-                ⚠️ Creator Redundancy
-              </span>
-            )}
-            {aggregation.modifiers.rimPen < -0.01 && (
-              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                🚨 No Rim Protection
-              </span>
-            )}
+            ))}
           </div>
         </div>
       )}
+
+      {/* Overall Rating */}
+      <div className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
+        <span className="text-gray-400">Overall Rating</span>
+        <span className="text-2xl font-bold text-white">
+          {aggregation.overallRating.toFixed(1)}
+        </span>
+      </div>
     </div>
   );
 };
