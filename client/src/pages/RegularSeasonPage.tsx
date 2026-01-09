@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useLeague } from '../context/LeagueContext';
+import { useApp } from '../context/AppContext';
 import { PageContainer } from '../components/PageContainer';
 import { Header } from '../components/Header';
 import { GameCard } from '../components/GameCard';
@@ -12,7 +12,7 @@ import { StandingsTable } from '../components/StandingsTable';
 import { Button } from '../components/Button';
 
 export const RegularSeasonPage: React.FC = () => {
-  const { league } = useLeague();
+  const { league } = useApp();
   const [revealedGames, setRevealedGames] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
 
