@@ -4,74 +4,101 @@ import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { TeamRecord } from '@nba-draft-sim/shared';
+import { TeamRecord, RegularSeasonGame } from '@nba-draft-sim/shared';
 import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
 
-// ------------------------------------------------------------------
-// 1. CONFIG & HELPER LOGIC
-// ------------------------------------------------------------------
+/**
+ * Generate realistic NBA game scores based on win probability
+ * Higher win probability = larger margin of victory (on average)
+ */
+function generateGameScore(winPctA: number, seed: number = 0): { scoreA: number; scoreB: number } {
+  // Use seed for consistent scores per game
+  const pseudoRandom = (s: number) => {
+    const x = Math.sin(s * 9999) * 10000;
+    return x - Math.floor(x);
+  };
 
-const SERIES_LENGTH_THRESHOLDS = [
-  { minWinPct: 0.80, wins: [4, 0] },
-  { minWinPct: 0.70, wins: [4, 1] },
-  { minWinPct: 0.60, wins: [4, 2] },
-  { minWinPct: 0.50, wins: [4, 3] },
-] as const;
+  // Base scores (typical NBA game)
+  const baseScore = 105 + pseudoRandom(seed + 1) * 20; // 105-125 range
+  
+  // Point differential based on win probability
+  // winPctA = 0.5 -> even game, winPctA = 0.7 -> ~8-10 point spread
+  const spread = (winPctA - 0.5) * 30; // -15 to +15 based on probability
+  
+  // Add variance to the spread
+  const variance = (pseudoRandom(seed + 2) - 0.5) * 15; // +/- 7.5 points
+  const actualSpread = spread + variance;
+  
+  // Sometimes the underdog wins (upset)
+  const upsetFactor = pseudoRandom(seed + 3);
+  const isUpset = upsetFactor > winPctA;
+  
+  let scoreA = Math.round(baseScore + actualSpread / 2);
+  let scoreB = Math.round(baseScore - actualSpread / 2);
+  
+  if (isUpset) {
+    // Swap scores for upset
+    [scoreA, scoreB] = [scoreB, scoreA];
+  }
+  
+  // Ensure scores are reasonable (85-140 range)
+  scoreA = Math.max(85, Math.min(140, scoreA));
+  scoreB = Math.max(85, Math.min(140, scoreB));
+  
+  return { scoreA, scoreB };
+}
 
-// ------------------------------------------------------------------
-// 2. MAIN COMPONENT
-// ------------------------------------------------------------------
+/**
+ * Format game time (quarter)
+ */
+function formatGameTime(gameIndex: number): string {
+  const quarters = ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'Final'];
+  return quarters[4]; // All completed games show "Final"
+}
 
 export function ResultsPage() {
   const navigate = useNavigate();
   const { league, regularSeasonResults, playoffResults, draft, lobby } = useApp();
 
-  // --- STATE ---
-  const [playbackQueue, setPlaybackQueue] = useState<any[]>([]);
-  const [displayedGames, setDisplayedGames] = useState<any[]>([]);
+  // State
+  const [playbackQueue, setPlaybackQueue] = useState<RegularSeasonGame[]>([]);
+  const [displayedGames, setDisplayedGames] = useState<RegularSeasonGame[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simSpeed, setSimSpeed] = useState(500);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // 🆕 FIX: Use ref to track if we've initialized to prevent double-init
   const hasInitialized = useRef(false);
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
 
-  // --- INITIALIZATION ---
+  // Redirect if no league
   useEffect(() => {
     if (!league) navigate('/');
   }, [league, navigate]);
 
-  // 🆕 FIX: Better initialization logic with guard against re-init
+  // Initialize animation
   useEffect(() => {
-    // Only initialize once when regularSeasonResults arrives
     if (regularSeasonResults && !playoffResults && !hasInitialized.current) {
       console.log('🔵 Initializing regular season animation with', regularSeasonResults.games.length, 'games');
       hasInitialized.current = true;
       setPlaybackQueue(regularSeasonResults.games);
       setDisplayedGames([]);
       setIsSimulating(true);
-    } 
-    // If playoffs exist, show final state
-    else if (playoffResults) {
+    } else if (playoffResults) {
       setIsSimulating(false);
-      // Show all regular season games immediately
       if (regularSeasonResults && displayedGames.length === 0) {
         setDisplayedGames(regularSeasonResults.games);
       }
     }
   }, [regularSeasonResults, playoffResults]);
 
-  // 🆕 FIX: Reset init flag when navigating away
+  // Reset on unmount
   useEffect(() => {
     return () => {
       hasInitialized.current = false;
     };
   }, []);
 
-  // --- ANIMATION LOOP ---
-  // 🆕 FIX: Use useCallback and proper state updates to avoid stale closures
+  // Animation loop
   useEffect(() => {
     if (!isSimulating || playbackQueue.length === 0) return;
 
@@ -81,11 +108,9 @@ export function ResultsPage() {
         
         const [nextGame, ...remaining] = prevQueue;
         
-        // Update displayed games
         setDisplayedGames(prevDisplayed => {
           const newDisplayed = [...prevDisplayed, nextGame];
           
-          // Scroll to bottom after state update
           setTimeout(() => {
             if (scrollRef.current) {
               scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -95,7 +120,6 @@ export function ResultsPage() {
           return newDisplayed;
         });
         
-        // Stop simulating if no more games
         if (remaining.length === 0) {
           setIsSimulating(false);
         }
@@ -107,8 +131,7 @@ export function ResultsPage() {
     return () => clearTimeout(timer);
   }, [isSimulating, playbackQueue.length, simSpeed]);
 
-
-  // --- DERIVED STATE: LIVE STANDINGS ---
+  // Live standings
   const liveStandings = useMemo(() => {
     if (!draft?.teams) return [];
     
@@ -116,7 +139,7 @@ export function ResultsPage() {
     draft.teams.forEach(t => records[t.teamId] = { teamId: t.teamId, wins: 0, losses: 0, winPct: 0 });
 
     displayedGames.forEach(game => {
-      if (!game?.result) return; // 🆕 FIX: Guard against malformed game data
+      if (!game?.result) return;
       
       const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
       const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
@@ -133,7 +156,7 @@ export function ResultsPage() {
       .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
   }, [displayedGames, draft]);
 
-  // --- HANDLERS ---
+  // Handlers
   const handleSkip = useCallback(() => {
     setPlaybackQueue(prevQueue => {
       setDisplayedGames(prevDisplayed => [...prevDisplayed, ...prevQueue]);
@@ -146,7 +169,6 @@ export function ResultsPage() {
     return draft?.teams.find(t => t.teamId === tid)?.displayName || tid;
   }, [draft]);
 
-  // 🆕 FIX: Calculate current matchup index from displayed games length
   const currentMatchupIdx = displayedGames.length;
   const totalGames = regularSeasonResults?.games.length || 0;
 
@@ -154,24 +176,52 @@ export function ResultsPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {playoffResults ? "League History" : "Season Simulation"}
-          </h1>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {playoffResults ? "League History" : "Season Simulation"}
+            </h1>
+            {isSimulating && (
+              <p className="text-gray-500 mt-1">Simulating games... {currentMatchupIdx} of {totalGames}</p>
+            )}
+          </div>
           
           {isSimulating && (
-            <div className="flex gap-2 mt-4 md:mt-0">
-              <div className="bg-white px-3 py-1 rounded border shadow-sm text-sm font-mono">
-                Matchup {currentMatchupIdx} / {totalGames}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+                <span className="text-sm text-gray-600">Speed:</span>
+                <button 
+                  onClick={() => setSimSpeed(800)} 
+                  className={`px-2 py-1 rounded text-xs ${simSpeed === 800 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                >
+                  Slow
+                </button>
+                <button 
+                  onClick={() => setSimSpeed(500)} 
+                  className={`px-2 py-1 rounded text-xs ${simSpeed === 500 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                >
+                  Normal
+                </button>
+                <button 
+                  onClick={() => setSimSpeed(100)} 
+                  className={`px-2 py-1 rounded text-xs ${simSpeed === 100 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                >
+                  Fast
+                </button>
+                <button 
+                  onClick={() => setSimSpeed(20)} 
+                  className={`px-2 py-1 rounded text-xs ${simSpeed === 20 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
+                >
+                  Turbo
+                </button>
               </div>
-              <Button size="sm" variant="secondary" onClick={() => setSimSpeed(50)}>Turbo</Button>
-              <Button size="sm" variant="primary" onClick={handleSkip}>Skip</Button>
+              <Button size="sm" variant="primary" onClick={handleSkip}>Skip All</Button>
             </div>
           )}
         </div>
 
-        {/* 🆕 DEBUG: Show if no results */}
+        {/* No results message */}
         {!regularSeasonResults && !playoffResults && (
           <Card padding="lg" className="mb-4 text-center">
             <p className="text-gray-500">Waiting for season results...</p>
@@ -183,35 +233,49 @@ export function ResultsPage() {
           <PlayoffsDisplay playoffResults={playoffResults} teams={draft.teams} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* LEFT: STANDINGS */}
+            {/* Standings */}
             <div className="lg:col-span-2">
               <Card padding="lg">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Live Standings</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  {isSimulating ? 'Live Standings' : 'Final Standings'}
+                </h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-100 border-b">
-                        <th className="px-4 py-3 text-left">Rank</th>
-                        <th className="px-4 py-3 text-left">Team</th>
-                        <th className="px-4 py-3 text-center">W</th>
-                        <th className="px-4 py-3 text-center">L</th>
-                        <th className="px-4 py-3 text-center">Pct</th>
-                        <th className="px-4 py-3 text-center">Status</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Rank</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Team</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600">W</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600">L</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600">Pct</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {liveStandings.length > 0 ? (
                         liveStandings.map((record, index) => (
-                          <tr key={record.teamId} className={`border-b ${index < 4 ? 'bg-green-50/30' : ''}`}>
-                            <td className="px-4 py-3 font-medium text-gray-500">{index + 1}</td>
-                            <td className="px-4 py-3 font-semibold">{getTeamName(record.teamId)}</td>
-                            <td className="px-4 py-3 text-center text-green-700">{record.wins}</td>
-                            <td className="px-4 py-3 text-center text-red-600">{record.losses}</td>
-                            <td className="px-4 py-3 text-center text-gray-600">{(record.winPct * 100).toFixed(1)}%</td>
+                          <tr 
+                            key={record.teamId} 
+                            className={`border-b transition-colors ${index < 4 ? 'bg-green-50/50' : 'hover:bg-gray-50'}`}
+                          >
+                            <td className="px-4 py-3">
+                              <span className={`
+                                inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                                ${index < 4 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}
+                              `}>
+                                {index + 1}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-gray-900">{getTeamName(record.teamId)}</td>
+                            <td className="px-4 py-3 text-center text-green-700 font-medium">{record.wins}</td>
+                            <td className="px-4 py-3 text-center text-red-600 font-medium">{record.losses}</td>
+                            <td className="px-4 py-3 text-center text-gray-600">
+                              {(record.winPct * 100).toFixed(1)}%
+                            </td>
                             <td className="px-4 py-3 text-center">
                               {!isSimulating && index < 4 ? (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                  CLINCHED
+                                  ✓ PLAYOFFS
                                 </span>
                               ) : (
                                 <span className="text-gray-300">-</span>
@@ -230,68 +294,102 @@ export function ResultsPage() {
                   </table>
                 </div>
 
-                {/* COMMISSIONER BUTTON */}
+                {/* Commissioner Button */}
                 {!isSimulating && !playoffResults && league?.phase === 'regular_season' && (
                   <div className="mt-8 text-center border-t pt-6">
                     {isCommissioner ? (
-                      <Button size="lg" onClick={() => wsService.startPlayoffs()} className="animate-bounce">
+                      <Button 
+                        size="lg" 
+                        onClick={() => wsService.startPlayoffs()} 
+                        className="animate-pulse"
+                      >
                         🏆 Start Playoffs
                       </Button>
                     ) : (
-                      <div className="text-gray-500 italic">Waiting on Commissioner...</div>
+                      <div className="text-gray-500 italic">Waiting for Commissioner to start playoffs...</div>
                     )}
                   </div>
                 )}
               </Card>
             </div>
 
-            {/* RIGHT: MATCHUP TICKER */}
+            {/* Game Feed */}
             <div className="lg:col-span-1">
-              <Card padding="none" className="h-[600px] flex flex-col bg-gray-900 text-white border-gray-800">
-                <div className="p-4 border-b border-gray-700 bg-gray-800 rounded-t-lg">
-                  <h3 className="font-bold text-white">Live Game Feed</h3>
+              <Card padding="none" className="h-[600px] flex flex-col overflow-hidden">
+                <div className="p-4 border-b bg-gradient-to-r from-gray-800 to-gray-900 text-white">
+                  <h3 className="font-bold text-lg">Live Game Feed</h3>
                   <div className="text-xs text-gray-400 mt-1">
-                    {isSimulating ? `Playing game ${currentMatchupIdx + 1}...` : 'Matchup Results & Analysis'}
+                    {isSimulating ? `Game ${currentMatchupIdx + 1} in progress...` : 'Season Complete'}
                   </div>
                 </div>
                 
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto bg-gray-900 p-4 space-y-3">
                   {displayedGames.map((game, idx) => {
-                    // 🆕 FIX: Guard against missing game data
-                    if (!game?.result) {
-                      return null;
-                    }
+                    if (!game?.result) return null;
                     
+                    // Generate scores based on win probability and game index as seed
+                    const { scoreA, scoreB } = generateGameScore(game.result.winPctA, idx + 1);
                     const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
                     const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
+                    const winnerScore = game.result.winner === 'A' ? scoreA : scoreB;
+                    const loserScore = game.result.winner === 'A' ? scoreB : scoreA;
 
                     return (
-                      <div key={idx} className="bg-gray-800 p-3 rounded border border-gray-700 text-sm animate-in slide-in-from-right-4 fade-in duration-300">
-                        <div className="flex justify-between items-center text-xs text-gray-400 mb-2 uppercase tracking-wide">
-                          <span>Matchup {idx + 1}</span>
-                          {/* 🆕 Show win probability */}
-                          <span className="text-gray-500">
-                            {game.result.winPctA !== undefined && 
-                              `${(game.result.winPctA * 100).toFixed(0)}% - ${((1 - game.result.winPctA) * 100).toFixed(0)}%`
-                            }
-                          </span>
+                      <div 
+                        key={idx} 
+                        className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 animate-in slide-in-from-right-4 fade-in duration-300"
+                      >
+                        {/* Game Header */}
+                        <div className="flex items-center justify-between px-3 py-2 bg-gray-700/50 text-xs">
+                          <span className="text-gray-400">Game {idx + 1}</span>
+                          <span className="text-gray-500 uppercase tracking-wide">Final</span>
                         </div>
-                        
-                        {/* SCOREBOARD */}
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex flex-col text-green-400 font-bold">
-                            <span>{getTeamName(winnerId).substring(0, 15)}</span>
+
+                        {/* Scoreboard */}
+                        <div className="p-3">
+                          {/* Team A (Home) */}
+                          <div className={`flex items-center justify-between py-2 ${game.result.winner === 'A' ? 'text-white' : 'text-gray-400'}`}>
+                            <div className="flex items-center gap-2">
+                              {game.result.winner === 'A' && (
+                                <span className="text-green-400 text-xs">▶</span>
+                              )}
+                              <span className={`font-semibold ${game.result.winner === 'A' ? 'text-white' : 'text-gray-400'}`}>
+                                {getTeamName(game.teamAId)}
+                              </span>
+                              {game.homeTeam === 'A' && (
+                                <span className="text-xs text-gray-500">(H)</span>
+                              )}
+                            </div>
+                            <span className={`text-xl font-bold ${game.result.winner === 'A' ? 'text-white' : 'text-gray-500'}`}>
+                              {scoreA}
+                            </span>
                           </div>
-                          <div className="text-gray-600 px-2">defeats</div>
-                          <div className="flex flex-col items-end text-gray-300">
-                            <span>{getTeamName(loserId).substring(0, 15)}</span>
+
+                          {/* Team B (Away) */}
+                          <div className={`flex items-center justify-between py-2 border-t border-gray-700 ${game.result.winner === 'B' ? 'text-white' : 'text-gray-400'}`}>
+                            <div className="flex items-center gap-2">
+                              {game.result.winner === 'B' && (
+                                <span className="text-green-400 text-xs">▶</span>
+                              )}
+                              <span className={`font-semibold ${game.result.winner === 'B' ? 'text-white' : 'text-gray-400'}`}>
+                                {getTeamName(game.teamBId)}
+                              </span>
+                              {game.homeTeam === 'B' && (
+                                <span className="text-xs text-gray-500">(H)</span>
+                              )}
+                            </div>
+                            <span className={`text-xl font-bold ${game.result.winner === 'B' ? 'text-white' : 'text-gray-500'}`}>
+                              {scoreB}
+                            </span>
                           </div>
                         </div>
 
-                        {/* KEY DRIVER */}
+                        {/* Editorial */}
                         {game.editorial && (
-                          <div className="pt-2 border-t border-gray-700 text-xs text-blue-300">
-                            <p>{game.editorial}</p>
+                          <div className="px-3 pb-3">
+                            <p className="text-xs text-blue-300 italic leading-relaxed">
+                              {game.editorial}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -299,14 +397,16 @@ export function ResultsPage() {
                   })}
 
                   {displayedGames.length === 0 && (
-                    <div className="text-center text-gray-600 py-12 italic">
-                      {isSimulating ? 'Starting season...' : 'Initializing Season...'}
+                    <div className="text-center text-gray-600 py-12">
+                      <div className="text-3xl mb-2">🏀</div>
+                      <div className="text-sm">
+                        {isSimulating ? 'Starting season...' : 'Waiting for games...'}
+                      </div>
                     </div>
                   )}
                 </div>
               </Card>
             </div>
-
           </div>
         )}
       </div>
