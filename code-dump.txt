@@ -6105,7 +6105,7 @@ where weight = player impact / total team impact
 ```
 
 This means:
-- Your star players (high impact) have more influence
+- Your windriver players (high impact) have more influence
 - Bench players (low impact) matter less
 - Reflects actual on-court importance
 

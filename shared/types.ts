@@ -141,7 +141,7 @@ export type ArchetypeName =
   | 'RimDeterrent'
   | 'ReboundEnforcer'
   | 'HustleEngine'
-  | 'Star';
+  | 'WinDriver';
 
 
 export interface ArchetypeProfile extends Record<ArchetypeName, number> {
@@ -647,7 +647,7 @@ export const ARCHETYPE_WEIGHTS: Record<string, Record<string, number>> = {
     VI: 0.10,
   },
 
-  Star: {
+  WinDriver: {
     PAR: 0.30,
     TS: 0.20,
     VI: 0.25,
@@ -677,7 +677,7 @@ export const ARCHETYPE_NAMES: string[] = [
   'RimDeterrent',
   'ReboundEnforcer',
   'HustleEngine',
-  'Star',
+  'WinDriver',
 ];
 
 // ============================================================================

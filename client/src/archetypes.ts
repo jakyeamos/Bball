@@ -47,8 +47,8 @@ export function getArchetypeColor(name: string): string {
   if (['PointOfAttackMenace', 'Disruptor', 'RimDeterrent'].includes(name)) {
     return 'bg-red-100 text-red-800 border-red-300';
   }
-  // Activity (ReboundEnforcer, HustleEngine, Star): green
-  if (['ReboundEnforcer', 'HustleEngine', 'Star'].includes(name)) {
+  // Activity (ReboundEnforcer, HustleEngine, WinDriver): green
+  if (['ReboundEnforcer', 'HustleEngine', 'WinDriver'].includes(name)) {
     return 'bg-green-100 text-green-800 border-green-300';
   }
   return 'bg-gray-100 text-gray-800 border-gray-300';
