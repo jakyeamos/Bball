@@ -52,7 +52,7 @@ export function WaitingRoomPage() {
         matchups = n * (n - 1);
         formatText = 'Double Round Robin';
         break;
-      case 'playoffs_only':
+      case 'quick_sim':
         matchups = (n * (n - 1)) / 2;
         formatText = 'Playoffs Only';
         break;

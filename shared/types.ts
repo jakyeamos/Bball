@@ -1,13 +1,16 @@
 /**
- * Shared types for NBA Draft + League Simulation - V2 UPDATE
+ * Shared types for NBA Draft + League Simulation - V3 UPDATE
  * Used by both client and server
  *
  * CHANGELOG:
- * - Phase 1A: Added SeasonFormat, isPublic to LobbyState, rotationDepth to LobbyConfig
+ * - Phase 1A: Added SeasonFormat, isPublic to LobbyState
  * - Phase 1B: Added RoundState, RoundPhase, CoachingWindow
  * - Phase 2: Added CoachingDecision, LineupStrategy, DefensiveStrategy
  * - Phase 2.5: Added TradeProposal, TradeProposalStatus
- * - FIX: Added convenience exports for constants
+ * - V3: Added quarter-based game simulation types
+ *       Renamed playoffs_only to quick_sim
+ *       Added ScoutingReport, QuarterResult, QuarterBlurb
+ *       Moved rotationDepth from LobbyConfig to CoachingDecision
  */
 
 // ============================================================================
@@ -15,21 +18,16 @@
 // ============================================================================
 
 export interface PlayerRawStats {
-  // Identification
   playerId: string;
   name: string;
   team: string;
   position: string;
-
-  // Displayed stats (UI)
   PTS: number;
   REB: number;
   AST: number;
   STL: number;
   BLK: number;
   TS_PCT: number;
-
-  // Core stats
   MP_TOTAL: number;
   GP: number;
   FGA: number;
@@ -43,29 +41,19 @@ export interface PlayerRawStats {
   ORB: number;
   DRB: number;
   PF: number;
-
-  // Shot selection detail
   TWO_PA: number;
   TWO_PM: number;
   TWO_P_PCT: number;
-
-  // Playmaking detail (optional)
   POTENTIAL_AST?: number;
   SECONDARY_AST?: number;
   PASSES_MADE?: number;
   PASSES_RECEIVED?: number;
-
-  // Defensive detail (optional)
   DEFLECTIONS?: number;
   CHARGES_DRAWN?: number;
   CONTESTED_SHOTS?: number;
-
-  // Advanced stats (optional)
   POSSESSIONS?: number;
   TOUCHES?: number;
   SCREEN_ASSISTS?: number;
-
-  // Computed proxies (optional)
   USG_PROXY?: number;
   AST_PCT_PROXY?: number;
   TOV_PCT_PROXY?: number;
@@ -157,7 +145,8 @@ export interface LeagueSnapshot {
 // PHASE 1A: SEASON FORMATS & PUBLIC LOBBIES
 // ============================================================================
 
-export type SeasonFormat = 'single_round_robin' | 'double_round_robin' | 'playoffs_only';
+// V3 UPDATED: Renamed playoffs_only to quick_sim for clarity
+export type SeasonFormat = 'single_round_robin' | 'double_round_robin' | 'quick_sim';
 
 export type PickTimer = 60 | 120 | 300;
 
@@ -165,7 +154,8 @@ export interface LobbyConfig {
   teamCount: number;  // 4-12
   rosterSize: number;  // 10-15
   pickTimer: PickTimer;
-  seasonFormat: SeasonFormat;  // NEW - Phase 1A
+  seasonFormat: SeasonFormat;
+  // V3 NOTE: rotationDepth removed - now a per-game coaching decision
 }
 
 export interface LobbyState {
@@ -175,7 +165,7 @@ export interface LobbyState {
   users: LobbyUser[];
   inviteCode: string;
   canStart: boolean;
-  isPublic: boolean;  // NEW - Phase 1A
+  isPublic: boolean;
   draftStarted: boolean;
   createdAt: string;
 }
@@ -206,7 +196,7 @@ export interface RoundState {
   phase: RoundPhase;
   coachingWindowEndsAt: string | null;
   matchups: RoundMatchup[];
-  coachingDecisions: Record<string, CoachingDecision>;  // CHANGED: Use Record instead of Map for serialization
+  coachingDecisions: Record<string, CoachingDecision>;
   roundResults: RoundResult | null;
 }
 
@@ -252,7 +242,8 @@ export type OffensiveStrategy =
 export interface CoachingDecision {
   teamId: string;
   roundNumber: number;
-  rotation: string[];  // playerIds in rotation (length = rotationDepth)
+  rotation: string[];  // playerIds in rotation
+  rotationDepth: number; // V3 NEW: User chooses 5-15 players per game
   lineupStrategy: LineupStrategy;
   defensiveStrategy: DefensiveStrategy;
   offensiveStrategy: OffensiveStrategy;
@@ -260,8 +251,114 @@ export interface CoachingDecision {
 }
 
 export interface CoachingWindowConfig {
-  durationSeconds: number;  // Default 120 (2 minutes)
-  autoSubmitOnExpire: boolean;  // Default true
+  durationSeconds: number;
+  autoSubmitOnExpire: boolean;
+}
+
+// ============================================================================
+// V3: QUARTER-BASED GAME SIMULATION
+// ============================================================================
+
+/**
+ * Pre-game scouting report shown to coaches before making decisions
+ */
+export interface ScoutingReport {
+  matchupId: string;
+  teamAId: string;
+  teamBId: string;
+  teamAName: string;
+  teamBName: string;
+  
+  // Team strengths/weaknesses analysis
+  teamAStrengths: string[];
+  teamAWeaknesses: string[];
+  teamBStrengths: string[];
+  teamBWeaknesses: string[];
+  
+  // Key players to watch
+  teamAKeyPlayers: Array<{ name: string; role: string; threat: string }>;
+  teamBKeyPlayers: Array<{ name: string; role: string; threat: string }>;
+  
+  // Predicted style clash
+  styleClash: string;
+  
+  // Betting line style prediction (editorial flavor)
+  prediction: string;
+}
+
+/**
+ * Result of a single quarter
+ */
+export interface QuarterResult {
+  quarter: 1 | 2 | 3 | 4;
+  scoreA: number;       // Points scored by team A this quarter
+  scoreB: number;       // Points scored by team B this quarter
+  totalScoreA: number;  // Running total for team A
+  totalScoreB: number;  // Running total for team B
+  
+  // Coaching effectiveness (hidden from user, used to generate blurb)
+  coachingImpactA: number; // -10 to +10
+  coachingImpactB: number;
+}
+
+/**
+ * Editorial blurb shown after each quarter
+ * Shrouds coaching wins/losses in "editorial fog"
+ */
+export interface QuarterBlurb {
+  quarter: 1 | 2 | 3 | 4;
+  narrative: string;           // What happened this quarter
+  coachingInsight: string;     // Hints at coaching decisions without exposing mechanics
+  momentum: 'A' | 'B' | 'even'; // Who has momentum going into next quarter
+}
+
+/**
+ * Full quarter-based game result
+ */
+export interface QuarterBasedGameResult {
+  gameId: string;
+  teamAId: string;
+  teamBId: string;
+  homeTeam: 'A' | 'B';
+  
+  // Scouting report (pre-game)
+  scoutingReport: ScoutingReport;
+  
+  // Quarter-by-quarter results
+  quarters: QuarterResult[];
+  quarterBlurbs: QuarterBlurb[];
+  
+  // Final result
+  finalScoreA: number;
+  finalScoreB: number;
+  winner: 'A' | 'B';
+  
+  // Game summary editorial
+  gameEditorial: string;
+  
+  // Legacy compatibility
+  result: MatchupResult;
+}
+
+/**
+ * In-progress game state for quarter-by-quarter coaching
+ */
+export interface LiveGameState {
+  gameId: string;
+  matchupId: string;
+  currentQuarter: 0 | 1 | 2 | 3 | 4; // 0 = pre-game
+  phase: 'scouting' | 'coaching' | 'simulating_quarter' | 'quarter_results' | 'final';
+  
+  scoutingReport: ScoutingReport;
+  completedQuarters: QuarterResult[];
+  quarterBlurbs: QuarterBlurb[];
+  
+  // Current coaching decisions (can be adjusted between quarters)
+  coachingDecisionA?: CoachingDecision;
+  coachingDecisionB?: CoachingDecision;
+  
+  // Timer for coaching window between quarters
+  coachingWindowEndsAt?: string;
 }
 
 // ============================================================================
@@ -269,11 +366,11 @@ export interface CoachingWindowConfig {
 // ============================================================================
 
 export type TradeProposalStatus =
-  | 'pending'      // Awaiting other team's response
-  | 'accepted'     // Both teams agreed
-  | 'rejected'     // Other team declined
-  | 'cancelled'    // Proposer cancelled
-  | 'expired';     // Time limit passed
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'cancelled'
+  | 'expired';
 
 export interface TradeProposal {
   proposalId: string;
@@ -283,7 +380,7 @@ export interface TradeProposal {
   toPlayerIds: string[];
   status: TradeProposalStatus;
   createdAt: string;
-  expiresAt: string;  // 5 minute expiry
+  expiresAt: string;
   respondedAt?: string;
 }
 
@@ -337,7 +434,7 @@ export interface DraftState {
 }
 
 // ============================================================================
-// SIMULATION TYPES (UNCHANGED)
+// SIMULATION TYPES
 // ============================================================================
 
 export interface TeamAggregation {
@@ -378,6 +475,9 @@ export interface MatchupResult {
   winsA: number;
   winsB: number;
   drivers: MatchupDriver[];
+  // V3: Added explicit scores to prevent winner/score mismatch
+  finalScoreA?: number;
+  finalScoreB?: number;
 }
 
 // ============================================================================
@@ -391,6 +491,8 @@ export interface RegularSeasonGame {
   homeTeam: 'A' | 'B';
   result: MatchupResult;
   editorial: string;
+  // V3: Optional quarter-based data
+  quarterData?: QuarterBasedGameResult;
 }
 
 export interface TeamRecord {
@@ -439,35 +541,32 @@ export interface PlayoffResults {
 }
 
 // ============================================================================
-// LEAGUE STATE - UPDATED FOR ROUND-BASED
+// LEAGUE STATE
 // ============================================================================
 
 export type LeaguePhase =
   | 'draft'
   | 'draft_recap'
-  | 'regular_season'      // Now subdivided into rounds
+  | 'regular_season'
   | 'playoffs'
   | 'complete'
-  | 'trade_window';      // NEW - Phase 2.5
+  | 'trade_window';
 
 export interface LeagueState {
   leagueId: string;
   phase: LeaguePhase;
   draftState: DraftState | null;
-
-  // Round-based season (Phase 1B)
   currentRound: number | null;
   roundState: RoundState | null;
   totalRounds: number | null;
-
-  // Full season results (populated when complete)
   regularSeasonResults: RegularSeasonResults | null;
   playoffResults: PlayoffResults | null;
-
-  // Trade proposals (Phase 2.5)
   tradeProposals: TradeProposal[];
-
   tradeWindowEndsAt: string | null;
+  
+  // V3: Live game state for quarter-based simulation
+  liveGame?: LiveGameState;
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -491,7 +590,7 @@ export interface LobbyUser {
 }
 
 // ============================================================================
-// WEBSOCKET MESSAGE TYPES - UPDATED
+// WEBSOCKET MESSAGE TYPES
 // ============================================================================
 
 export type ClientMessage =
@@ -515,7 +614,10 @@ export type ClientMessage =
   | { type: 'CANCEL_TRADE_PROPOSAL'; payload: { proposalId: string } }
   // Playoffs
   | { type: 'START_PLAYOFFS' }
-  | { type: 'COMPLETE_LEAGUE' };
+  | { type: 'COMPLETE_LEAGUE' }
+  // V3: Quarter-based game events
+  | { type: 'SUBMIT_QUARTER_COACHING'; payload: { decision: CoachingDecision; quarter: number } }
+  | { type: 'READY_FOR_QUARTER' };
 
 export type ServerMessage =
   | { type: 'LOBBY_CREATED'; payload: LobbyState }
@@ -543,10 +645,15 @@ export type ServerMessage =
   | { type: 'PLAYOFFS_STARTED'; payload: PlayoffResults }
   | { type: 'LEAGUE_UPDATED'; payload: LeagueState }
   | { type: 'LEAGUE_COMPLETED'; payload: LeagueState }
-  | { type: 'ERROR'; payload: { message: string } };
+  | { type: 'ERROR'; payload: { message: string } }
+  // V3: Quarter-based game events
+  | { type: 'SCOUTING_REPORT'; payload: { scoutingReport: ScoutingReport; gameState: LiveGameState } }
+  | { type: 'QUARTER_COACHING_WINDOW'; payload: { quarter: number; gameState: LiveGameState; timeRemaining: number } }
+  | { type: 'QUARTER_RESULT'; payload: { quarterResult: QuarterResult; blurb: QuarterBlurb; gameState: LiveGameState } }
+  | { type: 'GAME_FINAL'; payload: { gameResult: QuarterBasedGameResult } };
 
 // ============================================================================
-// WEBSOCKET EVENTS - UPDATED
+// WEBSOCKET EVENTS
 // ============================================================================
 
 export const WS_EVENTS = {
@@ -611,6 +718,12 @@ export const WS_EVENTS = {
   LEAGUE_UPDATED: 'league:updated',
   LEAGUE_COMPLETED: 'league:completed',
 
+  // V3: Quarter-based game events
+  SCOUTING_REPORT: 'game:scouting_report',
+  QUARTER_COACHING_WINDOW: 'game:quarter_coaching_window',
+  QUARTER_RESULT: 'game:quarter_result',
+  GAME_FINAL: 'game:final',
+
   // Errors
   ERROR: 'error',
 } as const;
@@ -618,7 +731,7 @@ export const WS_EVENTS = {
 export type WSEvent = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
 
 // ============================================================================
-// CONSTANTS - UPDATED
+// CONSTANTS
 // ============================================================================
 
 export const DRAFT_CONSTRAINTS = {
@@ -626,16 +739,18 @@ export const DRAFT_CONSTRAINTS = {
   TEAMS_MAX: 12,
   ROSTER_MIN: 10,
   ROSTER_MAX: 15,
-  ROTATION_MIN: 5,  // NEW - Phase 2
-  ROTATION_MAX: 15, // NEW - Phase 2 (= ROSTER_MAX)
+  ROTATION_MIN: 5,  // Phase 2
+  ROTATION_MAX: 15, // Phase 2 (= ROSTER_MAX)
+  ROTATION_DEFAULT: 8, // V3: Default rotation depth
   PICK_TIMER_OPTIONS_SECONDS: [60, 120, 300] as const,
   SIMS_PER_MATCHUP: 100,
   PLAYOFF_TEAMS: 4,
   PLAYOFF_BEST_OF: 3,
   SERIES_VISUAL_MAX_GAMES: 7,
   TOP_20_AUTO_PICK: 20,
-  COACHING_WINDOW_SECONDS: 120,  // NEW - Phase 1B (2 minutes)
-  TRADE_PROPOSAL_EXPIRY_SECONDS: 300,  // NEW - Phase 2.5 (5 minutes)
+  COACHING_WINDOW_SECONDS: 120,  // Phase 1B (2 minutes)
+  TRADE_PROPOSAL_EXPIRY_SECONDS: 300,  // Phase 2.5 (5 minutes)
+  QUARTER_COACHING_WINDOW_SECONDS: 60, // V3: Time between quarters
 } as const;
 
 // Convenience exports for backward compatibility
@@ -883,7 +998,7 @@ export const IMPACT_WEIGHTS = {
   // Offense
   TS: 0.32,
   AST: 0.12,
-  PAR: 0.18,              // NEW (Pomeroy Assist Ratio)
+  PAR: 0.18,              // Pomeroy Assist Ratio
   THREE_PA_RATE: 0.10,
   FT_RATE: 0.06,
   USG: 0.04,
@@ -894,7 +1009,7 @@ export const IMPACT_WEIGHTS = {
   REB: 0.05,
 
   // Stability
-  VI: 0.10,               // NEW (Versatility Index; positive-only entropy)
+  VI: 0.10,               // Versatility Index; positive-only entropy
   TOV: -0.12,
 } as const;
 

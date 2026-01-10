@@ -33,6 +33,7 @@ export function getDefaultCoachingDecision(teamId: string, roundNumber: number):
     teamId,
     roundNumber,
     rotation: [], // Rotation will be filled in by the logic that uses this.
+    rotationDepth: 8,
     lineupStrategy: 'balanced',
     defensiveStrategy: 'standard',
     offensiveStrategy: 'balanced_attack',

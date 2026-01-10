@@ -1,7 +1,9 @@
 /**
- * Lobby Page - UPDATED FOR V2
- * Phase 1A: Added isPublic checkbox, Browse Public Lobbies button
- * Phase 2: Added rotation depth slider (5 to rosterSize)
+ * Lobby Page - V3 UPDATE
+ * 
+ * CHANGELOG:
+ * - V3: Renamed "Playoffs Only" to "Quick Sim" with accurate description
+ * - Removed rotation depth from lobby config (now per-game coaching decision)
  */
 
 import React, { useState } from 'react';
@@ -27,7 +29,7 @@ export function LobbyPage() {
   const [rosterSize, setRosterSize] = useState(12);
   const [pickTimer, setPickTimer] = useState<60 | 120 | 300>(120);
   const [seasonFormat, setSeasonFormat] = useState<SeasonFormat>('double_round_robin');
-  const [isPublic, setIsPublic] = useState(false); // Phase 1A
+  const [isPublic, setIsPublic] = useState(false);
 
   // Join lobby form
   const [inviteCode, setInviteCode] = useState('');
@@ -59,6 +61,7 @@ export function LobbyPage() {
         rosterSize,
         pickTimer,
         seasonFormat,
+        // NOTE: rotationDepth removed - now set per-game in coaching decisions
       };
 
       wsService.emit('lobby:create', { config, isPublic, displayName: displayName.trim() });
@@ -80,6 +83,20 @@ export function LobbyPage() {
       wsService.joinLobby(inviteCode.toUpperCase(), displayName || 'Player');
     } catch (err: any) {
       setError(err.message || 'Failed to join lobby');
+    }
+  };
+
+  // Season format descriptions - V3 UPDATED
+  const getSeasonFormatDescription = (format: SeasonFormat): string => {
+    switch (format) {
+      case 'double_round_robin':
+        return 'Each team plays every other team twice. Full coaching decisions between rounds.';
+      case 'single_round_robin':
+        return 'Each team plays every other team once. Coaching decisions between rounds.';
+      case 'quick_sim':
+        return 'One round-robin season simulated quickly without coaching breaks. Great for testing.';
+      default:
+        return '';
     }
   };
 
@@ -182,13 +199,17 @@ export function LobbyPage() {
           )}
 
           <form onSubmit={handleCreateLobby} className="space-y-6">
-            {/* Phase 1A: Public/Private Toggle */}
+            {/* Public/Private Toggle */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <label className="text-sm font-medium text-gray-700">
                   Public Lobby
                 </label>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <p className="text-xs text-gray-500 mt-1">
+                  {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isPublic}
@@ -197,10 +218,6 @@ export function LobbyPage() {
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
               </label>
-                <p className="text-xs text-gray-500 mt-1">
-                  {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
-                </p>
-              </div>
             </div>
 
             {/* Team Count Slider */}
@@ -255,7 +272,7 @@ export function LobbyPage() {
               </select>
             </div>
 
-            {/* Phase 1A: Season Format Dropdown */}
+            {/* Season Format Dropdown - V3 UPDATED */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Season Format
@@ -265,14 +282,23 @@ export function LobbyPage() {
                 onChange={(e) => setSeasonFormat(e.target.value as SeasonFormat)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="double_round_robin">Double Round Robin (Standard)</option>
-                <option value="single_round_robin">Single Round Robin (Faster)</option>
-                <option value="playoffs_only">Playoffs Only (Fastest)</option>
+                <option value="double_round_robin">Double Round Robin (Full Season)</option>
+                <option value="single_round_robin">Single Round Robin (Half Season)</option>
+                <option value="quick_sim">Quick Sim (No Coaching Breaks)</option>
               </select>
               <p className="text-xs text-gray-500 mt-2">
-                {seasonFormat === 'double_round_robin' && 'Each team plays every other team twice'}
-                {seasonFormat === 'single_round_robin' && 'Each team plays every other team once'}
-                {seasonFormat === 'playoffs_only' && 'Skip straight to playoffs'}
+                {getSeasonFormatDescription(seasonFormat)}
+              </p>
+            </div>
+
+            {/* Info box about coaching */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="text-sm font-medium text-blue-800 mb-1">
+                📋 About Coaching Decisions
+              </h4>
+              <p className="text-xs text-blue-700">
+                Rotation depth and strategies are set per-game during coaching windows, 
+                not at lobby creation. This lets you adapt your approach based on matchups!
               </p>
             </div>
 

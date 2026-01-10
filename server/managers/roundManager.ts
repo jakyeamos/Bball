@@ -30,7 +30,7 @@ export function generateRoundSchedule(
 ): RoundMatchup[] {
   const matchups: RoundMatchup[] = [];
 
-  if (seasonFormat === 'playoffs_only') {
+  if (seasonFormat === 'quick_sim') {
     // Playoffs only - generate bracket matchups
     return generatePlayoffMatchups(teamIds, roundNumber);
   }
@@ -117,7 +117,7 @@ export function calculateTotalRounds(
   teamCount: number,
   seasonFormat: SeasonFormat
 ): number {
-  if (seasonFormat === 'playoffs_only') {
+  if (seasonFormat === 'quick_sim') {
     // Playoff rounds based on bracket depth
     return Math.ceil(Math.log2(teamCount));
   }

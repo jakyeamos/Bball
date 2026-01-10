@@ -1,59 +1,85 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+/**
+ * Results Page - V3 UPDATE
+ * 
+ * CHANGELOG:
+ * - V3: Fixed score display to use result.finalScoreA/B when available
+ * - Added score guard to ensure winner always shows higher score
+ * - Improved generateGameScore function with proper winner alignment
+ */
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
+import { RegularSeasonGame, TeamRecord } from '@nba-draft-sim/shared';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { TeamRecord, RegularSeasonGame } from '@nba-draft-sim/shared';
 import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
 
 /**
- * Generate realistic NBA game scores based on win probability
- * Higher win probability = larger margin of victory (on average)
+ * V3: Generate realistic NBA game scores with SCORE GUARD
+ * Uses result.finalScoreA/B if available, otherwise generates with guarantee
+ * that winner always has the higher score
  */
-function generateGameScore(winPctA: number, seed: number = 0): { scoreA: number; scoreB: number } {
-  // Use seed for consistent scores per game
+function generateGameScore(
+  winPctA: number, 
+  winner: 'A' | 'B',
+  seed: number = 0,
+  existingScoreA?: number,
+  existingScoreB?: number
+): { scoreA: number; scoreB: number } {
+  // V3: If scores already exist in result, use them (they're already guarded)
+  if (existingScoreA !== undefined && existingScoreB !== undefined) {
+    return { scoreA: existingScoreA, scoreB: existingScoreB };
+  }
+
   const pseudoRandom = (s: number) => {
     const x = Math.sin(s * 9999) * 10000;
     return x - Math.floor(x);
   };
 
   // Base scores (typical NBA game)
-  const baseScore = 105 + pseudoRandom(seed + 1) * 20; // 105-125 range
+  const baseScore = 105 + pseudoRandom(seed + 1) * 20;
   
   // Point differential based on win probability
-  // winPctA = 0.5 -> even game, winPctA = 0.7 -> ~8-10 point spread
-  const spread = (winPctA - 0.5) * 30; // -15 to +15 based on probability
+  const dominance = Math.abs(winPctA - 0.5);
+  const baseSpread = dominance * 30;
   
-  // Add variance to the spread
-  const variance = (pseudoRandom(seed + 2) - 0.5) * 15; // +/- 7.5 points
-  const actualSpread = spread + variance;
+  // Add variance
+  const variance = (pseudoRandom(seed + 2) - 0.5) * 10;
+  let spread = Math.max(1, baseSpread + variance);
   
-  // Sometimes the underdog wins (upset)
-  const upsetFactor = pseudoRandom(seed + 3);
-  const isUpset = upsetFactor > winPctA;
+  // Calculate scores with winner having higher score
+  let scoreA: number;
+  let scoreB: number;
   
-  let scoreA = Math.round(baseScore + actualSpread / 2);
-  let scoreB = Math.round(baseScore - actualSpread / 2);
-  
-  if (isUpset) {
-    // Swap scores for upset
-    [scoreA, scoreB] = [scoreB, scoreA];
+  if (winner === 'A') {
+    scoreA = Math.round(baseScore + spread / 2);
+    scoreB = Math.round(baseScore - spread / 2);
+  } else {
+    scoreB = Math.round(baseScore + spread / 2);
+    scoreA = Math.round(baseScore - spread / 2);
   }
   
-  // Ensure scores are reasonable (85-140 range)
+  // SCORE GUARD: Ensure winner always has higher score
+  if (winner === 'A' && scoreA <= scoreB) {
+    scoreA = scoreB + Math.max(1, Math.round(pseudoRandom(seed + 5) * 5) + 1);
+  } else if (winner === 'B' && scoreB <= scoreA) {
+    scoreB = scoreA + Math.max(1, Math.round(pseudoRandom(seed + 5) * 5) + 1);
+  }
+  
+  // Clamp to realistic NBA range
   scoreA = Math.max(85, Math.min(140, scoreA));
   scoreB = Math.max(85, Math.min(140, scoreB));
   
+  // Final safety check after clamping
+  if (winner === 'A' && scoreA <= scoreB) {
+    scoreA = scoreB + 1;
+  } else if (winner === 'B' && scoreB <= scoreA) {
+    scoreB = scoreA + 1;
+  }
+  
   return { scoreA, scoreB };
-}
-
-/**
- * Format game time (quarter)
- */
-function formatGameTime(gameIndex: number): string {
-  const quarters = ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter', 'Final'];
-  return quarters[4]; // All completed games show "Final"
 }
 
 export function ResultsPage() {
@@ -107,18 +133,7 @@ export function ResultsPage() {
         if (prevQueue.length === 0) return prevQueue;
         
         const [nextGame, ...remaining] = prevQueue;
-        
-        setDisplayedGames(prevDisplayed => {
-          const newDisplayed = [...prevDisplayed, nextGame];
-          
-          setTimeout(() => {
-            if (scrollRef.current) {
-              scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            }
-          }, 50);
-          
-          return newDisplayed;
-        });
+        setDisplayedGames(prev => [...prev, nextGame]);
         
         if (remaining.length === 0) {
           setIsSimulating(false);
@@ -129,181 +144,130 @@ export function ResultsPage() {
     }, simSpeed);
 
     return () => clearTimeout(timer);
-  }, [isSimulating, playbackQueue.length, simSpeed]);
+  }, [isSimulating, playbackQueue, simSpeed]);
 
-  // Live standings
-  const liveStandings = useMemo(() => {
-    if (!draft?.teams) return [];
-    
-    const records: Record<string, TeamRecord> = {};
-    draft.teams.forEach(t => records[t.teamId] = { teamId: t.teamId, wins: 0, losses: 0, winPct: 0 });
+  // Auto-scroll
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [displayedGames]);
 
-    displayedGames.forEach(game => {
-      if (!game?.result) return;
-      
-      const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
-      const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
-       
-      if (records[winnerId]) records[winnerId].wins++;
-      if (records[loserId]) records[loserId].losses++;
+  // Team name lookup
+  const teamNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    draft?.teams.forEach(t => {
+      map.set(t.teamId, t.displayName);
     });
-
-    return Object.values(records)
-      .map(r => ({
-        ...r,
-        winPct: (r.wins + r.losses) > 0 ? r.wins / (r.wins + r.losses) : 0
-      }))
-      .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
-  }, [displayedGames, draft]);
-
-  // Handlers
-  const handleSkip = useCallback(() => {
-    setPlaybackQueue(prevQueue => {
-      setDisplayedGames(prevDisplayed => [...prevDisplayed, ...prevQueue]);
-      return [];
-    });
-    setIsSimulating(false);
-  }, []);
-
-  const getTeamName = useCallback((tid: string) => {
-    return draft?.teams.find(t => t.teamId === tid)?.displayName || tid;
+    return map;
   }, [draft]);
 
+  const getTeamName = (teamId: string) => teamNameMap.get(teamId) || teamId;
+
+  // Current matchup for display
   const currentMatchupIdx = displayedGames.length;
-  const totalGames = regularSeasonResults?.games.length || 0;
+
+  // Handlers
+  const handleStartPlayoffs = () => {
+    wsService.emit('playoffs:start', {});
+  };
+
+  const handleSkipAnimation = () => {
+    if (regularSeasonResults) {
+      setDisplayedGames(regularSeasonResults.games);
+      setPlaybackQueue([]);
+      setIsSimulating(false);
+    }
+  };
+
+  if (!league || !regularSeasonResults) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-gray-500">Loading results...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
-        
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {playoffResults ? "League History" : "Season Simulation"}
+              {playoffResults ? 'Championship Complete' : 'Season Results'}
             </h1>
-            {isSimulating && (
-              <p className="text-gray-500 mt-1">Simulating games... {currentMatchupIdx} of {totalGames}</p>
-            )}
+            <p className="text-gray-600 mt-1">
+              {playoffResults 
+                ? `${getTeamName(playoffResults.champion)} wins the championship!` 
+                : regularSeasonResults.summary}
+            </p>
           </div>
           
           {isSimulating && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
-                <span className="text-sm text-gray-600">Speed:</span>
-                <button 
-                  onClick={() => setSimSpeed(800)} 
-                  className={`px-2 py-1 rounded text-xs ${simSpeed === 800 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
-                >
-                  Slow
-                </button>
-                <button 
-                  onClick={() => setSimSpeed(500)} 
-                  className={`px-2 py-1 rounded text-xs ${simSpeed === 500 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
-                >
-                  Normal
-                </button>
-                <button 
-                  onClick={() => setSimSpeed(100)} 
-                  className={`px-2 py-1 rounded text-xs ${simSpeed === 100 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
-                >
-                  Fast
-                </button>
-                <button 
-                  onClick={() => setSimSpeed(20)} 
-                  className={`px-2 py-1 rounded text-xs ${simSpeed === 20 ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}
-                >
-                  Turbo
-                </button>
-              </div>
-              <Button size="sm" variant="primary" onClick={handleSkip}>Skip All</Button>
+            <div className="flex items-center gap-4">
+              <select
+                value={simSpeed}
+                onChange={(e) => setSimSpeed(Number(e.target.value))}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value={1000}>Slow</option>
+                <option value={500}>Normal</option>
+                <option value={200}>Fast</option>
+                <option value={50}>Instant</option>
+              </select>
+              <Button variant="secondary" onClick={handleSkipAnimation}>
+                Skip to End
+              </Button>
             </div>
           )}
         </div>
 
-        {/* No results message */}
-        {!regularSeasonResults && !playoffResults && (
-          <Card padding="lg" className="mb-4 text-center">
-            <p className="text-gray-500">Waiting for season results...</p>
-            <p className="text-sm text-gray-400 mt-2">League phase: {league?.phase || 'unknown'}</p>
-          </Card>
-        )}
-
-        {playoffResults && draft ? (
-          <PlayoffsDisplay playoffResults={playoffResults} teams={draft.teams} />
+        {/* Playoffs Display */}
+        {playoffResults ? (
+          <PlayoffsDisplay
+            playoffResults={playoffResults}
+            teams={draft?.teams || []}
+          />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Standings */}
             <div className="lg:col-span-2">
-              <Card padding="lg">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  {isSimulating ? 'Live Standings' : 'Final Standings'}
-                </h2>
+              <Card>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Standings</h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-100 border-b">
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Rank</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Team</th>
-                        <th className="px-4 py-3 text-center font-semibold text-gray-600">W</th>
-                        <th className="px-4 py-3 text-center font-semibold text-gray-600">L</th>
-                        <th className="px-4 py-3 text-center font-semibold text-gray-600">Pct</th>
-                        <th className="px-4 py-3 text-center font-semibold text-gray-600">Status</th>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-3">#</th>
+                        <th className="text-left py-2 px-3">Team</th>
+                        <th className="text-center py-2 px-3">W</th>
+                        <th className="text-center py-2 px-3">L</th>
+                        <th className="text-center py-2 px-3">PCT</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {liveStandings.length > 0 ? (
-                        liveStandings.map((record, index) => (
-                          <tr 
-                            key={record.teamId} 
-                            className={`border-b transition-colors ${index < 4 ? 'bg-green-50/50' : 'hover:bg-gray-50'}`}
-                          >
-                            <td className="px-4 py-3">
-                              <span className={`
-                                inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
-                                ${index < 4 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}
-                              `}>
-                                {index + 1}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-semibold text-gray-900">{getTeamName(record.teamId)}</td>
-                            <td className="px-4 py-3 text-center text-green-700 font-medium">{record.wins}</td>
-                            <td className="px-4 py-3 text-center text-red-600 font-medium">{record.losses}</td>
-                            <td className="px-4 py-3 text-center text-gray-600">
-                              {(record.winPct * 100).toFixed(1)}%
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {!isSimulating && index < 4 ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                  ✓ PLAYOFFS
-                                </span>
-                              ) : (
-                                <span className="text-gray-300">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                            {draft?.teams ? 'No games played yet...' : 'Loading teams...'}
-                          </td>
+                      {regularSeasonResults.standings.map((team, idx) => (
+                        <tr key={team.teamId} className={idx < 4 ? 'bg-green-50' : ''}>
+                          <td className="py-2 px-3 font-medium">{idx + 1}</td>
+                          <td className="py-2 px-3 font-semibold">{getTeamName(team.teamId)}</td>
+                          <td className="py-2 px-3 text-center">{team.wins}</td>
+                          <td className="py-2 px-3 text-center">{team.losses}</td>
+                          <td className="py-2 px-3 text-center">{(team.winPct * 100).toFixed(1)}%</td>
                         </tr>
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
-
-                {/* Commissioner Button */}
-                {!isSimulating && !playoffResults && league?.phase === 'regular_season' && (
-                  <div className="mt-8 text-center border-t pt-6">
+                
+                {/* Start Playoffs Button */}
+                {!isSimulating && !playoffResults && (
+                  <div className="mt-6 pt-4 border-t">
                     {isCommissioner ? (
-                      <Button 
-                        size="lg" 
-                        onClick={() => wsService.startPlayoffs()} 
-                        className="animate-pulse"
-                      >
-                        🏆 Start Playoffs
+                      <Button variant="primary" size="lg" fullWidth onClick={handleStartPlayoffs}>
+                        Start Playoffs
                       </Button>
                     ) : (
                       <div className="text-gray-500 italic">Waiting for Commissioner to start playoffs...</div>
@@ -327,12 +291,14 @@ export function ResultsPage() {
                   {displayedGames.map((game, idx) => {
                     if (!game?.result) return null;
                     
-                    // Generate scores based on win probability and game index as seed
-                    const { scoreA, scoreB } = generateGameScore(game.result.winPctA, idx + 1);
-                    const winnerId = game.result.winner === 'A' ? game.teamAId : game.teamBId;
-                    const loserId = game.result.winner === 'A' ? game.teamBId : game.teamAId;
-                    const winnerScore = game.result.winner === 'A' ? scoreA : scoreB;
-                    const loserScore = game.result.winner === 'A' ? scoreB : scoreA;
+                    // V3: Use result scores if available, otherwise generate with score guard
+                    const { scoreA, scoreB } = generateGameScore(
+                      game.result.winPctA,
+                      game.result.winner,
+                      idx + 1,
+                      game.result.finalScoreA,
+                      game.result.finalScoreB
+                    );
 
                     return (
                       <div 
@@ -347,7 +313,7 @@ export function ResultsPage() {
 
                         {/* Scoreboard */}
                         <div className="p-3">
-                          {/* Team A (Home) */}
+                          {/* Team A */}
                           <div className={`flex items-center justify-between py-2 ${game.result.winner === 'A' ? 'text-white' : 'text-gray-400'}`}>
                             <div className="flex items-center gap-2">
                               {game.result.winner === 'A' && (
@@ -365,7 +331,7 @@ export function ResultsPage() {
                             </span>
                           </div>
 
-                          {/* Team B (Away) */}
+                          {/* Team B */}
                           <div className={`flex items-center justify-between py-2 border-t border-gray-700 ${game.result.winner === 'B' ? 'text-white' : 'text-gray-400'}`}>
                             <div className="flex items-center gap-2">
                               {game.result.winner === 'B' && (
