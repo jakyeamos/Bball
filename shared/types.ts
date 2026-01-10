@@ -281,7 +281,11 @@ export interface ScoutingReport {
   
   // Predicted style clash
   styleClash: string;
-  
+
+  // Editorial coaching tendency insights (based on recent coaching decisions)
+  teamACoachingTendencies: string;
+  teamBCoachingTendencies: string;
+
   // Betting line style prediction (editorial flavor)
   prediction: string;
 }
@@ -563,10 +567,14 @@ export interface LeagueState {
   playoffResults: PlayoffResults | null;
   tradeProposals: TradeProposal[];
   tradeWindowEndsAt: string | null;
-  
+
   // V3: Live game state for quarter-based simulation
   liveGame?: LiveGameState;
-  
+
+  // V3: Historical coaching decisions for scouting reports
+  // Maps teamId -> array of decisions from past rounds
+  coachingHistory: Record<string, CoachingDecision[]>;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -719,8 +727,9 @@ export const WS_EVENTS = {
   LEAGUE_COMPLETED: 'league:completed',
 
   // V3: Quarter-based game events
-  SCOUTING_REPORT: 'game:scouting_report',
+  GAME_SCOUTING_REPORT: 'game:scouting_report',
   QUARTER_COACHING_WINDOW: 'game:quarter_coaching_window',
+  SUBMIT_QUARTER_COACHING: 'game:submit_quarter_coaching',
   QUARTER_RESULT: 'game:quarter_result',
   GAME_FINAL: 'game:final',
 

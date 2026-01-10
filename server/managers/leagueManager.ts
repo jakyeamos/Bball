@@ -35,6 +35,8 @@ export function createLeague(draftState: DraftState): LeagueState {
     // FIX: Add missing Phase 2.5 property
     tradeProposals: [],
     tradeWindowEndsAt: null, // No longer used, but kept for type safety
+    // V3: Historical coaching decisions for scouting reports
+    coachingHistory: {},
     createdAt: now,
     updatedAt: now,
   };

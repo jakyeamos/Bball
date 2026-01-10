@@ -13,6 +13,7 @@ import { DraftRecapPage } from './pages/DraftRecapPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { LobbyBrowserPage } from './pages/LobbyBrowserPage';
 import { CoachingDecisionsPage } from './pages/CoachingDecisionsPage';
+import { QuarterCoachingPage } from './pages/QuarterCoachingPage';
 import { RoundResultsPage } from './pages/RoundResultsPage';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/" element={<LobbyPage />} />
           <Route path="/browse" element={<LobbyBrowserPage />} />
           <Route path="/coaching" element={<CoachingDecisionsPage />} />
+          <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
           <Route path="/waiting-room" element={<WaitingRoomPage />} />
           <Route path="/draft" element={<DraftPage />} />
           <Route path="/draft-recap" element={<DraftRecapPage />} />
