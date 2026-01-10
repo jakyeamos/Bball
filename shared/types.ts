@@ -443,7 +443,8 @@ export type LeaguePhase =
   | 'draft_recap'
   | 'regular_season'      // Now subdivided into rounds
   | 'playoffs'
-  | 'complete';
+  | 'complete'
+  | 'trade_window';      // NEW - Phase 2.5`;
 
 export interface LeagueState {
   leagueId: string;
