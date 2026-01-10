@@ -213,13 +213,20 @@ export function simulateRound(
     const coachingA = round.coachingDecisions[matchup.teamAId];
     const coachingB = round.coachingDecisions[matchup.teamBId];
 
+    // Create unique seed for this matchup to ensure different scores
+    const matchupSeed = matchup.matchupId.split('').reduce((acc, char) => {
+      return acc + char.charCodeAt(0);
+    }, 0) + round.roundNumber;
+
     // Simulate matchup
     const result = simulateMatchup(
       teamA,
       teamB,
       matchup.homeTeam,
       coachingA,
-      coachingB
+      coachingB,
+      undefined, // numSims - use default
+      matchupSeed
     );
 
     // Create a RegularSeasonGame record

@@ -317,6 +317,12 @@ export function CoachingDecisionsPage() {
                           ))}
                         </ul>
                       </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
+                        <p className="text-xs text-gray-600 italic mt-1">
+                          {scoutingReport.teamACoachingTendencies}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -339,6 +345,12 @@ export function CoachingDecisionsPage() {
                             <li key={i}>{w}</li>
                           ))}
                         </ul>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
+                        <p className="text-xs text-gray-600 italic mt-1">
+                          {scoutingReport.teamBCoachingTendencies}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -470,9 +482,9 @@ export function CoachingDecisionsPage() {
           <div className="space-y-4">
             {/* View Scouting Report Button */}
             {scoutingReport && (
-              <Button 
-                variant="secondary" 
-                fullWidth 
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => setShowScoutingReport(true)}
               >
                 📋 View Scouting Report

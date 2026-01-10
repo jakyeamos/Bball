@@ -26,6 +26,7 @@ import {
 } from '../managers/tradeProposalManager';
 import { getLeague, leagueStore } from '../stores/leagueStore';
 import { aggregateTeam } from '../services/aggregation';
+import { generateScoutingReport } from '../services/scoutingReport';
 import { lobbies } from './handlers'; // Import existing lobbies store
 
 export function getDefaultCoachingDecision(teamId: string, roundNumber: number): CoachingDecision {
@@ -101,6 +102,51 @@ export function handleStartRound(
       roundState,
     });
 
+    // Generate and send scouting reports for each matchup
+    for (const matchup of matchups) {
+      const teamA = draftState.teams.find(t => t.teamId === matchup.teamAId);
+      const teamB = draftState.teams.find(t => t.teamId === matchup.teamBId);
+
+      if (teamA && teamB) {
+        // Get rosters
+        const teamARoster = teamA.roster
+          .map(pid => allPlayers.find(p => p.playerId === pid))
+          .filter((p): p is Player => p !== undefined);
+        const teamBRoster = teamB.roster
+          .map(pid => allPlayers.find(p => p.playerId === pid))
+          .filter((p): p is Player => p !== undefined);
+
+        if (teamARoster.length > 0 && teamBRoster.length > 0) {
+          // Generate team aggregations
+          const teamAAgg = aggregateTeam(teamARoster, teamA.teamId);
+          const teamBAgg = aggregateTeam(teamBRoster, teamB.teamId);
+
+          // Get recent coaching decisions for both teams
+          const teamARecentDecisions = league.coachingHistory?.[teamA.teamId] || [];
+          const teamBRecentDecisions = league.coachingHistory?.[teamB.teamId] || [];
+
+          // Generate scouting report
+          const scoutingReport = generateScoutingReport(
+            matchup,
+            teamA.displayName,
+            teamB.displayName,
+            teamAAgg,
+            teamBAgg,
+            teamARoster,
+            teamBRoster,
+            teamARecentDecisions,
+            teamBRecentDecisions
+          );
+
+          // Send scouting report to both teams
+          io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.GAME_SCOUTING_REPORT, {
+            type: 'GAME_SCOUTING_REPORT',
+            payload: { scoutingReport },
+          });
+        }
+      }
+    }
+
     // Broadcast round started
     io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.ROUND_STARTED, {
       type: 'ROUND_STARTED',
@@ -145,6 +191,16 @@ export function handleSubmitCoaching(
     );
 
     leagueStore.update(lobbyId, { roundState: updatedRound });
+
+    // Update coaching history
+    if (!league.coachingHistory) {
+      league.coachingHistory = {};
+    }
+    if (!league.coachingHistory[team.teamId]) {
+      league.coachingHistory[team.teamId] = [];
+    }
+    league.coachingHistory[team.teamId].push(payload.decision);
+    leagueStore.update(lobbyId, { coachingHistory: league.coachingHistory });
 
     // Check if all decisions submitted
     const activeTeamIds = league.draftState.teams.map(t => t.teamId);
