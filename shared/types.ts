@@ -719,8 +719,9 @@ export const WS_EVENTS = {
   LEAGUE_COMPLETED: 'league:completed',
 
   // V3: Quarter-based game events
-  SCOUTING_REPORT: 'game:scouting_report',
+  GAME_SCOUTING_REPORT: 'game:scouting_report',
   QUARTER_COACHING_WINDOW: 'game:quarter_coaching_window',
+  SUBMIT_QUARTER_COACHING: 'game:submit_quarter_coaching',
   QUARTER_RESULT: 'game:quarter_result',
   GAME_FINAL: 'game:final',
 
