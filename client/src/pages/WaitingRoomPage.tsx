@@ -63,13 +63,7 @@ export function WaitingRoomPage() {
         break;
     }
 
-    // Estimate runtime: ~20s per game + draft time
-    const draftTime = lobby.config.rosterSize * n * (lobby.config.pickTimer / 60);
-    const seasonTime = Math.ceil((matchups * 20) / 60);
-    const totalMinutes = Math.ceil(draftTime + seasonTime);
-    const runtime = `~${totalMinutes} min`;
-
-    return { format: formatText, matchups, runtime };
+    return { format: formatText, matchups };
   }, [lobby.config]);
 
   // Safe access with optional chaining
@@ -157,16 +151,16 @@ export function WaitingRoomPage() {
                 <div className="text-sm text-gray-600">Teams</div>
               </div>
               <div>
+                <div className="text-sm text-gray-600">Roster Size</div>
                 <div className="text-2xl font-bold text-primary-600">
                   {lobby.config?.rosterSize || 0}
                 </div>
-                <div className="text-sm text-gray-600">Roster Size</div>
               </div>
               <div>
+                <div className="text-sm text-gray-600">Pick Timer</div>
                 <div className="text-2xl font-bold text-primary-600">
                   {(lobby.config?.pickTimer || 0) / 60}m
                 </div>
-                <div className="text-sm text-gray-600">Pick Timer</div>
               </div>
             </div>
           </div>
@@ -175,22 +169,18 @@ export function WaitingRoomPage() {
             <h3 className="font-bold text-gray-900 mb-2">Season Details</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
+                <div className="text-sm text-gray-600">Format</div>
                 <div className="text-lg font-bold text-primary-600 truncate px-2">
                   {seasonDetails.format}
                 </div>
-                <div className="text-sm text-gray-600">Format</div>
               </div>
               <div>
+                <div className="text-sm text-gray-600">Total Games</div>
                 <div className="text-2xl font-bold text-primary-600">
                   {seasonDetails.matchups}
                 </div>
-                <div className="text-sm text-gray-600">Total Games</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-primary-600">
-                  {seasonDetails.runtime}
-                </div>
-                <div className="text-sm text-gray-600">Est. Runtime</div>
               </div>
             </div>
           </div>

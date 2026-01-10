@@ -203,6 +203,7 @@ export function DraftRecapPage() {
                   </div>
                 )}
               </div>
+              <br />
             </div>
 
             {/* Right: Player Grid */}
@@ -216,6 +217,7 @@ export function DraftRecapPage() {
                   />
                 ))}
               </div>
+              <br />
 
               {sortedRoster.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
