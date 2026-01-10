@@ -1,322 +1,236 @@
 /**
- * server/managers/roundManager.ts - Phase 1B
- * Round-based execution system
+ * Socket Manager
+ * Orchestrates WebSocket connections and event routing
+ * 
+ * UPDATED: Emits SESSION_INFO on connection so client knows their userId
+ * FIX: Import handlers from correct files
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { Server as HttpServer } from 'http';
+import { Server as SocketServer, Socket } from 'socket.io';
+import { Player } from '@nba-draft-sim/shared';
+import { WS_EVENTS } from '@nba-draft-sim/shared';
+import { getOrCreateSession, SESSION_COOKIE_NAME } from './sessionManager';
+// FIX: Import core handlers from handlers.ts
 import {
-  RoundState,
-  RoundPhase,
-  RoundMatchup,
-  RoundResult,
-  CoachingDecision,
-  TeamAggregation,
-  Player,
-  SeasonFormat,
-  RegularSeasonGame,
-  TeamRecord,
-  MatchupResult,
-  DRAFT_CONSTRAINTS,
-} from '@nba-draft-sim/shared';
-import { simulateMatchup } from '../services/simulation';
+  handleCreateLobby,
+  handleJoinLobby,
+  handleStartDraft,
+  handleMakePick,
+  handleUpdateQueue,
+  handlePauseDraft,
+  handleUnpauseDraft,
+  handleStartRegularSeason,
+  handleStartPlayoffs,
+  handleCompleteLeague,
+} from '../services/handlers';
+// FIX: Import new handlers from handlers-v2.ts
+import {
+  handleStartRound,
+  handleSubmitCoaching,
+  handleProposeTrade,
+  handleRespondToTrade,
+  handleCancelTrade,
+} from '../services/handlers-v2';
+import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
+import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
 
 /**
- * Generate schedule for a round based on season format
+ * Initialize Socket.io server
  */
-export function generateRoundSchedule(
-  teamIds: string[],
-  roundNumber: number,
-  seasonFormat: SeasonFormat
-): RoundMatchup[] {
-  const matchups: RoundMatchup[] = [];
+export function initializeSocketServer(
+  httpServer: HttpServer,
+  allPlayers: Player[]
+): SocketServer {
+  const io = new SocketServer(httpServer, {
+    cors: {
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
 
-  if (seasonFormat === 'playoffs_only') {
-    // Playoffs only - generate bracket matchups
-    return generatePlayoffMatchups(teamIds, roundNumber);
-  }
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'https://bball-client.vercel.app',
+        ];
 
-  // Round robin scheduling
-  const n = teamIds.length;
+        const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
 
-  // Fixed pivot algorithm for round robin
-  let scheduleTeams = teamIds;
-  if (n % 2 !== 0) {
-    scheduleTeams = [...teamIds, 'BYE']; // Add dummy for odd teams
-  }
-
-  const pivotTeam = scheduleTeams[0];
-  const rotatingTeams = scheduleTeams.slice(1);
-
-  // Calculate rotation for this round
-  const rotation = (roundNumber - 1) % rotatingTeams.length;
-  const rotated = [
-    ...rotatingTeams.slice(rotation),
-    ...rotatingTeams.slice(0, rotation),
-  ];
-
-  const roundTeams = [pivotTeam, ...rotated];
-
-  // Generate matchups for this round
-  const halfSize = roundTeams.length / 2;
-  for (let i = 0; i < halfSize; i++) {
-    const teamA = roundTeams[i];
-    const teamB = roundTeams[roundTeams.length - 1 - i];
-
-    // Skip BYE matchups
-    if (teamA === 'BYE' || teamB === 'BYE') continue;
-
-    // Alternate home team based on round number
-    const homeTeam = roundNumber % 2 === 1 ? 'A' : 'B';
-
-    matchups.push({
-      matchupId: uuidv4(),
-      teamAId: teamA,
-      teamBId: teamB,
-      homeTeam,
-      result: undefined,  // FIX: Use undefined instead of null
-    });
-  }
-
-  return matchups;
-}
-
-/**
- * Generate playoff bracket matchups (for playoffs_only format)
- */
-function generatePlayoffMatchups(
-  teamIds: string[],
-  roundNumber: number
-): RoundMatchup[] {
-  const matchups: RoundMatchup[] = [];
-
-  // Assume teams are seeded in order
-  if (roundNumber === 1) {
-    // First round: seed bracket
-    for (let i = 0; i < teamIds.length / 2; i++) {
-      matchups.push({
-        matchupId: uuidv4(),
-        teamAId: teamIds[i],
-        teamBId: teamIds[teamIds.length - 1 - i],
-        homeTeam: 'A',
-        result: undefined,  // FIX: Use undefined instead of null
-      });
-    }
-  } else {
-    // Subsequent rounds: winners advance
-    // This requires tracking previous round results
-    // For now, return empty (will be populated by league manager)
-  }
-
-  return matchups;
-}
-
-/**
- * Calculate total rounds based on season format
- */
-export function calculateTotalRounds(
-  teamCount: number,
-  seasonFormat: SeasonFormat
-): number {
-  if (seasonFormat === 'playoffs_only') {
-    // Playoff rounds based on bracket depth
-    return Math.ceil(Math.log2(teamCount));
-  }
-
-  const roundsInFullCycle = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
-
-  if (seasonFormat === 'single_round_robin') {
-    return roundsInFullCycle;
-  }
-
-  // double_round_robin
-  return roundsInFullCycle * 2;
-}
-
-/**
- * Create initial round state
- */
-export function createRoundState(
-  roundNumber: number,
-  matchups: RoundMatchup[]
-): RoundState {
-  return {
-    roundNumber,
-    phase: 'coaching_window',
-    matchups,
-    coachingDecisions: {},  // FIX: Use plain object (Record) instead of Map for JSON serialization
-    roundResults: null,
-    coachingWindowEndsAt: new Date(Date.now() + DRAFT_CONSTRAINTS.COACHING_WINDOW_SECONDS * 1000).toISOString(),
-  };
-}
-
-/**
- * Submit coaching decision for a team
- */
-export function submitCoachingDecision(
-  round: RoundState,
-  teamId: string,
-  decision: CoachingDecision
-): RoundState {
-  return {
-    ...round,
-    coachingDecisions: {
-      ...round.coachingDecisions,
-      [teamId]: decision,
+        if (allowedOrigins.includes(origin) || isVercelPreview) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
     },
-  };
-}
+    pingTimeout: 60000,
+    pingInterval: 25000,
+  });
 
-/**
- * Check if all teams have submitted coaching decisions
- */
-export function allDecisionsSubmitted(
-  round: RoundState,
-  activeTeamIds: string[]
-): boolean {
-  return activeTeamIds.every(teamId => round.coachingDecisions[teamId] !== undefined);
-}
+  // Middleware: Session authentication
+  io.use((socket, next) => {
+    try {
+      // Get session from cookie or create new
+      const cookies = socket.handshake.headers.cookie;
+      let userId: string | null = null;
 
-/**
- * Check if coaching window has expired
- */
-export function isCoachingWindowExpired(round: RoundState): boolean {
-  if (!round.coachingWindowEndsAt) return true;  // FIX: Handle null case
-  return new Date().getTime() >= new Date(round.coachingWindowEndsAt).getTime();
-}
+      if (cookies) {
+        const sessionCookie = cookies
+          .split(';')
+          .find(c => c.trim().startsWith(`${SESSION_COOKIE_NAME}=`));
 
-/**
- * Simulate all matchups in a round
- */
-export function simulateRound(
-  round: RoundState,
-  teamAggregations: Map<string, TeamAggregation>,
-  teamNames: Map<string, string>
-): RoundState {
-  const games: RegularSeasonGame[] = [];
-  const standings: Map<string, { wins: number; losses: number }> = new Map();
+        if (sessionCookie) {
+          userId = sessionCookie.split('=')[1];
+        }
+      }
 
-  // Initialize standings for all teams
-  for (const teamId of teamAggregations.keys()) {
-    standings.set(teamId, { wins: 0, losses: 0 });
-  }
+      // Get or create session
+      const displayName = socket.handshake.auth.displayName as string | undefined;
+      const session = getOrCreateSession(userId, displayName);
 
-  for (const matchup of round.matchups) {
-    const teamA = teamAggregations.get(matchup.teamAId);
-    const teamB = teamAggregations.get(matchup.teamBId);
+      // Store session info on socket
+      socket.data.userId = session.userId;
+      socket.data.displayName = session.displayName;
 
-    if (!teamA || !teamB) {
-      console.error(`Missing team aggregation for matchup ${matchup.matchupId}`);
-      continue;
+      next();
+    } catch (error) {
+      next(new Error('Authentication failed'));
     }
+  });
 
-    // Get coaching decisions for each team (use bracket notation for Record type)
-    const coachingA = round.coachingDecisions[matchup.teamAId];
-    const coachingB = round.coachingDecisions[matchup.teamBId];
+  // Connection handler
+  io.on(WS_EVENTS.CONNECT, (socket: Socket) => {
+    console.log(`✅ Client connected: ${socket.id} (user: ${socket.data.userId})`);
+    console.log('🔵 Registering CREATE_LOBBY listener for event:', WS_EVENTS.CREATE_LOBBY);
 
-    // Simulate matchup
-    const result = simulateMatchup(
-      teamA,
-      teamB,
-      matchup.homeTeam,
-      coachingA,
-      coachingB
-    );
+    socket.onAny((eventName, ...args) => {
+      console.log(`📥 Received event: "${eventName}"`, args);
+    });
 
-    // Create a RegularSeasonGame record
-    const game: RegularSeasonGame = {
-      gameId: matchup.matchupId,
-      teamAId: matchup.teamAId,
-      teamBId: matchup.teamBId,
-      homeTeam: matchup.homeTeam,
-      result,
-      editorial: generateGameEditorial(
-        teamNames.get(matchup.teamAId) || matchup.teamAId,
-        teamNames.get(matchup.teamBId) || matchup.teamBId,
-        result
-      ),
-    };
+    console.log(`Client connected: ${socket.id} (user: ${socket.data.userId})`);
 
-    games.push(game);
+    const userId = socket.data.userId;
+    const displayName = socket.data.displayName;
 
-    // Update standings
-    const winnerId = result.winner === 'A' ? matchup.teamAId : matchup.teamBId;
-    const loserId = result.winner === 'A' ? matchup.teamBId : matchup.teamAId;
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🆕 EMIT SESSION INFO - Tell the client who they are
+    // ═══════════════════════════════════════════════════════════════════════
+    socket.emit(WS_EVENTS.SESSION_INFO, {
+      payload: {
+        userId: userId,
+        displayName: displayName,
+      }
+    });
+    console.log(`📤 Sent SESSION_INFO to client: userId=${userId}`);
+    // ═══════════════════════════════════════════════════════════════════════
 
-    const winnerRecord = standings.get(winnerId)!;
-    const loserRecord = standings.get(loserId)!;
-    winnerRecord.wins++;
-    loserRecord.losses++;
-  }
+    // CREATE_LOBBY
+    socket.on(WS_EVENTS.CREATE_LOBBY, (payload: any) => {
+      console.log('🟢 CREATE_LOBBY EVENT RECEIVED!', payload);
 
-  // Convert standings map to array
-  const updatedStandings: TeamRecord[] = Array.from(standings.entries())
-    .map(([teamId, record]) => ({
-      teamId,
-      wins: record.wins,
-      losses: record.losses,
-      winPct: record.wins / Math.max(record.wins + record.losses, 1),
-    }))
-    .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
+      handleCreateLobby(io, socket, payload, userId, displayName);
+    });
 
-  // Create RoundResult
-  const roundResults: RoundResult = {
-    roundNumber: round.roundNumber,
-    games,
-    updatedStandings,
-  };
+    // JOIN_LOBBY
+    socket.on(WS_EVENTS.JOIN_LOBBY, (payload: any) => {
+      handleJoinLobby(io, socket, payload, userId);
+    });
 
-  return {
-    ...round,
-    phase: 'results',
-    roundResults,
-    // Update matchups with results
-    matchups: round.matchups.map(m => {
-      const game = games.find(g => g.gameId === m.matchupId);
-      return game ? { ...m, result: game.result } : m;
-    }),
-  };
-}
+    // START_DRAFT
+    socket.on(WS_EVENTS.START_DRAFT, () => {
+      handleStartDraft(io, socket, userId, allPlayers);
 
-/**
- * Generate a simple editorial for a game
- */
-function generateGameEditorial(
-  teamAName: string,
-  teamBName: string,
-  result: MatchupResult
-): string {
-  const winner = result.winner === 'A' ? teamAName : teamBName;
-  const loser = result.winner === 'A' ? teamBName : teamAName;
-  const winPct = result.winner === 'A' ? result.winPctA : (1 - result.winPctA);
-  
-  if (winPct > 0.7) {
-    return `${winner} dominated ${loser} in a convincing victory.`;
-  } else if (winPct > 0.55) {
-    return `${winner} secured a solid win over ${loser}.`;
-  } else {
-    return `${winner} edged out ${loser} in a tight contest.`;
-  }
-}
+      // Start timer for this lobby
+      const lobbyId = socket.data.lobbyId;
+      if (lobbyId) {
+        startDraftTimer(io, lobbyId, allPlayers);
+      }
+    });
 
-/**
- * Transition round to next phase
- */
-export function transitionRoundPhase(
-  round: RoundState,
-  newPhase: RoundPhase
-): RoundState {
-  return {
-    ...round,
-    phase: newPhase,
-  };
-}
+    // MAKE_PICK
+    socket.on(WS_EVENTS.MAKE_PICK, (payload: any) => {
+      handleMakePick(io, socket, payload, userId);
+    });
 
-/**
- * Get time remaining in coaching window (seconds)
- */
-export function getCoachingTimeRemaining(round: RoundState): number {
-  if (!round.coachingWindowEndsAt) return 0;  // FIX: Handle null case
-  const now = Date.now();
-  const endsAt = new Date(round.coachingWindowEndsAt).getTime();
-  return Math.max(0, Math.floor((endsAt - now) / 1000));
+    // UPDATE_QUEUE
+    socket.on(WS_EVENTS.UPDATE_QUEUE, (payload: any) => {
+      handleUpdateQueue(io, socket, payload, userId);
+    });
+
+    // PAUSE_DRAFT
+    socket.on(WS_EVENTS.PAUSE_DRAFT, () => {
+      handlePauseDraft(io, socket, userId);
+    });
+
+    // UNPAUSE_DRAFT
+    socket.on(WS_EVENTS.UNPAUSE_DRAFT, () => {
+      handleUnpauseDraft(io, socket, userId);
+    });
+
+    // START_REGULAR_SEASON
+    socket.on(WS_EVENTS.START_REGULAR_SEASON, () => {
+      handleStartRegularSeason(io, socket, userId, allPlayers);
+    });
+
+    socket.on(WS_EVENTS.START_ROUND, () => {
+      handleStartRound(io, socket, userId, allPlayers);
+    });
+
+    socket.on(WS_EVENTS.SUBMIT_COACHING_DECISION, (payload: any) => {
+      handleSubmitCoaching(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.PROPOSE_TRADE, (payload: any) => {
+      handleProposeTrade(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.RESPOND_TO_TRADE, (payload: any) => {
+      handleRespondToTrade(io, socket, payload, userId);
+    });
+
+    socket.on(WS_EVENTS.CANCEL_TRADE_PROPOSAL, (payload: any) => {
+      handleCancelTrade(io, socket, payload, userId);
+    });
+
+    // START_PLAYOFFS
+    socket.on(WS_EVENTS.START_PLAYOFFS, () => {
+      handleStartPlayoffs(io, socket, userId, allPlayers);
+    });
+
+    // COMPLETE_LEAGUE
+    socket.on(WS_EVENTS.COMPLETE_LEAGUE, () => {
+      handleCompleteLeague(io, socket, userId);
+    });
+
+    // DISCONNECT
+    socket.on(WS_EVENTS.DISCONNECT, () => {
+      console.log(`Client disconnected: ${socket.id}`);
+
+      // Clean up timer if this was the last user in a lobby
+      const lobbyId = socket.data.lobbyId;
+      if (lobbyId) {
+        const roomSockets = io.sockets.adapter.rooms.get(`lobby:${lobbyId}`);
+        if (!roomSockets || roomSockets.size === 0) {
+          stopDraftTimer(lobbyId);
+        }
+        stopTradeWindowTimer(lobbyId);
+      }
+    });
+  });
+
+  // Cleanup on server shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, cleaning up...');
+    stopAllTimers();
+    stopAllTradeTimers();
+    io.close();
+  });
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, cleaning up...');
+    stopAllTimers();
+    stopAllTradeTimers();
+    io.close();
+  });
+
+  return io;
 }

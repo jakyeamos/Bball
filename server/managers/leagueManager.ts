@@ -3,6 +3,8 @@
  *
  * SIMPLIFIED: Removed Trade Window phase and Timer.
  * Trades are now allowed directly in 'draft_recap'.
+ * 
+ * FIX: Added missing properties for LeagueState (currentRound, roundState, totalRounds, tradeProposals)
  */
 
 import { LeagueState, Player, DraftState } from '@nba-draft-sim/shared';
@@ -23,8 +25,15 @@ export function createLeague(draftState: DraftState): LeagueState {
     leagueId: draftState.draftId,
     phase: 'draft',
     draftState: draftState,
+    // FIX: Add missing Phase 1B properties
+    currentRound: null,
+    roundState: null,
+    totalRounds: null,
+    // Full season results
     regularSeasonResults: null,
     playoffResults: null,
+    // FIX: Add missing Phase 2.5 property
+    tradeProposals: [],
     tradeWindowEndsAt: null, // No longer used, but kept for type safety
     createdAt: now,
     updatedAt: now,
