@@ -166,7 +166,6 @@ export interface LobbyConfig {
   rosterSize: number;  // 10-15
   pickTimer: PickTimer;
   seasonFormat: SeasonFormat;  // NEW - Phase 1A
-  rotationDepth: number;  // NEW - Phase 2 (5 to rosterSize)
 }
 
 export interface LobbyState {
