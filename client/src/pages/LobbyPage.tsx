@@ -202,9 +202,6 @@ export function LobbyPage() {
             {/* Public/Private Toggle */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Public Lobby
-                </label>
                 <p className="text-xs text-gray-500 mt-1">
                   {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
                 </p>
@@ -290,18 +287,6 @@ export function LobbyPage() {
                 {getSeasonFormatDescription(seasonFormat)}
               </p>
             </div>
-
-            {/* Info box about coaching */}
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="text-sm font-medium text-blue-800 mb-1">
-                📋 About Coaching Decisions
-              </h4>
-              <p className="text-xs text-blue-700">
-                Rotation depth and strategies are set per-game during coaching windows, 
-                not at lobby creation. This lets you adapt your approach based on matchups!
-              </p>
-            </div>
-
             <div className="pt-4">
               <Button
                 type="submit"
