@@ -133,7 +133,7 @@ function generateSchedule(
   seasonFormat: SeasonFormat
 ): Array<{ home: string; away: string }> {
   switch (seasonFormat) {
-    case 'playoffs_only':
+    case 'quick_sim':
     case 'single_round_robin':
       return generateSingleRoundRobinSchedule(teamIds);
     case 'double_round_robin':
