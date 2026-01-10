@@ -179,11 +179,6 @@ function validateLobbyConfig(config: LobbyConfig): void {
     errors.push(`Pick timer must be one of: ${DRAFT_CONSTRAINTS.PICK_TIMER_OPTIONS_SECONDS.join(', ')}`);
   }
 
-  // Phase 1A: Validate rotation depth
-  if (config.rotationDepth < DRAFT_CONSTRAINTS.ROTATION_MIN || config.rotationDepth > config.rosterSize) {
-    errors.push(`Rotation depth must be between ${DRAFT_CONSTRAINTS.ROTATION_MIN} and roster size`);
-  }
-
   // Phase 1A: Validate season format
   const validFormats = ['single_round_robin', 'double_round_robin', 'playoffs_only'];
   if (!validFormats.includes(config.seasonFormat)) {

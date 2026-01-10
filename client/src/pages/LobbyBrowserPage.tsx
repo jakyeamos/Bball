@@ -199,12 +199,6 @@ export function LobbyBrowserPage() {
                       {getSeasonFormatLabel(lobby.config.seasonFormat)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Rotation</span>
-                    <span className="font-medium text-gray-900">
-                      {lobby.config.rotationDepth} players
-                    </span>
-                  </div>
                 </div>
 
                 {/* Join Button */}

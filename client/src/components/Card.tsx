@@ -1,18 +1,19 @@
-/**
- * Card Component
- * Dumb UI component for card containers
- */
-
+// client/src/components/Card.tsx
 import React, { ReactNode } from 'react';
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
-  className?: string;
   title?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-export function Card({ children, className = '', title, padding = 'md' }: CardProps) {
+export function Card({
+  children,
+  className = '',
+  title,
+  padding = 'md',
+  ...rest
+}: CardProps) {
   const paddingStyles = {
     none: '',
     sm: 'p-4',
@@ -21,10 +22,11 @@ export function Card({ children, className = '', title, padding = 'md' }: CardPr
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-md ${paddingStyles[padding]} ${className}`}>
-      {title && (
-        <h3 className="text-xl font-bold mb-4 text-gray-900">{title}</h3>
-      )}
+    <div
+      {...rest}
+      className={`bg-white rounded-lg shadow-md ${paddingStyles[padding]} ${className}`}
+    >
+      {title && <h3 className="text-xl font-bold mb-4 text-gray-900">{title}</h3>}
       {children}
     </div>
   );

@@ -40,7 +40,7 @@ export function CoachingDecisionsPage() {
       .filter((p): p is Player => p !== undefined);
   }, [myTeam, allPlayers]);
 
-  const rotationDepth = draft?.config.rotationDepth || 8;
+  const rotationDepth = 8;
 
   // Initialize rotation with top players by impact
   useEffect(() => {
@@ -83,7 +83,7 @@ export function CoachingDecisionsPage() {
 
     const decision: CoachingDecision = {
       teamId: myTeam.teamId,
-      roundNumber: league.currentRound.roundNumber,
+      roundNumber: league.currentRound,
       rotation: selectedRotation,
       lineupStrategy,
       defensiveStrategy,
@@ -116,7 +116,7 @@ export function CoachingDecisionsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Coaching Decisions</h1>
               <p className="text-gray-600 mt-1">
-                Round {league?.currentRound?.roundNumber || 1} - Set your rotation and strategies
+                Round {league?.currentRound || 1} - Set your rotation and strategies
               </p>
             </div>
             {timeRemaining !== null && (
