@@ -32,7 +32,6 @@ router.get('/lobbies', (req, res) => {
             rosterSize: lobby.config.rosterSize,
             pickTimer: lobby.config.pickTimer,
             seasonFormat: lobby.config.seasonFormat,
-            rotationDepth: lobby.config.rotationDepth,
           },
           createdAt: lobby.createdAt,
         });

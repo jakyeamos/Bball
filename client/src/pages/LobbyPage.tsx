@@ -27,7 +27,6 @@ export function LobbyPage() {
   const [rosterSize, setRosterSize] = useState(12);
   const [pickTimer, setPickTimer] = useState<60 | 120 | 300>(120);
   const [seasonFormat, setSeasonFormat] = useState<SeasonFormat>('double_round_robin');
-  const [rotationDepth, setRotationDepth] = useState(8); // Phase 2
   const [isPublic, setIsPublic] = useState(false); // Phase 1A
 
   // Join lobby form
@@ -39,16 +38,6 @@ export function LobbyPage() {
       navigate('/waiting-room');
     }
   }, [lobby, navigate]);
-
-  // Update rotation depth when roster size changes
-  React.useEffect(() => {
-    // Keep rotation within valid range (5 to rosterSize)
-    if (rotationDepth > rosterSize) {
-      setRotationDepth(rosterSize);
-    } else if (rotationDepth < DRAFT_CONSTRAINTS.ROTATION_MIN) {
-      setRotationDepth(DRAFT_CONSTRAINTS.ROTATION_MIN);
-    }
-  }, [rosterSize, rotationDepth]);
 
   const handleCreateLobby = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +59,6 @@ export function LobbyPage() {
         rosterSize,
         pickTimer,
         seasonFormat,
-        rotationDepth,
       };
 
       wsService.emit('lobby:create', { config, isPublic, displayName: displayName.trim() });
@@ -200,11 +188,7 @@ export function LobbyPage() {
                 <label className="text-sm font-medium text-gray-700">
                   Public Lobby
                 </label>
-                <p className="text-xs text-gray-500 mt-1">
-                  {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isPublic}
@@ -213,6 +197,10 @@ export function LobbyPage() {
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
               </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
+                </p>
+              </div>
             </div>
 
             {/* Team Count Slider */}
@@ -249,27 +237,6 @@ export function LobbyPage() {
               <div className="text-center text-2xl font-bold text-primary-600 mt-2">
                 {rosterSize}
               </div>
-            </div>
-
-            {/* Phase 2: Rotation Depth Slider (5 to rosterSize) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rotation Depth ({DRAFT_CONSTRAINTS.ROTATION_MIN}-{rosterSize})
-              </label>
-              <input
-                type="range"
-                min={DRAFT_CONSTRAINTS.ROTATION_MIN}
-                max={rosterSize}
-                value={rotationDepth}
-                onChange={(e) => setRotationDepth(Number(e.target.value))}
-                className="w-full"
-              />
-              <div className="text-center text-2xl font-bold text-primary-600 mt-2">
-                {rotationDepth} players
-              </div>
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Number of players you'll select for your rotation each round
-              </p>
             </div>
 
             {/* Pick Timer Dropdown */}
@@ -315,7 +282,7 @@ export function LobbyPage() {
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={!isConnected || !displayName.trim()}
+                disabled={!isConnected}
               >
                 Create Lobby
               </Button>
