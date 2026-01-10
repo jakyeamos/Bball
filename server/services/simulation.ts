@@ -276,7 +276,8 @@ export function simulateMatchup(
   homeTeam: 'A' | 'B' | null = null,
   coachingA?: CoachingDecision,
   coachingB?: CoachingDecision,
-  numSims: number = SIMULATION_PARAMS.NUM_SIMULATIONS
+  numSims: number = SIMULATION_PARAMS.NUM_SIMULATIONS,
+  seed?: number
 ): MatchupResult {
   const P = SIMULATION_PARAMS as any;
 
@@ -328,7 +329,9 @@ export function simulateMatchup(
   const drivers = generateMatchupDrivers(teamA, teamB, modsA, modsB);
 
   // V3: Generate scores with score guard
-  const { scoreA, scoreB } = generateGameScores(winPctA, winner, Date.now());
+  // Use provided seed or fallback to Date.now()
+  const scoreSeed = seed !== undefined ? seed : Date.now();
+  const { scoreA, scoreB } = generateGameScores(winPctA, winner, scoreSeed);
 
   return { 
     winner, 

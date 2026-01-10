@@ -99,15 +99,18 @@ export function generateGameEditorial(
 
   const phrases: string[] = [];
 
-  // 1. Main outcome phrase (based on win percentage)
-  const winMargin = Math.abs(result.winPctA - 0.5);
+  // 1. Main outcome phrase (based on actual point differential)
+  const pointDifferential = Math.abs(result.finalScoreA - result.finalScoreB);
 
   let outcomePool: string[];
-  if (winMargin < 0.10) {
+  if (pointDifferential <= 5) {
+    // Close game: 5 points or less
     outcomePool = PHRASE_POOLS.close_win;
-  } else if (winMargin < 0.20) {
+  } else if (pointDifferential <= 12) {
+    // Comfortable win: 6-12 points
     outcomePool = PHRASE_POOLS.comfortable_win;
   } else {
+    // Blowout: 13+ points (phrases like "blows out", "dismantles" only for bigger margins)
     outcomePool = PHRASE_POOLS.blowout;
   }
 

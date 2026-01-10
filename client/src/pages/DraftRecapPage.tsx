@@ -152,8 +152,9 @@ export function DraftRecapPage() {
           </div>
           
           {/* Commissioner Controls */}
-          {isCommissioner && league.phase === 'draft_recap' && (
+          {league.phase === 'draft_recap' && (
             <div className="flex gap-3">
+              {/* Trade button visible to all users */}
               <Button
                 onClick={() => setIsTradeModalOpen(true)}
                 variant="secondary"
@@ -161,13 +162,16 @@ export function DraftRecapPage() {
               >
                 🔄 Trade
               </Button>
-              <Button
-                onClick={handleStartSeason}
-                variant="primary"
-                disabled={startingSeason}
-              >
-                {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
-              </Button>
+              {/* Start Season button only for commissioner */}
+              {isCommissioner && (
+                <Button
+                  onClick={handleStartSeason}
+                  variant="primary"
+                  disabled={startingSeason}
+                >
+                  {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -230,16 +234,18 @@ export function DraftRecapPage() {
       </div>
 
       {/* Trade Modal */}
-      <TradeModal
-        teams={draft.teams}
-        allPlayers={allPlayers}
-        isOpen={isTradeModalOpen}
-        onClose={() => setIsTradeModalOpen(false)}
-        onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
-          wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
-          setIsTradeModalOpen(false);
-        }}
-      />
+      {allPlayers && (
+        <TradeModal
+          teams={draft.teams}
+          allPlayers={allPlayers}
+          isOpen={isTradeModalOpen}
+          onClose={() => setIsTradeModalOpen(false)}
+          onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
+            wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
+            setIsTradeModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
