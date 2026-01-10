@@ -11,6 +11,10 @@ import {
   Player,
   RoundMatchup,
   PlayerArchetypes,
+  CoachingDecision,
+  LineupStrategy,
+  DefensiveStrategy,
+  OffensiveStrategy,
 } from '@nba-draft-sim/shared';
 
 interface TeamAnalysis {
@@ -29,7 +33,9 @@ export function generateScoutingReport(
   teamAAggregation: TeamAggregation,
   teamBAggregation: TeamAggregation,
   teamARoster: Player[],
-  teamBRoster: Player[]
+  teamBRoster: Player[],
+  teamARecentDecisions?: CoachingDecision[],
+  teamBRecentDecisions?: CoachingDecision[]
 ): ScoutingReport {
   const teamAAnalysis = analyzeTeam(teamAAggregation, teamARoster);
   const teamBAnalysis = analyzeTeam(teamBAggregation, teamBRoster);
@@ -42,6 +48,10 @@ export function generateScoutingReport(
     teamBName,
     matchup.homeTeam
   );
+
+  // Analyze coaching tendencies from recent decisions
+  const teamACoachingTendencies = analyzeCoachingTendencies(teamAName, teamARecentDecisions);
+  const teamBCoachingTendencies = analyzeCoachingTendencies(teamBName, teamBRecentDecisions);
 
   return {
     matchupId: matchup.matchupId,
@@ -56,6 +66,8 @@ export function generateScoutingReport(
     teamAKeyPlayers: teamAAnalysis.keyPlayers,
     teamBKeyPlayers: teamBAnalysis.keyPlayers,
     styleClash,
+    teamACoachingTendencies,
+    teamBCoachingTendencies,
     prediction,
   };
 }
@@ -262,6 +274,85 @@ function generateStyleClash(
   }
 
   return clash || `A balanced matchup between ${teamAName} and ${teamBName}.`;
+}
+
+/**
+ * Analyze coaching tendencies from recent decisions (editorial style)
+ */
+function analyzeCoachingTendencies(teamName: string, recentDecisions?: CoachingDecision[]): string {
+  if (!recentDecisions || recentDecisions.length === 0) {
+    return `${teamName}'s coaching approach is still being assessed.`;
+  }
+
+  // Analyze the most recent 3 decisions
+  const decisions = recentDecisions.slice(-3);
+  const insights: string[] = [];
+
+  // Analyze lineup strategy patterns
+  const lineupStrategies = decisions.map(d => d.lineupStrategy);
+  const smallBallCount = lineupStrategies.filter(s => s === 'small_ball').length;
+  const bigLineupCount = lineupStrategies.filter(s => s === 'big_lineup').length;
+  const offenseFirstCount = lineupStrategies.filter(s => s === 'offense_first').length;
+  const defenseFirstCount = lineupStrategies.filter(s => s === 'defense_first').length;
+
+  if (smallBallCount >= 2) {
+    insights.push('they\'ve been favoring a faster, perimeter-oriented approach');
+  } else if (bigLineupCount >= 2) {
+    insights.push('they\'ve been emphasizing size and interior presence');
+  } else if (offenseFirstCount >= 2) {
+    insights.push('they\'ve prioritized offensive firepower over defensive structure');
+  } else if (defenseFirstCount >= 2) {
+    insights.push('they\'ve taken a defensive-minded, grind-it-out approach');
+  }
+
+  // Analyze defensive strategy patterns
+  const defStrategies = decisions.map(d => d.defensiveStrategy);
+  const switchingCount = defStrategies.filter(s => s === 'switch_everything').length;
+  const pressureCount = defStrategies.filter(s => s === 'pressure_ball').length;
+  const paintProtectCount = defStrategies.filter(s => s === 'protect_paint' || s === 'pack_paint').length;
+
+  if (switchingCount >= 2) {
+    insights.push('expect them to switch aggressively on defense');
+  } else if (pressureCount >= 2) {
+    insights.push('watch for full-court pressure and trap-heavy schemes');
+  } else if (paintProtectCount >= 2) {
+    insights.push('they\'ve been clogging the paint and daring opponents to shoot');
+  }
+
+  // Analyze offensive strategy patterns
+  const offStrategies = decisions.map(d => d.offensiveStrategy);
+  const paceSpaceCount = offStrategies.filter(s => s === 'pace_and_space').length;
+  const insideOutCount = offStrategies.filter(s => s === 'inside_out').length;
+  const isolationCount = offStrategies.filter(s => s === 'isolation').length;
+
+  if (paceSpaceCount >= 2) {
+    insights.push('they\'ve been spreading the floor and launching from deep');
+  } else if (insideOutCount >= 2) {
+    insights.push('they\'ve been working inside-out to set up their shooters');
+  } else if (isolationCount >= 2) {
+    insights.push('they\'ve been riding their best player in crunch time');
+  }
+
+  // Analyze rotation depth trends
+  const rotationDepths = decisions.map(d => d.rotationDepth);
+  const avgDepth = rotationDepths.reduce((a, b) => a + b, 0) / rotationDepths.length;
+  if (avgDepth >= 9) {
+    insights.push('they\'ve been going deep into their bench');
+  } else if (avgDepth <= 7) {
+    insights.push('they\'ve been playing a tight rotation, leaning on their top players');
+  }
+
+  // Construct editorial narrative
+  if (insights.length === 0) {
+    return `${teamName} has been playing it straight, sticking to fundamentals.`;
+  } else if (insights.length === 1) {
+    return `Recently, ${insights[0]}.`;
+  } else if (insights.length === 2) {
+    return `Recently, ${insights[0]} and ${insights[1]}.`;
+  } else {
+    const lastInsight = insights.pop();
+    return `Recently, ${insights.join(', ')}, and ${lastInsight}.`;
+  }
 }
 
 /**

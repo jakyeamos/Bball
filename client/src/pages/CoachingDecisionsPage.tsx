@@ -126,10 +126,6 @@ export function CoachingDecisionsPage() {
   const [scoutingReport, setScoutingReport] = useState<ScoutingReport | null>(null);
   const [showScoutingReport, setShowScoutingReport] = useState(true);
 
-  // Recent coaching decisions state
-  const [showRecentDecisions, setShowRecentDecisions] = useState(false);
-  const [recentDecisions, setRecentDecisions] = useState<CoachingDecision[]>([]);
-
   const myTeam = useMemo(() => {
     if (!draft || !userId) return null;
     return draft.teams.find(t => t.userId === userId);
@@ -186,23 +182,6 @@ export function CoachingDecisionsPage() {
     });
     return unsubscribe;
   }, []);
-
-  // Load recent coaching decisions from league state
-  useEffect(() => {
-    if (league?.roundState && myTeam) {
-      const pastDecisions: CoachingDecision[] = [];
-
-      // Get current round decision if exists
-      const currentDecision = league.roundState.coachingDecisions[myTeam.teamId];
-      if (currentDecision) {
-        pastDecisions.push(currentDecision);
-      }
-
-      // TODO: Load historical decisions from league.seasonResults when available
-
-      setRecentDecisions(pastDecisions);
-    }
-  }, [league, myTeam]);
 
   const handlePlayerToggle = (playerId: string) => {
     if (selectedRotation.includes(playerId)) {
@@ -293,74 +272,6 @@ export function CoachingDecisionsPage() {
           </div>
         </div>
 
-        {/* Recent Coaching Decisions Modal */}
-        {showRecentDecisions && recentDecisions.length > 0 && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">📊 Recent Coaching Decisions</h2>
-                  <button
-                    onClick={() => setShowRecentDecisions(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {recentDecisions.slice().reverse().map((decision, index) => (
-                    <div key={`${decision.roundNumber}-${index}`} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900">Round {decision.roundNumber}</h3>
-                        <span className="text-xs text-gray-500">
-                          {new Date(decision.submittedAt).toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs font-medium text-gray-600 mb-1">Rotation</div>
-                          <div className="text-sm text-gray-900">
-                            {decision.rotationDepth} players
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-medium text-gray-600 mb-1">Lineup Strategy</div>
-                          <div className="text-sm text-gray-900">
-                            {LINEUP_STRATEGY_INFO[decision.lineupStrategy]?.label || decision.lineupStrategy}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-medium text-gray-600 mb-1">Defensive Strategy</div>
-                          <div className="text-sm text-gray-900">
-                            {DEFENSIVE_STRATEGY_INFO[decision.defensiveStrategy]?.label || decision.defensiveStrategy}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-medium text-gray-600 mb-1">Offensive Strategy</div>
-                          <div className="text-sm text-gray-900">
-                            {OFFENSIVE_STRATEGY_INFO[decision.offensiveStrategy]?.label || decision.offensiveStrategy}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6">
-                  <Button variant="primary" fullWidth onClick={() => setShowRecentDecisions(false)}>
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
-
         {/* V3: Scouting Report Modal */}
         {scoutingReport && showScoutingReport && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -406,6 +317,12 @@ export function CoachingDecisionsPage() {
                           ))}
                         </ul>
                       </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
+                        <p className="text-xs text-gray-600 italic mt-1">
+                          {scoutingReport.teamACoachingTendencies}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -428,6 +345,12 @@ export function CoachingDecisionsPage() {
                             <li key={i}>{w}</li>
                           ))}
                         </ul>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
+                        <p className="text-xs text-gray-600 italic mt-1">
+                          {scoutingReport.teamBCoachingTendencies}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -565,17 +488,6 @@ export function CoachingDecisionsPage() {
                 onClick={() => setShowScoutingReport(true)}
               >
                 📋 View Scouting Report
-              </Button>
-            )}
-
-            {/* View Recent Decisions Button */}
-            {recentDecisions.length > 0 && (
-              <Button
-                variant="secondary"
-                fullWidth
-                onClick={() => setShowRecentDecisions(true)}
-              >
-                📊 Recent Coaching Decisions
               </Button>
             )}
 

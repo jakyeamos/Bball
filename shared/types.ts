@@ -281,7 +281,11 @@ export interface ScoutingReport {
   
   // Predicted style clash
   styleClash: string;
-  
+
+  // Editorial coaching tendency insights (based on recent coaching decisions)
+  teamACoachingTendencies: string;
+  teamBCoachingTendencies: string;
+
   // Betting line style prediction (editorial flavor)
   prediction: string;
 }
@@ -563,10 +567,14 @@ export interface LeagueState {
   playoffResults: PlayoffResults | null;
   tradeProposals: TradeProposal[];
   tradeWindowEndsAt: string | null;
-  
+
   // V3: Live game state for quarter-based simulation
   liveGame?: LiveGameState;
-  
+
+  // V3: Historical coaching decisions for scouting reports
+  // Maps teamId -> array of decisions from past rounds
+  coachingHistory: Record<string, CoachingDecision[]>;
+
   createdAt: string;
   updatedAt: string;
 }
