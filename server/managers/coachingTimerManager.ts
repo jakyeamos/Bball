@@ -1,6 +1,6 @@
 import { Server as SocketServer } from 'socket.io';
-import { WS_EVENTS } from '@nba-draft-sim/shared';
-import { getLeague } from '../stores/leagueStore';
+import { WS_EVENTS, DraftTeam } from '@nba-draft-sim/shared';
+import { getLeague, leagueStore } from '../stores/leagueStore';
 import { getCoachingTimeRemaining } from './roundManager';
 import { handleSubmitCoaching, getDefaultCoachingDecision } from '../services/handlers-v2';
 
@@ -24,11 +24,18 @@ export function startCoachingTimer(io: SocketServer, lobbyId: string) {
     });
 
     if (timeRemaining === 0) {
+      // FIX: Add null check for draftState
+      if (!league.draftState) {
+        stopCoachingTimer(lobbyId);
+        return;
+      }
+
       const activeTeamIds = league.draftState.teams.map(t => t.teamId);
       const submittedTeamIds = Object.keys(league.roundState.coachingDecisions);
       const missingTeamIds = activeTeamIds.filter(id => !submittedTeamIds.includes(id));
 
       for (const teamId of missingTeamIds) {
+        // FIX: Add null check for draftState
         const team = league.draftState.teams.find(t => t.teamId === teamId);
         if (team) {
           const decision = getDefaultCoachingDecision(teamId, league.roundState.roundNumber);

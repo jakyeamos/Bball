@@ -10,7 +10,7 @@ import {
   TradeProposalNotification,
   LeagueState,
   DraftState,
-  TRADE_PROPOSAL_EXPIRY_SECONDS,
+  DRAFT_CONSTRAINTS,
 } from '@nba-draft-sim/shared';
 
 /**
@@ -30,7 +30,7 @@ export function createTradeProposal(
     toPlayerIds,
     status: 'pending',
     createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + TRADE_PROPOSAL_EXPIRY_SECONDS * 1000).toISOString(),
+    expiresAt: new Date(Date.now() + DRAFT_CONSTRAINTS.TRADE_PROPOSAL_EXPIRY_SECONDS * 1000).toISOString(),
   };
 }
 
@@ -150,7 +150,7 @@ export function executeTradeProposal(
     draftState: updatedDraftState,
     tradeProposals: league.tradeProposals.map(p =>
       p.proposalId === proposalId
-        ? { ...p, status: 'accepted' as TradeProposalStatus, executedAt: new Date().toISOString() }
+        ? { ...p, status: 'accepted' as TradeProposalStatus }
         : p
     ),
   };
@@ -223,17 +223,17 @@ export function getActiveProposals(
 
 /**
  * Create notification for trade proposal
+ * FIX: Match the TradeProposalNotification interface
  */
 export function createTradeNotification(
   proposal: TradeProposal,
-  type: 'received' | 'accepted' | 'rejected' | 'cancelled' | 'expired'
+  fromTeamName: string,
+  toTeamName: string
 ): TradeProposalNotification {
   return {
-    proposalId: proposal.proposalId,
-    type,
-    fromTeamId: proposal.fromTeamId,
-    toTeamId: proposal.toTeamId,
-    timestamp: new Date().toISOString(),
+    proposal,
+    fromTeamName,
+    toTeamName,
   };
 }
 

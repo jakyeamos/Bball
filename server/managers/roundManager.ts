@@ -13,7 +13,10 @@ import {
   TeamAggregation,
   Player,
   SeasonFormat,
-  COACHING_WINDOW_SECONDS,
+  RegularSeasonGame,
+  TeamRecord,
+  MatchupResult,
+  DRAFT_CONSTRAINTS,
 } from '@nba-draft-sim/shared';
 import { simulateMatchup } from '../services/simulation';
 
@@ -36,12 +39,13 @@ export function generateRoundSchedule(
   const n = teamIds.length;
 
   // Fixed pivot algorithm for round robin
+  let scheduleTeams = teamIds;
   if (n % 2 !== 0) {
-    teamIds = [...teamIds, 'BYE']; // Add dummy for odd teams
+    scheduleTeams = [...teamIds, 'BYE']; // Add dummy for odd teams
   }
 
-  const pivotTeam = teamIds[0];
-  const rotatingTeams = teamIds.slice(1);
+  const pivotTeam = scheduleTeams[0];
+  const rotatingTeams = scheduleTeams.slice(1);
 
   // Calculate rotation for this round
   const rotation = (roundNumber - 1) % rotatingTeams.length;
@@ -69,7 +73,7 @@ export function generateRoundSchedule(
       teamAId: teamA,
       teamBId: teamB,
       homeTeam,
-      result: null,
+      result: undefined,  // FIX: Use undefined instead of null
     });
   }
 
@@ -94,7 +98,7 @@ function generatePlayoffMatchups(
         teamAId: teamIds[i],
         teamBId: teamIds[teamIds.length - 1 - i],
         homeTeam: 'A',
-        result: null,
+        result: undefined,  // FIX: Use undefined instead of null
       });
     }
   } else {
@@ -139,9 +143,9 @@ export function createRoundState(
     roundNumber,
     phase: 'coaching_window',
     matchups,
-    coachingDecisions: {},
-    results: null,
-    coachingWindowEndsAt: new Date(Date.now() + COACHING_WINDOW_SECONDS * 1000).toISOString(),
+    coachingDecisions: {},  // FIX: Use plain object (Record) instead of Map for JSON serialization
+    roundResults: null,
+    coachingWindowEndsAt: new Date(Date.now() + DRAFT_CONSTRAINTS.COACHING_WINDOW_SECONDS * 1000).toISOString(),
   };
 }
 
@@ -176,6 +180,7 @@ export function allDecisionsSubmitted(
  * Check if coaching window has expired
  */
 export function isCoachingWindowExpired(round: RoundState): boolean {
+  if (!round.coachingWindowEndsAt) return true;  // FIX: Handle null case
   return new Date().getTime() >= new Date(round.coachingWindowEndsAt).getTime();
 }
 
@@ -187,7 +192,13 @@ export function simulateRound(
   teamAggregations: Map<string, TeamAggregation>,
   teamNames: Map<string, string>
 ): RoundState {
-  const results: RoundResult[] = [];
+  const games: RegularSeasonGame[] = [];
+  const standings: Map<string, { wins: number; losses: number }> = new Map();
+
+  // Initialize standings for all teams
+  for (const teamId of teamAggregations.keys()) {
+    standings.set(teamId, { wins: 0, losses: 0 });
+  }
 
   for (const matchup of round.matchups) {
     const teamA = teamAggregations.get(matchup.teamAId);
@@ -198,9 +209,9 @@ export function simulateRound(
       continue;
     }
 
-    // Get coaching decisions for each team
-    const coachingA = round.coachingDecisions.get(matchup.teamAId);
-    const coachingB = round.coachingDecisions.get(matchup.teamBId);
+    // Get coaching decisions for each team (use bracket notation for Record type)
+    const coachingA = round.coachingDecisions[matchup.teamAId];
+    const coachingB = round.coachingDecisions[matchup.teamBId];
 
     // Simulate matchup
     const result = simulateMatchup(
@@ -211,22 +222,80 @@ export function simulateRound(
       coachingB
     );
 
-    results.push({
-      matchupId: matchup.matchupId,
+    // Create a RegularSeasonGame record
+    const game: RegularSeasonGame = {
+      gameId: matchup.matchupId,
       teamAId: matchup.teamAId,
       teamBId: matchup.teamBId,
-      winner: result.winner === 'A' ? matchup.teamAId : matchup.teamBId,
-      teamAScore: Math.round(result.winsA * 10 + 100), // Placeholder scoring
-      teamBScore: Math.round(result.winsB * 10 + 100),
+      homeTeam: matchup.homeTeam,
       result,
-    });
+      editorial: generateGameEditorial(
+        teamNames.get(matchup.teamAId) || matchup.teamAId,
+        teamNames.get(matchup.teamBId) || matchup.teamBId,
+        result
+      ),
+    };
+
+    games.push(game);
+
+    // Update standings
+    const winnerId = result.winner === 'A' ? matchup.teamAId : matchup.teamBId;
+    const loserId = result.winner === 'A' ? matchup.teamBId : matchup.teamAId;
+
+    const winnerRecord = standings.get(winnerId)!;
+    const loserRecord = standings.get(loserId)!;
+    winnerRecord.wins++;
+    loserRecord.losses++;
   }
+
+  // Convert standings map to array
+  const updatedStandings: TeamRecord[] = Array.from(standings.entries())
+    .map(([teamId, record]) => ({
+      teamId,
+      wins: record.wins,
+      losses: record.losses,
+      winPct: record.wins / Math.max(record.wins + record.losses, 1),
+    }))
+    .sort((a, b) => b.winPct - a.winPct || b.wins - a.wins);
+
+  // Create RoundResult
+  const roundResults: RoundResult = {
+    roundNumber: round.roundNumber,
+    games,
+    updatedStandings,
+  };
 
   return {
     ...round,
     phase: 'results',
-    results,
+    roundResults,
+    // Update matchups with results
+    matchups: round.matchups.map(m => {
+      const game = games.find(g => g.gameId === m.matchupId);
+      return game ? { ...m, result: game.result } : m;
+    }),
   };
+}
+
+/**
+ * Generate a simple editorial for a game
+ */
+function generateGameEditorial(
+  teamAName: string,
+  teamBName: string,
+  result: MatchupResult
+): string {
+  const winner = result.winner === 'A' ? teamAName : teamBName;
+  const loser = result.winner === 'A' ? teamBName : teamAName;
+  const winPct = result.winner === 'A' ? result.winPctA : (1 - result.winPctA);
+  
+  if (winPct > 0.7) {
+    return `${winner} dominated ${loser} in a convincing victory.`;
+  } else if (winPct > 0.55) {
+    return `${winner} secured a solid win over ${loser}.`;
+  } else {
+    return `${winner} edged out ${loser} in a tight contest.`;
+  }
 }
 
 /**
@@ -246,6 +315,7 @@ export function transitionRoundPhase(
  * Get time remaining in coaching window (seconds)
  */
 export function getCoachingTimeRemaining(round: RoundState): number {
+  if (!round.coachingWindowEndsAt) return 0;  // FIX: Handle null case
   const now = Date.now();
   const endsAt = new Date(round.coachingWindowEndsAt).getTime();
   return Math.max(0, Math.floor((endsAt - now) / 1000));

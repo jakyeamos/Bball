@@ -62,3 +62,7 @@ export const leagueStore = {
     leagues.clear();
   },
 };
+
+export function getLeague(leagueId: string): LeagueState | undefined {
+  return leagueStore.get(leagueId);
+}

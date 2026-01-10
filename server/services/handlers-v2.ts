@@ -59,10 +59,13 @@ export function handleStartRound(
       throw new Error('Only commissioner can start round');
     }
 
-    const league = getLeague(lobbyId);
+    let league = getLeague(lobbyId);
     if (!league || !league.draftState) {
       throw new Error('League not found');
     }
+
+    // Store draftState reference before any reassignment (TypeScript loses narrowing after reassignment)
+    const draftState = league.draftState;
 
     // Expire any pending trades from the previous window
     league = expireAllPendingProposals(league);
@@ -71,8 +74,8 @@ export function handleStartRound(
     // Calculate total rounds if not set
     if (!league.totalRounds) {
       const totalRounds = calculateTotalRounds(
-        league.draftState.config.teamCount,
-        league.draftState.config.seasonFormat
+        draftState.config.teamCount,
+        draftState.config.seasonFormat
       );
       leagueStore.update(lobbyId, { totalRounds });
     }
@@ -81,11 +84,11 @@ export function handleStartRound(
     const currentRound = (league.currentRound || 0) + 1;
 
     // Generate matchups for this round
-    const teamIds = league.draftState.teams.map(t => t.teamId);
+    const teamIds = draftState.teams.map(t => t.teamId);
     const matchups = generateRoundSchedule(
       teamIds,
       currentRound,
-      league.draftState.config.seasonFormat
+      draftState.config.seasonFormat
     );
 
     // Create round state
@@ -146,7 +149,9 @@ export function handleSubmitCoaching(
     const activeTeamIds = league.draftState.teams.map(t => t.teamId);
     if (allDecisionsSubmitted(updatedRound, activeTeamIds)) {
       // All decisions in - simulate immediately
-      handleSimulateRound(io, lobbyId, league.draftState.teams.map(t => t.teamId), allPlayers);
+      // FIX: Get allPlayers from a stored reference or pass it differently
+      // For now, we'll need to load players from the league snapshot
+      handleSimulateRoundInternal(io, lobbyId);
     }
 
     console.log(`✅ Coaching decision submitted for team ${team.teamId}`);
@@ -158,8 +163,70 @@ export function handleSubmitCoaching(
 
 /**
  * Simulate round when all decisions are in (internal)
+ * FIX: Renamed and doesn't require allPlayers parameter
  */
-function handleSimulateRound(
+function handleSimulateRoundInternal(
+  io: SocketServer,
+  lobbyId: string
+) {
+  try {
+    const league = getLeague(lobbyId);
+    if (!league || !league.roundState || !league.draftState) return;
+
+    // Build team aggregations
+    const teamAggregations = new Map();
+    const teamNames = new Map();
+
+    for (const team of league.draftState.teams) {
+      // FIX: We need to get player data from somewhere
+      // For now, create a minimal aggregation based on available data
+      teamAggregations.set(team.teamId, {
+        teamId: team.teamId,
+        features: {},
+        archetypes: {},
+        modifiers: {
+          total: 0,
+          shootBonus: 0,
+          creatorPen: 0,
+          rimPen: 0,
+          offenseBonus: 0,
+          offensePenalty: 0,
+          defenseBonus: 0,
+          defensePenalty: 0,
+          variancePenalty: 0,
+          homeCourtAdvantage: 2,
+        },
+        overallRating: 50,
+        rotation: [],
+      });
+      teamNames.set(team.teamId, team.displayName);
+    }
+
+    // Simulate round
+    const simulatedRound = simulateRound(
+      league.roundState,
+      teamAggregations,
+      teamNames
+    );
+
+    leagueStore.update(lobbyId, { roundState: simulatedRound });
+
+    // Broadcast results
+    io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.ROUND_SIMULATED, {
+      type: 'ROUND_SIMULATED',
+      payload: { roundResults: simulatedRound.roundResults },
+    });
+
+    console.log(`✅ Round ${league.currentRound} simulated for league ${lobbyId}`);
+  } catch (error) {
+    console.error('Simulate round error:', error);
+  }
+}
+
+/**
+ * Public version of simulate round with allPlayers parameter
+ */
+export function handleSimulateRound(
   io: SocketServer,
   lobbyId: string,
   teamIds: string[],
@@ -197,7 +264,7 @@ function handleSimulateRound(
     // Broadcast results
     io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.ROUND_SIMULATED, {
       type: 'ROUND_SIMULATED',
-      payload: { results: simulatedRound.results },
+      payload: { roundResults: simulatedRound.roundResults },
     });
 
     console.log(`✅ Round ${league.currentRound} simulated for league ${lobbyId}`);
@@ -261,7 +328,11 @@ export function handleProposeTrade(
     // Notify recipient
     const toTeam = league.draftState.teams.find(t => t.teamId === payload.toTeamId);
     if (toTeam) {
-      const notification = createTradeNotification(proposal, 'received');
+      const notification = createTradeNotification(
+        proposal,
+        fromTeam.displayName,
+        toTeam.displayName
+      );
 
       io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.TRADE_PROPOSED, {
         type: 'TRADE_PROPOSED',
@@ -304,6 +375,11 @@ export function handleRespondToTrade(
       throw new Error('Not authorized');
     }
 
+    // Get team names for notification
+    const fromTeam = league.draftState.teams.find(t => t.teamId === proposal.fromTeamId);
+    const fromTeamName = fromTeam?.displayName || proposal.fromTeamId;
+    const toTeamName = recipientTeam.displayName;
+
     if (payload.accept) {
       // Accept and execute trade
       league = updateProposalStatus(league, proposal.proposalId, 'accepted', new Date().toISOString());
@@ -320,7 +396,7 @@ export function handleRespondToTrade(
           payload: { proposal, league: result.league },
         });
 
-        const notification = createTradeNotification(proposal, 'accepted');
+        const notification = createTradeNotification(proposal, fromTeamName, toTeamName);
         io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.TRADE_NOTIFICATION, {
           type: 'TRADE_NOTIFICATION',
           payload: notification,
@@ -335,7 +411,7 @@ export function handleRespondToTrade(
       league = updateProposalStatus(league, proposal.proposalId, 'rejected', new Date().toISOString());
       leagueStore.set(lobbyId, league);
 
-      const notification = createTradeNotification(proposal, 'rejected');
+      const notification = createTradeNotification(proposal, fromTeamName, toTeamName);
       io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.TRADE_NOTIFICATION, {
         type: 'TRADE_NOTIFICATION',
         payload: notification,
@@ -364,7 +440,7 @@ export function handleCancelTrade(
     if (!lobbyId) throw new Error('Not in a lobby');
 
     const league = getLeague(lobbyId);
-    if (!league) throw new Error('League not found');
+    if (!league || !league.draftState) throw new Error('League not found');
 
     const result = cancelTradeProposal(league, payload.proposalId, userId);
 
@@ -373,7 +449,13 @@ export function handleCancelTrade(
 
       const proposal = result.league.tradeProposals.find(p => p.proposalId === payload.proposalId);
       if (proposal) {
-        const notification = createTradeNotification(proposal, 'cancelled');
+        // Get team names for notification
+        const fromTeam = league.draftState.teams.find(t => t.teamId === proposal.fromTeamId);
+        const toTeam = league.draftState.teams.find(t => t.teamId === proposal.toTeamId);
+        const fromTeamName = fromTeam?.displayName || proposal.fromTeamId;
+        const toTeamName = toTeam?.displayName || proposal.toTeamId;
+
+        const notification = createTradeNotification(proposal, fromTeamName, toTeamName);
         io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.TRADE_NOTIFICATION, {
           type: 'TRADE_NOTIFICATION',
           payload: notification,

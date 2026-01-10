@@ -24,8 +24,9 @@ router.get('/lobbies', (req, res) => {
           lobbyId: lobby.lobbyId,
           inviteCode: lobby.inviteCode,
           commissionerName: lobby.users.find(u => u.isCommissioner)?.displayName || 'Unknown',
-          playerCount: lobby.users.length,
-          maxPlayers: lobby.config.teamCount,
+          teamCount: lobby.config.teamCount,
+          currentPlayers: lobby.users.length,
+          playerCount: lobby.users.length,  // FIX: Use correct property name
           config: {
             teamCount: lobby.config.teamCount,
             rosterSize: lobby.config.rosterSize,
