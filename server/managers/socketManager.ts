@@ -34,6 +34,9 @@ import {
 } from '../services/handlers-v2';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
 import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
+import { rejoinManager } from './rejoinManager';
+import { lobbies, drafts } from '../services/handlers';
+import { getLeague } from '../managers/leagueManager';
 
 /**
  * Initialize Socket.io server
@@ -123,6 +126,61 @@ export function initializeSocketServer(
     console.log(`📤 Sent SESSION_INFO to client: userId=${userId}`);
     // ═══════════════════════════════════════════════════════════════════════
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // 🔄 REJOIN POLICY - Check if user has an existing session
+    // ═══════════════════════════════════════════════════════════════════════
+    const existingLobbyId = rejoinManager.getUserLobby(userId);
+    if (existingLobbyId) {
+      console.log(`🔄 User ${userId} has existing session in lobby ${existingLobbyId}, rejoining...`);
+
+      const lobby = lobbies.get(existingLobbyId);
+      if (lobby) {
+        // Update user connection status
+        const updatedLobby = {
+          ...lobby,
+          users: lobby.users.map(u =>
+            u.userId === userId ? { ...u, isConnected: true } : u
+          ),
+        };
+        lobbies.set(existingLobbyId, updatedLobby);
+
+        // Rejoin lobby room
+        socket.join(`lobby:${existingLobbyId}`);
+        socket.data.lobbyId = existingLobbyId;
+
+        // Send current state to rejoining user
+        socket.emit(WS_EVENTS.LOBBY_UPDATED, {
+          type: 'LOBBY_UPDATED',
+          payload: updatedLobby
+        });
+
+        // Check if draft exists and send draft state
+        const draft = drafts.get(existingLobbyId);
+        if (draft) {
+          socket.emit(WS_EVENTS.DRAFT_UPDATED, {
+            type: 'DRAFT_UPDATED',
+            payload: draft
+          });
+        }
+
+        // Check if league exists and send league state
+        const league = getLeague(existingLobbyId);
+        if (league) {
+          socket.emit(WS_EVENTS.LEAGUE_UPDATED, {
+            type: 'LEAGUE_UPDATED',
+            payload: league
+          });
+        }
+
+        console.log(`✅ User ${userId} successfully rejoined lobby ${existingLobbyId}`);
+      } else {
+        // Lobby no longer exists, clean up rejoin mapping
+        rejoinManager.removeUser(userId);
+        console.log(`⚠️ Lobby ${existingLobbyId} no longer exists, cleaned up rejoin mapping`);
+      }
+    }
+    // ═══════════════════════════════════════════════════════════════════════
+
     // CREATE_LOBBY
     socket.on(WS_EVENTS.CREATE_LOBBY, (payload: any) => {
       console.log('🟢 CREATE_LOBBY EVENT RECEIVED!', payload);
@@ -203,11 +261,31 @@ export function initializeSocketServer(
 
     // DISCONNECT
     socket.on(WS_EVENTS.DISCONNECT, () => {
-      console.log(`Client disconnected: ${socket.id}`);
+      console.log(`Client disconnected: ${socket.id} (user: ${userId})`);
 
-      // Clean up timer if this was the last user in a lobby
       const lobbyId = socket.data.lobbyId;
       if (lobbyId) {
+        // Mark user as disconnected but keep them in the lobby (rejoin policy)
+        const lobby = lobbies.get(lobbyId);
+        if (lobby) {
+          const updatedLobby = {
+            ...lobby,
+            users: lobby.users.map(u =>
+              u.userId === userId ? { ...u, isConnected: false } : u
+            ),
+          };
+          lobbies.set(lobbyId, updatedLobby);
+
+          // Notify other users about disconnection
+          io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.LOBBY_UPDATED, {
+            type: 'LOBBY_UPDATED',
+            payload: updatedLobby
+          });
+
+          console.log(`📴 User ${userId} marked as disconnected in lobby ${lobbyId}`);
+        }
+
+        // Clean up timer if this was the last connected user in a lobby
         const roomSockets = io.sockets.adapter.rooms.get(`lobby:${lobbyId}`);
         if (!roomSockets || roomSockets.size === 0) {
           stopDraftTimer(lobbyId);
