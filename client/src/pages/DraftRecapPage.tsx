@@ -156,7 +156,14 @@ export function DraftRecapPage() {
             <div className="flex gap-3">
               {/* Trade button visible to all users */}
               <Button
-                onClick={() => setIsTradeModalOpen(true)}
+                onClick={() => {
+                  console.log('🔄 Trade button clicked, opening modal. Current state:', {
+                    allPlayersCount: allPlayers?.length,
+                    teamsCount: draft?.teams?.length,
+                    isTradeModalOpen,
+                  });
+                  setIsTradeModalOpen(true);
+                }}
                 variant="secondary"
                 disabled={startingSeason}
               >
@@ -232,34 +239,42 @@ export function DraftRecapPage() {
       </div>
 
       {/* Trade Modal */}
-      {allPlayers && allPlayers.length > 0 && (
-        <TradeModal
-          teams={draft.teams}
-          allPlayers={allPlayers}
-          isOpen={isTradeModalOpen}
-          onClose={() => {
-            console.log('🔄 Trade modal closed');
-            setIsTradeModalOpen(false);
-          }}
-          onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
-            console.log('🔄 Executing trade:', {
-              team1Id,
-              team2Id,
-              team1PlayerIds,
-              team2PlayerIds,
-              team1: draft.teams.find(t => t.teamId === team1Id)?.displayName,
-              team2: draft.teams.find(t => t.teamId === team2Id)?.displayName
-            });
-            wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
-            setIsTradeModalOpen(false);
-          }}
-        />
-      )}
-      {(!allPlayers || allPlayers.length === 0) && (
-        <div className="fixed bottom-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded">
-          Loading player data...
-        </div>
-      )}
+      {(() => {
+        const shouldRenderModal = allPlayers && allPlayers.length > 0;
+        console.log('🔍 DraftRecapPage modal render check:', {
+          shouldRenderModal,
+          allPlayersCount: allPlayers?.length,
+          teamsCount: draft?.teams?.length,
+          isTradeModalOpen,
+        });
+        return shouldRenderModal ? (
+          <TradeModal
+            teams={draft.teams}
+            allPlayers={allPlayers}
+            isOpen={isTradeModalOpen}
+            onClose={() => {
+              console.log('🔄 Trade modal closed');
+              setIsTradeModalOpen(false);
+            }}
+            onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
+              console.log('🔄 Executing trade:', {
+                team1Id,
+                team2Id,
+                team1PlayerIds,
+                team2PlayerIds,
+                team1: draft.teams.find(t => t.teamId === team1Id)?.displayName,
+                team2: draft.teams.find(t => t.teamId === team2Id)?.displayName
+              });
+              wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
+              setIsTradeModalOpen(false);
+            }}
+          />
+        ) : (
+          <div className="fixed bottom-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded">
+            Loading player data...
+          </div>
+        );
+      })()}
     </div>
   );
 }

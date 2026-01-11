@@ -10,23 +10,37 @@ interface TradeModalProps {
   onTrade: (team1Id: string, team2Id: string, team1PlayerIds: string[], team2PlayerIds: string[]) => void;
 }
 
-export const TradeModal: React.FC<TradeModalProps> = React.memo(({ teams, allPlayers, isOpen, onClose, onTrade }) => {
+export const TradeModal: React.FC<TradeModalProps> = ({ teams, allPlayers, isOpen, onClose, onTrade }) => {
   const [team1Id, setTeam1Id] = useState<string>('');
   const [team2Id, setTeam2Id] = useState<string>('');
   const [team1PlayerIds, setTeam1PlayerIds] = useState<string[]>([]);
   const [team2PlayerIds, setTeam2PlayerIds] = useState<string[]>([]);
 
-  // Only log when modal is actually open
-  useEffect(() => {
-    if (isOpen) {
-      console.log('🔄 TradeModal opened:', {
-        teamsCount: teams?.length,
-        allPlayersCount: allPlayers?.length,
-      });
-    }
-  }, [isOpen, teams?.length, allPlayers?.length]);
+  // Debug logging
+  console.log('🔍 TradeModal render:', {
+    isOpen,
+    teamsCount: teams?.length,
+    allPlayersCount: allPlayers?.length,
+    hasTeams: !!teams,
+    hasPlayers: !!allPlayers,
+  });
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('❌ Modal not shown - isOpen is false');
+    return null;
+  }
+
+  if (!teams || teams.length === 0) {
+    console.error('❌ Modal not shown - no teams available');
+    return null;
+  }
+
+  if (!allPlayers || allPlayers.length === 0) {
+    console.error('❌ Modal not shown - no players available');
+    return null;
+  }
+
+  console.log('✅ Modal should be visible');
 
   const handleTrade = () => {
     console.log('🔄 handleTrade called:', {
@@ -238,4 +252,4 @@ export const TradeModal: React.FC<TradeModalProps> = React.memo(({ teams, allPla
       </div>
     </div>
   );
-});
+};
