@@ -100,7 +100,7 @@ export function generateGameEditorial(
   const phrases: string[] = [];
 
   // 1. Main outcome phrase (based on actual point differential)
-  const pointDifferential = Math.abs(result.finalScoreA - result.finalScoreB);
+  const pointDifferential = Math.abs((result.finalScoreA ?? 0) - (result.finalScoreB ?? 0));
 
   let outcomePool: string[];
   if (pointDifferential <= 5) {
