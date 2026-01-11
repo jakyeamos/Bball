@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // FIXED: Changed 'Team' to 'DraftTeam' - Team type doesn't exist in shared types
 import { Player, DraftTeam } from '@nba-draft-sim/shared';
 
@@ -16,17 +16,31 @@ export const TradeModal: React.FC<TradeModalProps> = ({ teams, allPlayers, isOpe
   const [team1PlayerIds, setTeam1PlayerIds] = useState<string[]>([]);
   const [team2PlayerIds, setTeam2PlayerIds] = useState<string[]>([]);
 
-  console.log('🔄 TradeModal rendered:', {
+  // Debug logging
+  console.log('🔍 TradeModal render:', {
     isOpen,
     teamsCount: teams?.length,
     allPlayersCount: allPlayers?.length,
-    team1Id,
-    team2Id,
-    team1PlayerIds,
-    team2PlayerIds
+    hasTeams: !!teams,
+    hasPlayers: !!allPlayers,
   });
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('❌ Modal not shown - isOpen is false');
+    return null;
+  }
+
+  if (!teams || teams.length === 0) {
+    console.error('❌ Modal not shown - no teams available');
+    return null;
+  }
+
+  if (!allPlayers || allPlayers.length === 0) {
+    console.error('❌ Modal not shown - no players available');
+    return null;
+  }
+
+  console.log('✅ Modal should be visible');
 
   const handleTrade = () => {
     console.log('🔄 handleTrade called:', {
