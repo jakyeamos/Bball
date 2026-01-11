@@ -10,7 +10,7 @@ import {
   TeamAggregation,
   Player,
   RoundMatchup,
-  PlayerArchetypes,
+  ArchetypeProfile,
   CoachingDecision,
   LineupStrategy,
   DefensiveStrategy,
@@ -164,9 +164,9 @@ function analyzeTeam(aggregation: TeamAggregation, roster: Player[]): TeamAnalys
 /**
  * Get top archetypes by weight
  */
-function getTopArchetypes(archetypes: PlayerArchetypes, count: number = 3): string[] {
+function getTopArchetypes(archetypes: ArchetypeProfile, count: number = 3): string[] {
   return Object.entries(archetypes)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, count)
     .map(([name]) => name);
 }
@@ -234,7 +234,7 @@ function getTopPlayerArchetype(player: Player): string {
   const entries = Object.entries(player.archetypes);
   if (entries.length === 0) return 'ROLE_PLAYER';
 
-  return entries.sort(([, a], [, b]) => b - a)[0][0];
+  return entries.sort(([, a], [, b]) => (b ?? 0) - (a ?? 0))[0][0];
 }
 
 /**
