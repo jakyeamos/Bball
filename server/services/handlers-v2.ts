@@ -96,11 +96,18 @@ export function handleStartRound(
     // Create round state
     const roundState = createRoundState(currentRound, matchups);
 
-    // Update league
-    leagueStore.update(lobbyId, {
+    // Update league - set phase to regular_season on first round
+    const updateData: any = {
       currentRound,
       roundState,
-    });
+    };
+    if (currentRound === 1 && league.phase !== 'regular_season') {
+      updateData.phase = 'regular_season';
+    }
+    leagueStore.update(lobbyId, updateData);
+
+    // Get updated league for broadcast
+    const updatedLeague = getLeague(lobbyId);
 
     // Generate and send scouting reports for each matchup
     for (const matchup of matchups) {
@@ -152,6 +159,14 @@ export function handleStartRound(
       type: 'ROUND_STARTED',
       payload: { roundNumber: currentRound, matchups, roundState },
     });
+
+    // Broadcast updated league (includes phase change if first round)
+    if (updatedLeague) {
+      io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.LEAGUE_UPDATED, {
+        type: 'LEAGUE_UPDATED',
+        payload: updatedLeague,
+      });
+    }
 
     console.log(`✅ Started round ${currentRound} for league ${lobbyId}`);
   } catch (error: any) {
