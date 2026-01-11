@@ -17,6 +17,8 @@ import {
   LeagueState,
   RegularSeasonResults,
   PlayoffResults,
+  RoundState,
+  ScoutingReport,
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
 
@@ -41,6 +43,9 @@ interface AppState {
   league: LeagueState | null;
   regularSeasonResults: RegularSeasonResults | null;
   playoffResults: PlayoffResults | null;
+
+  // Round-based gameplay
+  scoutingReports: Record<string, ScoutingReport>; // matchupId -> ScoutingReport
 
   // Error
   error: string | null;
@@ -68,6 +73,7 @@ export function AppProvider({ children }: AppProviderProps) {
     league: null,
     regularSeasonResults: null,
     playoffResults: null,
+    scoutingReports: {},
     error: null,
   });
 
@@ -216,6 +222,72 @@ export function AppProvider({ children }: AppProviderProps) {
       wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
         console.log('🔵 PLAYOFFS_STARTED event received:', data);
         setState((prev) => ({ ...prev, playoffResults: data.payload }));
+      })
+    );
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Round-based events for coaching windows
+    // ═══════════════════════════════════════════════════════════════════════
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.ROUND_STARTED, (data: any) => {
+        console.log('🔵 ROUND_STARTED event received:', data);
+        const { roundNumber, matchups, roundState } = data.payload;
+
+        setState((prev) => ({
+          ...prev,
+          league: prev.league ? {
+            ...prev.league,
+            currentRound: roundNumber,
+            roundState: roundState,
+          } : null,
+        }));
+      })
+    );
+
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.GAME_SCOUTING_REPORT, (data: any) => {
+        console.log('🔵 GAME_SCOUTING_REPORT event received:', data);
+        const { scoutingReport } = data.payload;
+
+        setState((prev) => ({
+          ...prev,
+          scoutingReports: {
+            ...prev.scoutingReports,
+            [scoutingReport.matchup.matchupId]: scoutingReport,
+          },
+        }));
+      })
+    );
+
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.ROUND_SIMULATED, (data: any) => {
+        console.log('🔵 ROUND_SIMULATED event received:', data);
+        const roundResults = data.payload.roundResults;
+
+        setState((prev) => ({
+          ...prev,
+          league: prev.league && prev.league.roundState ? {
+            ...prev.league,
+            roundState: {
+              ...prev.league.roundState,
+              phase: 'results',
+              roundResults: roundResults,
+            },
+          } : prev.league,
+        }));
+      })
+    );
+
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.ROUND_COMPLETED, (data: any) => {
+        console.log('🔵 ROUND_COMPLETED event received:', data);
+        setState((prev) => ({
+          ...prev,
+          league: prev.league ? {
+            ...prev.league,
+            roundState: data.payload,
+          } : null,
+        }));
       })
     );
 
