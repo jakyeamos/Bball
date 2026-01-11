@@ -84,10 +84,29 @@ export function executeTrade(
   playerAIds: string[],
   playerBIds: string[]
 ): LeagueState | undefined {
+  console.log('🔄 executeTrade called:', {
+    leagueId,
+    teamAId,
+    teamBId,
+    playerAIds,
+    playerBIds
+  });
+
   const league = leagueStore.get(leagueId);
 
+  if (!league) {
+    console.error('❌ League not found:', leagueId);
+    throw new Error('League not found');
+  }
+
+  console.log('📊 League state:', {
+    phase: league.phase,
+    hasDraftState: !!league.draftState,
+    teamsCount: league.draftState?.teams.length
+  });
+
   // FIXED: Allow trades specifically during 'draft_recap'
-  if (!league || league.phase !== 'draft_recap' || !league.draftState) {
+  if (league.phase !== 'draft_recap' || !league.draftState) {
     throw new Error('Invalid league state for trade. Trades only allowed in Draft Recap.');
   }
 
@@ -95,17 +114,25 @@ export function executeTrade(
   const teamB = league.draftState.teams.find(t => t.teamId === teamBId);
 
   if (!teamA || !teamB) {
+    console.error('❌ Teams not found:', { teamAId, teamBId, availableTeams: league.draftState.teams.map(t => t.teamId) });
     throw new Error('Teams not found');
   }
+
+  console.log('📊 Team rosters before trade:', {
+    teamA: { teamId: teamA.teamId, roster: teamA.roster },
+    teamB: { teamId: teamB.teamId, roster: teamB.roster }
+  });
 
   // Validate players belong to correct teams
   for (const pid of playerAIds) {
     if (!teamA.roster.includes(pid)) {
+      console.error(`❌ Player ${pid} not on team ${teamAId}`, { teamARoster: teamA.roster });
       throw new Error(`Player ${pid} not on team ${teamAId}`);
     }
   }
   for (const pid of playerBIds) {
     if (!teamB.roster.includes(pid)) {
+      console.error(`❌ Player ${pid} not on team ${teamBId}`, { teamBRoster: teamB.roster });
       throw new Error(`Player ${pid} not on team ${teamBId}`);
     }
   }
@@ -113,6 +140,11 @@ export function executeTrade(
   // Execute trade logic
   teamA.roster = teamA.roster.filter(p => !playerAIds.includes(p)).concat(playerBIds);
   teamB.roster = teamB.roster.filter(p => !playerBIds.includes(p)).concat(playerAIds);
+
+  console.log('📊 Team rosters after trade:', {
+    teamA: { teamId: teamA.teamId, roster: teamA.roster },
+    teamB: { teamId: teamB.teamId, roster: teamB.roster }
+  });
 
   console.log(`✅ Trade executed in league ${leagueId} between ${teamAId} and ${teamBId}`);
 

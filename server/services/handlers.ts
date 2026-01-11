@@ -360,6 +360,12 @@ export function handleExecuteTrade(
   userId: string
 ) {
   try {
+    console.log('📥 Server received EXECUTE_TRADE:', {
+      userId,
+      lobbyId: socket.data.lobbyId,
+      payload
+    });
+
     const lobbyId = socket.data.lobbyId;
     if (!lobbyId) {
       throw new Error('Not in a lobby');
@@ -370,6 +376,7 @@ export function handleExecuteTrade(
       throw new Error('Lobby not found');
     }
 
+    console.log('🔄 Executing trade in leagueManager...');
     const updatedLeague = executeTrade(
       lobbyId,
       payload.teamAId,
@@ -382,6 +389,7 @@ export function handleExecuteTrade(
       throw new Error('Failed to execute trade');
     }
 
+    console.log('✅ Trade executed successfully, broadcasting to lobby');
     emitToLobby(io, lobbyId, WS_EVENTS.TRADE_EXECUTED, {
       type: 'TRADE_EXECUTED',
       payload: updatedLeague
@@ -391,6 +399,7 @@ export function handleExecuteTrade(
       payload: updatedLeague
     });
   } catch (error: any) {
+    console.error('❌ Trade execution error:', error);
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
 }

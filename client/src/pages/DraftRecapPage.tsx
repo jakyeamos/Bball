@@ -237,8 +237,19 @@ export function DraftRecapPage() {
           teams={draft.teams}
           allPlayers={allPlayers}
           isOpen={isTradeModalOpen}
-          onClose={() => setIsTradeModalOpen(false)}
+          onClose={() => {
+            console.log('🔄 Trade modal closed');
+            setIsTradeModalOpen(false);
+          }}
           onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
+            console.log('🔄 Executing trade:', {
+              team1Id,
+              team2Id,
+              team1PlayerIds,
+              team2PlayerIds,
+              team1: draft.teams.find(t => t.teamId === team1Id)?.displayName,
+              team2: draft.teams.find(t => t.teamId === team2Id)?.displayName
+            });
             wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
             setIsTradeModalOpen(false);
           }}

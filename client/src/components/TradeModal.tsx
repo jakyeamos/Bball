@@ -16,13 +16,34 @@ export const TradeModal: React.FC<TradeModalProps> = ({ teams, allPlayers, isOpe
   const [team1PlayerIds, setTeam1PlayerIds] = useState<string[]>([]);
   const [team2PlayerIds, setTeam2PlayerIds] = useState<string[]>([]);
 
+  console.log('🔄 TradeModal rendered:', {
+    isOpen,
+    teamsCount: teams?.length,
+    allPlayersCount: allPlayers?.length,
+    team1Id,
+    team2Id,
+    team1PlayerIds,
+    team2PlayerIds
+  });
+
   if (!isOpen) return null;
 
   const handleTrade = () => {
+    console.log('🔄 handleTrade called:', {
+      team1Id,
+      team2Id,
+      team1PlayerIds,
+      team2PlayerIds
+    });
+
     if (!team1Id || !team2Id || team1PlayerIds.length === 0 || team2PlayerIds.length === 0) {
+      console.warn('⚠️ Trade validation failed - missing data');
       return; // Don't allow empty trades
     }
+
+    console.log('✅ Trade validation passed - executing trade');
     onTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
+
     // Reset state
     setTeam1Id('');
     setTeam2Id('');
@@ -32,17 +53,23 @@ export const TradeModal: React.FC<TradeModalProps> = ({ teams, allPlayers, isOpe
   };
 
   const handleTeam1Change = (newTeamId: string) => {
+    console.log('🔄 Team 1 changed:', newTeamId);
     setTeam1Id(newTeamId);
     setTeam1PlayerIds([]); // Reset player selections when team changes
   };
 
   const handleTeam2Change = (newTeamId: string) => {
+    console.log('🔄 Team 2 changed:', newTeamId);
     setTeam2Id(newTeamId);
     setTeam2PlayerIds([]); // Reset player selections when team changes
   };
 
   const getPlayerById = (playerId: string) => {
-    return allPlayers.find(p => p.playerId === playerId);
+    const player = allPlayers.find(p => p.playerId === playerId);
+    if (!player) {
+      console.warn('⚠️ Player not found:', playerId);
+    }
+    return player;
   };
 
   const isTradeValid = team1Id && team2Id && team1PlayerIds.length > 0 && team2PlayerIds.length > 0;
