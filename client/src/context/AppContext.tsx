@@ -253,7 +253,7 @@ export function AppProvider({ children }: AppProviderProps) {
           ...prev,
           scoutingReports: {
             ...prev.scoutingReports,
-            [scoutingReport.matchup.matchupId]: scoutingReport,
+            [scoutingReport.matchupId]: scoutingReport,
           },
         }));
       })

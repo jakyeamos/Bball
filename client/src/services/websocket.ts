@@ -172,6 +172,13 @@ class WebSocketService {
     playerAIds: string[],
     playerBIds: string[]
   ) {
+    console.log('📤 Executing trade via WebSocket:', {
+      event: WS_EVENTS.EXECUTE_TRADE,
+      teamAId,
+      teamBId,
+      playerAIds,
+      playerBIds,
+    });
     this.emit(WS_EVENTS.EXECUTE_TRADE, {
       teamAId,
       teamBId,
