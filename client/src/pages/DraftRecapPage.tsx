@@ -146,8 +146,8 @@ export function DraftRecapPage() {
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-[1920px] mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">🏀 Draft Complete!</h1>
-            <p className="text-gray-400 text-sm">Review rosters and prepare for the season</p>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Draft Recap</h1>
+            <p className="text-blue-400 text-sm font-medium mt-1 uppercase tracking-wide">Season Preparation Phase</p>
           </div>
 
           {/* Commissioner Controls */}
@@ -157,8 +157,9 @@ export function DraftRecapPage() {
                 onClick={handleStartSeason}
                 variant="primary"
                 disabled={startingSeason}
+                className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20"
               >
-                {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
+                {startingSeason ? 'Starting Season...' : 'Start Regular Season ▶'}
               </Button>
             </div>
           )}
@@ -173,22 +174,27 @@ export function DraftRecapPage() {
             {/* COLUMN 1: Team Identity & Analysis (Fixed/Scrollable side) */}
             <div className="lg:col-span-3 bg-gray-800 rounded-lg border border-gray-700 p-4 h-[500px] lg:h-full overflow-y-auto flex flex-col gap-6">
               {/* Team Selector moved here */}
-              <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-                  Viewing Team
+              <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                  Select Team to View
                 </label>
-                <select
-                  value={selectedTeamId}
-                  onChange={(e) => setSelectedTeamId(e.target.value)}
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  {sortedTeams.map(team => (
-                    <option key={team.teamId} value={team.teamId}>
-                      {team.displayName} {team.userId === userId ? '(You)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-center text-gray-500 mt-2">{leagueSettings}</p>
+                <div className="relative">
+                  <select
+                    value={selectedTeamId}
+                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                    className="w-full bg-gray-800 text-white border border-gray-600 rounded-md px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer appearance-none"
+                  >
+                    {sortedTeams.map(team => (
+                      <option key={team.teamId} value={team.teamId}>
+                        {team.displayName} {team.userId === userId ? '(You)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                    ▼
+                  </div>
+                </div>
+                <p className="text-[10px] text-center text-gray-500 mt-2 font-mono uppercase tracking-tight">{leagueSettings}</p>
               </div>
 
               {/* Team Identity Summary */}
@@ -203,11 +209,12 @@ export function DraftRecapPage() {
               </div>
 
               {/* Deep Analysis (Traits & Weaknesses) */}
-              <div className="flex-1">
+              <div className="flex-1 bg-gray-900/30 rounded-lg p-1">
                 {teamAggregations[selectedTeam.teamId] ? (
                   <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
                 ) : (
-                  <div className="text-gray-400 text-center py-8 animate-pulse">
+                  <div className="text-gray-500 text-sm text-center py-12 flex flex-col items-center">
+                    <span className="animate-spin text-2xl mb-2">⚙️</span>
                     Analyzing roster composition...
                   </div>
                 )}

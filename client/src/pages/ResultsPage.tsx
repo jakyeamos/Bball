@@ -22,7 +22,7 @@ import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
  * that winner always has the higher score
  */
 function generateGameScore(
-  winPctA: number, 
+  winPctA: number,
   winner: 'A' | 'B',
   seed: number = 0,
   existingScoreA?: number,
@@ -40,19 +40,19 @@ function generateGameScore(
 
   // Base scores (typical NBA game)
   const baseScore = 105 + pseudoRandom(seed + 1) * 20;
-  
+
   // Point differential based on win probability
   const dominance = Math.abs(winPctA - 0.5);
   const baseSpread = dominance * 30;
-  
+
   // Add variance
   const variance = (pseudoRandom(seed + 2) - 0.5) * 10;
   let spread = Math.max(1, baseSpread + variance);
-  
+
   // Calculate scores with winner having higher score
   let scoreA: number;
   let scoreB: number;
-  
+
   if (winner === 'A') {
     scoreA = Math.round(baseScore + spread / 2);
     scoreB = Math.round(baseScore - spread / 2);
@@ -60,25 +60,25 @@ function generateGameScore(
     scoreB = Math.round(baseScore + spread / 2);
     scoreA = Math.round(baseScore - spread / 2);
   }
-  
+
   // SCORE GUARD: Ensure winner always has higher score
   if (winner === 'A' && scoreA <= scoreB) {
     scoreA = scoreB + Math.max(1, Math.round(pseudoRandom(seed + 5) * 5) + 1);
   } else if (winner === 'B' && scoreB <= scoreA) {
     scoreB = scoreA + Math.max(1, Math.round(pseudoRandom(seed + 5) * 5) + 1);
   }
-  
+
   // Clamp to realistic NBA range
   scoreA = Math.max(85, Math.min(140, scoreA));
   scoreB = Math.max(85, Math.min(140, scoreB));
-  
+
   // Final safety check after clamping
   if (winner === 'A' && scoreA <= scoreB) {
     scoreA = scoreB + 1;
   } else if (winner === 'B' && scoreB <= scoreA) {
     scoreB = scoreA + 1;
   }
-  
+
   return { scoreA, scoreB };
 }
 
@@ -131,14 +131,14 @@ export function ResultsPage() {
     const timer = setTimeout(() => {
       setPlaybackQueue(prevQueue => {
         if (prevQueue.length === 0) return prevQueue;
-        
+
         const [nextGame, ...remaining] = prevQueue;
         setDisplayedGames(prev => [...prev, nextGame]);
-        
+
         if (remaining.length === 0) {
           setIsSimulating(false);
         }
-        
+
         return remaining;
       });
     }, simSpeed);
@@ -180,15 +180,51 @@ export function ResultsPage() {
     }
   };
 
-  if (!league || !regularSeasonResults) {
+  // Handle Coaching Window phase
+  useEffect(() => {
+    if (league?.phase === 'regular_season' && league?.roundState?.phase === 'coaching_window') {
+      console.log('📋 Coaching window active, redirecting to coaching page');
+      navigate('/coaching');
+    }
+  }, [league, navigate]);
+
+  if (!league || (!regularSeasonResults && league.roundState?.phase !== 'coaching_window')) {
+    // If we are in regular season but clearly waiting for simulation/results (not coaching)
+    const isSimulating = league?.roundState?.phase === 'simulating';
+
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-gray-500">Loading results...</p>
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="max-w-md w-full text-center">
+          <div className="text-4xl mb-4 animate-bounce">🏀</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {isSimulating ? 'Simulating Games...' : 'Loading Season Data...'}
+          </h2>
+          <p className="text-gray-500">
+            {isSimulating
+              ? `Processing round ${league?.currentRound || 1}...`
+              : 'Please wait while we fetch the latest statistics.'}
+          </p>
         </div>
       </div>
     );
   }
+
+  // If we are here and still don't have results (but maybe stuck in transition), show a safe fallback or redirect
+  if (!regularSeasonResults && league?.phase === 'regular_season') {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-gray-900">Season in Progress</h2>
+          <p className="text-gray-600 mb-4">Round {league.currentRound} is active.</p>
+          <Button onClick={() => navigate('/coaching')} variant="primary">
+            Go to Coaching Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!league || !regularSeasonResults) return null;
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
@@ -200,12 +236,12 @@ export function ResultsPage() {
               {playoffResults ? 'Championship Complete' : 'Season Results'}
             </h1>
             <p className="text-gray-600 mt-1">
-              {playoffResults 
-                ? `${getTeamName(playoffResults.champion)} wins the championship!` 
+              {playoffResults
+                ? `${getTeamName(playoffResults.champion)} wins the championship!`
                 : regularSeasonResults.summary}
             </p>
           </div>
-          
+
           {isSimulating && (
             <div className="flex items-center gap-4">
               <select
@@ -261,7 +297,7 @@ export function ResultsPage() {
                     </tbody>
                   </table>
                 </div>
-                
+
                 {/* Start Playoffs Button */}
                 {!isSimulating && !playoffResults && (
                   <div className="mt-6 pt-4 border-t">
@@ -286,11 +322,11 @@ export function ResultsPage() {
                     {isSimulating ? `Game ${currentMatchupIdx + 1} in progress...` : 'Season Complete'}
                   </div>
                 </div>
-                
+
                 <div ref={scrollRef} className="flex-1 overflow-y-auto bg-gray-900 p-4 space-y-3">
                   {displayedGames.map((game, idx) => {
                     if (!game?.result) return null;
-                    
+
                     // V3: Use result scores if available, otherwise generate with score guard
                     const { scoreA, scoreB } = generateGameScore(
                       game.result.winPctA,
@@ -301,8 +337,8 @@ export function ResultsPage() {
                     );
 
                     return (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 animate-in slide-in-from-right-4 fade-in duration-300"
                       >
                         {/* Game Header */}
