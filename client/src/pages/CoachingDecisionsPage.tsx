@@ -193,13 +193,19 @@ export function CoachingDecisionsPage() {
     }
   };
 
-  const handleSubmit = () => {
+  // State for submission confirmation
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const handleSubmit = async () => {
     if (!myTeam || !league?.currentRound) return;
 
     if (selectedRotation.length !== rotationDepth) {
       alert(`Please select exactly ${rotationDepth} players for your rotation`);
       return;
     }
+
+    setSubmitStatus('submitting');
 
     const decision: CoachingDecision = {
       teamId: myTeam.teamId,
@@ -212,7 +218,18 @@ export function CoachingDecisionsPage() {
       submittedAt: new Date().toISOString(),
     };
 
-    wsService.emit('round:submit_coaching', { decision });
+    try {
+      wsService.emit('round:submit_coaching', { decision });
+
+      // Simulate confirmation delay/listener (ideally listen for ACK)
+      setSubmitStatus('success');
+      setSubmitMessage('Strategy submitted successfully!');
+
+      setTimeout(() => setSubmitStatus('idle'), 3000); // Clear after 3s
+    } catch (err) {
+      setSubmitStatus('error');
+      setSubmitMessage('Failed to submit strategy. Please try again.');
+    }
   };
 
   const isRotationComplete = selectedRotation.length === rotationDepth;
@@ -236,7 +253,23 @@ export function CoachingDecisionsPage() {
   }, [draft, league]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col relative">
+      {/* SUCCESS TOAST */}
+      {submitStatus === 'success' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-[100] animate-bounce flex items-center gap-2">
+          <span>✅</span>
+          <span className="font-bold">{submitMessage}</span>
+        </div>
+      )}
+
+      {/* ERROR TOAST */}
+      {submitStatus === 'error' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-lg z-[100] flex items-center gap-2">
+          <span>⚠️</span>
+          <span className="font-bold">{submitMessage}</span>
+        </div>
+      )}
+
       <div className="max-w-[1920px] mx-auto w-full flex-1 flex flex-col min-h-0">
         {/* Header */}
         <div className="mb-6 shrink-0">
@@ -396,8 +429,8 @@ export function CoachingDecisionsPage() {
                       key={player.playerId}
                       onClick={() => handlePlayerToggle(player.playerId)}
                       className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <div className="flex items-center justify-between">
@@ -408,8 +441,8 @@ export function CoachingDecisionsPage() {
                           </div>
                         </div>
                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected
-                            ? 'border-primary-500 bg-primary-500 text-white'
-                            : 'border-gray-300'
+                          ? 'border-primary-500 bg-primary-500 text-white'
+                          : 'border-gray-300'
                           }`}>
                           {isSelected && '✓'}
                         </div>
@@ -459,8 +492,8 @@ export function CoachingDecisionsPage() {
                     <label
                       key={strategy}
                       className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${lineupStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
@@ -492,8 +525,8 @@ export function CoachingDecisionsPage() {
                     <label
                       key={strategy}
                       className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${defensiveStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
@@ -525,8 +558,8 @@ export function CoachingDecisionsPage() {
                     <label
                       key={strategy}
                       className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${offensiveStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
@@ -555,12 +588,13 @@ export function CoachingDecisionsPage() {
                 size="lg"
                 fullWidth
                 onClick={handleSubmit}
-                disabled={!canSubmit}
+                disabled={!canSubmit || submitStatus === 'submitting'}
                 className="shadow-lg"
               >
-                {isRotationComplete
-                  ? 'Submit Decisions'
-                  : `Select ${rotationDepth - selectedRotation.length} More Player${rotationDepth - selectedRotation.length !== 1 ? 's' : ''}`}
+                {submitStatus === 'submitting' ? 'Submitting...' :
+                  isRotationComplete
+                    ? 'Submit Decisions'
+                    : `Select ${rotationDepth - selectedRotation.length} More Player${rotationDepth - selectedRotation.length !== 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>

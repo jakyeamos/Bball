@@ -16,6 +16,8 @@ import { CoachingDecisionsPage } from './pages/CoachingDecisionsPage';
 import { QuarterCoachingPage } from './pages/QuarterCoachingPage';
 import { RoundResultsPage } from './pages/RoundResultsPage';
 import { DebugOverlay } from './components/DebugOverlay';
+import { GameTimer } from './components/GameTimer';
+import { ScoutingReportPage } from './pages/ScoutingReportPage';
 
 const GameRouting = () => {
   const { league } = useApp();
@@ -35,8 +37,16 @@ const GameRouting = () => {
       timestamp: new Date().toISOString()
     });
 
+    // 0. Scouting Phase -> Go to Scouting Page
+    if (league.roundState?.phase === 'scouting' && !league.liveGame) {
+      if (location.pathname !== '/scouting-report') {
+        console.log('🔄 [RoutingDebug] SCOUTING PHASE FOUND -> Redirecting to /scouting-report');
+        navigate('/scouting-report');
+      }
+    }
+
     // 1. Live Game Active -> Go to Quarter Coaching
-    if (league.liveGame && league.liveGame.phase !== 'final') {
+    else if (league.liveGame && league.liveGame.phase !== 'final') {
       if (location.pathname !== '/quarter-coaching') {
         console.log('🔄 [RoutingDebug] LIVE GAME FOUND -> Redirecting to /quarter-coaching');
         navigate('/quarter-coaching');
@@ -59,11 +69,13 @@ function App() {
   return (
     <AppProvider>
       <DebugOverlay />
+      <GameTimer />
       <BrowserRouter>
         <GameRouting />
         <Routes>
           <Route path="/" element={<LobbyPage />} />
           <Route path="/browse" element={<LobbyBrowserPage />} />
+          <Route path="/scouting-report" element={<ScoutingReportPage />} />
           <Route path="/coaching" element={<CoachingDecisionsPage />} />
           <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
           <Route path="/waiting-room" element={<WaitingRoomPage />} />
