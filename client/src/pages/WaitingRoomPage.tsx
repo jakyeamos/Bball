@@ -107,7 +107,12 @@ export function WaitingRoomPage() {
                   `}
                 >
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
+                      {user.teamId && (
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                          {user.teamId.replace('team_', 'Team ')}
+                        </div>
+                      )}
                       <div className="font-medium text-gray-900">
                         {user.displayName}
                         {user.isCommissioner && (
@@ -116,11 +121,6 @@ export function WaitingRoomPage() {
                           </span>
                         )}
                       </div>
-                      {user.teamId && (
-                        <div className="text-sm text-gray-600">
-                          {user.teamId}
-                        </div>
-                      )}
                     </div>
                     <div className={`w-3 h-3 rounded-full ${user.isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
                   </div>

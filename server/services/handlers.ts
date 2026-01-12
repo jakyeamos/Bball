@@ -17,6 +17,7 @@ import {
   createLobby,
   addUserToLobby,
   createDraftTeamsFromLobby,
+  updateUserConnection,
 } from '../managers/lobbyManager';
 import {
   createDraftState,
@@ -38,6 +39,8 @@ import {
   getLeague,
 } from '../managers/leagueManager';
 import { startTradeWindowTimer, stopTradeWindowTimer } from '../managers/tradeTimerManager';
+import { rejoinManager } from '../managers/rejoinManager';
+import { handleStartRound } from './handlers-v2';
 
 /**
  * In-memory stores (for v1)
@@ -64,13 +67,13 @@ function emitToLobby(io: SocketServer, lobbyId: string, event: string, data: Ser
 export function handleCreateLobby(
   io: SocketServer,
   socket: Socket,
-  payload: { config: LobbyConfig },
+  payload: { config: LobbyConfig; isPublic?: boolean },
   userId: string,
   displayName: string
 ) {
   console.log('🟢 handleCreateLobby called!', { userId, displayName, config: payload.config });
   try {
-    const lobby = createLobby(userId, displayName, payload.config);
+    const lobby = createLobby(userId, displayName, payload.config, payload.isPublic);
 
     // Store lobby
     lobbies.set(lobby.lobbyId, lobby);
@@ -81,6 +84,9 @@ export function handleCreateLobby(
 
     // Store lobby ID on socket
     socket.data.lobbyId = lobby.lobbyId;
+
+    // Register user for rejoin capability
+    rejoinManager.registerUser(userId, lobby.lobbyId);
 
     // Send response
     socket.emit(WS_EVENTS.LOBBY_CREATED, { payload: lobby });
@@ -116,6 +122,9 @@ export function handleJoinLobby(
     // Join room
     joinLobbyRoom(socket, lobbyId);
     socket.data.lobbyId = lobbyId;
+
+    // Register user for rejoin capability
+    rejoinManager.registerUser(userId, lobbyId);
 
     // Broadcast update to all users in lobby
     emitToLobby(io, lobbyId, WS_EVENTS.LOBBY_UPDATED, {
@@ -351,6 +360,12 @@ export function handleExecuteTrade(
   userId: string
 ) {
   try {
+    console.log('📥 Server received EXECUTE_TRADE:', {
+      userId,
+      lobbyId: socket.data.lobbyId,
+      payload
+    });
+
     const lobbyId = socket.data.lobbyId;
     if (!lobbyId) {
       throw new Error('Not in a lobby');
@@ -361,6 +376,7 @@ export function handleExecuteTrade(
       throw new Error('Lobby not found');
     }
 
+    console.log('🔄 Executing trade in leagueManager...');
     const updatedLeague = executeTrade(
       lobbyId,
       payload.teamAId,
@@ -373,6 +389,7 @@ export function handleExecuteTrade(
       throw new Error('Failed to execute trade');
     }
 
+    console.log('✅ Trade executed successfully, broadcasting to lobby');
     emitToLobby(io, lobbyId, WS_EVENTS.TRADE_EXECUTED, {
       type: 'TRADE_EXECUTED',
       payload: updatedLeague
@@ -382,6 +399,7 @@ export function handleExecuteTrade(
       payload: updatedLeague
     });
   } catch (error: any) {
+    console.error('❌ Trade execution error:', error);
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
 }
@@ -405,19 +423,34 @@ export function handleStartRegularSeason(
 
     stopTradeWindowTimer(lobbyId);
 
-    const updatedLeague = startRegularSeason(lobbyId, allPlayers);
-    if (!updatedLeague || !updatedLeague.regularSeasonResults) {
-      throw new Error('Failed to start regular season');
+    const league = getLeague(lobbyId);
+    if (!league || !league.draftState) {
+      throw new Error('League not found');
     }
 
-    emitToLobby(io, lobbyId, WS_EVENTS.REGULAR_SEASON_STARTED, {
-      type: 'REGULAR_SEASON_STARTED',
-      payload: updatedLeague.regularSeasonResults,
-    });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, {
-      type: 'LEAGUE_UPDATED',
-      payload: updatedLeague
-    });
+    const seasonFormat = league.draftState.config.seasonFormat;
+
+    // Route based on season format
+    if (seasonFormat === 'quick_sim') {
+      // Quick sim: Run entire season without coaching windows
+      const updatedLeague = startRegularSeason(lobbyId, allPlayers);
+      if (!updatedLeague || !updatedLeague.regularSeasonResults) {
+        throw new Error('Failed to start regular season');
+      }
+
+      emitToLobby(io, lobbyId, WS_EVENTS.REGULAR_SEASON_STARTED, {
+        type: 'REGULAR_SEASON_STARTED',
+        payload: updatedLeague.regularSeasonResults,
+      });
+      emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, {
+        type: 'LEAGUE_UPDATED',
+        payload: updatedLeague
+      });
+    } else {
+      // Round robin formats: Use round-based system with coaching windows
+      console.log(`🎮 Starting round-based season with format: ${seasonFormat}`);
+      handleStartRound(io, socket, userId, allPlayers);
+    }
   } catch (error: any) {
     console.error('Start regular season error:', error);
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });

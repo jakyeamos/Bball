@@ -128,13 +128,35 @@ export function LobbyPage() {
             </div>
           )}
 
-          <div className="space-y-4">
+          {/* Team Name Input - Required first */}
+          <div className={`p-4 rounded-lg border-2 ${!displayName.trim() ? 'border-orange-400 bg-orange-50' : 'border-green-400 bg-green-50'}`}>
+            <Input
+              label="Team Name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your team name"
+              fullWidth
+              required
+            />
+            {!displayName.trim() && (
+              <p className="mt-2 text-sm font-medium text-orange-700 flex items-center gap-2">
+                ⚠️ Please enter a team name to continue
+              </p>
+            )}
+            {displayName.trim() && (
+              <p className="mt-2 text-sm font-medium text-green-700 flex items-center gap-2">
+                ✓ Team name set
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-4 mt-6">
             <Button
               variant="primary"
               size="lg"
               fullWidth
               onClick={() => setMode('create')}
-              disabled={!isConnected}
+              disabled={!isConnected || !displayName.trim()}
             >
               Create Lobby
             </Button>
@@ -144,7 +166,7 @@ export function LobbyPage() {
               size="lg"
               fullWidth
               onClick={() => navigate('/browse')}
-              disabled={!isConnected}
+              disabled={!isConnected || !displayName.trim()}
             >
               Browse Public Lobbies
             </Button>
@@ -154,21 +176,10 @@ export function LobbyPage() {
               size="lg"
               fullWidth
               onClick={() => setMode('join')}
-              disabled={!isConnected}
+              disabled={!isConnected || !displayName.trim()}
             >
               Join with Code
             </Button>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <Input
-              label="Team Name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Enter your team name"
-              fullWidth
-              required
-            />
           </div>
         </Card>
       </div>
