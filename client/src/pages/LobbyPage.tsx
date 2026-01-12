@@ -16,6 +16,14 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 
+// Defensive fallback in case shared library import fails in production
+const CONSTRAINTS = DRAFT_CONSTRAINTS || {
+  TEAMS_MIN: 4,
+  TEAMS_MAX: 30,
+  ROSTER_MIN: 8,
+  ROSTER_MAX: 15,
+};
+
 export function LobbyPage() {
   const navigate = useNavigate();
   const { lobby, isConnected } = useApp();
@@ -231,12 +239,12 @@ export function LobbyPage() {
             {/* Team Count Slider */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Teams ({DRAFT_CONSTRAINTS.TEAMS_MIN}-{DRAFT_CONSTRAINTS.TEAMS_MAX})
+                Number of Teams ({CONSTRAINTS.TEAMS_MIN}-{CONSTRAINTS.TEAMS_MAX})
               </label>
               <input
                 type="range"
-                min={DRAFT_CONSTRAINTS.TEAMS_MIN}
-                max={DRAFT_CONSTRAINTS.TEAMS_MAX}
+                min={CONSTRAINTS.TEAMS_MIN}
+                max={CONSTRAINTS.TEAMS_MAX}
                 value={teamCount}
                 onChange={(e) => setTeamCount(Number(e.target.value))}
                 className="w-full"
@@ -249,12 +257,12 @@ export function LobbyPage() {
             {/* Roster Size Slider */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Roster Size ({DRAFT_CONSTRAINTS.ROSTER_MIN}-{DRAFT_CONSTRAINTS.ROSTER_MAX})
+                Roster Size ({CONSTRAINTS.ROSTER_MIN}-{CONSTRAINTS.ROSTER_MAX})
               </label>
               <input
                 type="range"
-                min={DRAFT_CONSTRAINTS.ROSTER_MIN}
-                max={DRAFT_CONSTRAINTS.ROSTER_MAX}
+                min={CONSTRAINTS.ROSTER_MIN}
+                max={CONSTRAINTS.ROSTER_MAX}
                 value={rosterSize}
                 onChange={(e) => setRosterSize(Number(e.target.value))}
                 className="w-full"

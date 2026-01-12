@@ -25,6 +25,14 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { getTopArchetypes, formatArchetypeName, getArchetypeColor } from '../archetypes';
 
+// Defensive fallback
+const CONSTRAINTS = DRAFT_CONSTRAINTS || {
+  ROTATION_MIN: 5,
+  ROTATION_MAX: 15,
+  ROTATION_DEFAULT: 8,
+  ROSTER_MAX: 15,
+};
+
 // Strategy descriptions for UI
 const LINEUP_STRATEGY_INFO: Record<LineupStrategy, { label: string; description: string; tip: string }> = {
   balanced: {
@@ -116,7 +124,7 @@ export function CoachingDecisionsPage() {
 
   // Core state
   const [selectedRotation, setSelectedRotation] = useState<string[]>([]);
-  const [rotationDepth, setRotationDepth] = useState<number>(DRAFT_CONSTRAINTS.ROTATION_DEFAULT);
+  const [rotationDepth, setRotationDepth] = useState<number>(CONSTRAINTS.ROTATION_DEFAULT);
   const [lineupStrategy, setLineupStrategy] = useState<LineupStrategy>('balanced');
   const [defensiveStrategy, setDefensiveStrategy] = useState<DefensiveStrategy>('standard');
   const [offensiveStrategy, setOffensiveStrategy] = useState<OffensiveStrategy>('balanced_attack');
@@ -248,7 +256,7 @@ export function CoachingDecisionsPage() {
   // Determine max rotation depth from config
   const maxRotationDepth = useMemo(() => {
     // Try to get from lobby config or draft config
-    const configRosterSize = (draft?.config?.rosterSize) || (league?.draftState?.config?.rosterSize) || DRAFT_CONSTRAINTS.ROSTER_MAX;
+    const configRosterSize = (draft?.config?.rosterSize) || (league?.draftState?.config?.rosterSize) || CONSTRAINTS.ROSTER_MAX;
     return configRosterSize;
   }, [draft, league]);
 
@@ -404,7 +412,7 @@ export function CoachingDecisionsPage() {
                 <span className="text-sm text-gray-600">Depth:</span>
                 <input
                   type="range"
-                  min={DRAFT_CONSTRAINTS.ROTATION_MIN}
+                  min={CONSTRAINTS.ROTATION_MIN}
                   max={maxRotationDepth}
                   value={rotationDepth}
                   onChange={(e) => setRotationDepth(Number(e.target.value))}
