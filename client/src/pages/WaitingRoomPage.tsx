@@ -112,7 +112,7 @@ export function WaitingRoomPage() {
                         {user.displayName}
                         {user.isCommissioner && (
                           <span className="ml-2 text-xs bg-primary-600 text-white px-2 py-1 rounded">
-                            Commissioner
+                            (Commissioner)
                           </span>
                         )}
                       </div>
@@ -145,19 +145,19 @@ export function WaitingRoomPage() {
             <h3 className="font-bold text-gray-900 mb-2">League Settings</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
+                 <div className="text-sm text-gray-600"><strong>Teams</strong></div>
                 <div className="text-2xl font-bold text-primary-600">
                   {lobby.config?.teamCount || 0}
                 </div>
-                <div className="text-sm text-gray-600">Teams</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Roster Size</div>
+                <div className="text-sm text-gray-600"><strong>Roster Size</strong></div>
                 <div className="text-2xl font-bold text-primary-600">
                   {lobby.config?.rosterSize || 0}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Pick Timer</div>
+                <div className="text-sm text-gray-600"><strong>Pick Timer</strong></div>
                 <div className="text-2xl font-bold text-primary-600">
                   {(lobby.config?.pickTimer || 0) / 60}m
                 </div>
@@ -168,14 +168,12 @@ export function WaitingRoomPage() {
           <div className="border-t border-gray-200 mt-6 pt-6">
             <h3 className="font-bold text-gray-900 mb-2">Season Details</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-sm text-gray-600">Format</div>
+                <div className="text-sm text-gray-600"><strong>Format</strong></div>
                 <div className="text-lg font-bold text-primary-600 truncate px-2">
                   {seasonDetails.format}
                 </div>
-              </div>
               <div>
-                <div className="text-sm text-gray-600">Total Games</div>
+                <div className="text-sm text-gray-600"><strong>Total Games</strong></div>
                 <div className="text-2xl font-bold text-primary-600">
                   {seasonDetails.matchups}
                 </div>
