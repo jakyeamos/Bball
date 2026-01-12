@@ -169,61 +169,63 @@ export function DraftRecapPage() {
       {/* Main Content - Responsive Grid */}
       <div className="h-auto lg:h-[calc(100vh-85px)] max-w-[1920px] mx-auto p-4">
         {selectedTeam ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+          <div className="flex flex-col lg:flex-row gap-4 h-full">
 
-            {/* COLUMN 1: Team Identity & Analysis (Fixed/Scrollable side) */}
-            <div className="lg:col-span-3 bg-gray-800 rounded-lg border border-gray-700 p-4 h-[500px] lg:h-full overflow-y-auto flex flex-col gap-6">
-              {/* Team Selector moved here */}
-              <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
-                  Select Team to View
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedTeamId}
-                    onChange={(e) => setSelectedTeamId(e.target.value)}
-                    className="w-full bg-gray-800 text-white border border-gray-600 rounded-md px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer appearance-none"
-                  >
-                    {sortedTeams.map(team => (
-                      <option key={team.teamId} value={team.teamId}>
-                        {team.displayName} {team.userId === userId ? '(You)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
-                    ▼
+            {/* COLUMN 1: Team Identity & Analysis (Fixed width) */}
+            <div className="w-full lg:w-[25%] min-w-[300px] flex flex-col gap-4">
+              <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 h-[500px] lg:h-full overflow-y-auto flex flex-col gap-6 scrollbar-thin scrollbar-thumb-gray-600">
+                {/* Team Selector moved here */}
+                <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 shrink-0">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                    Select Team to View
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedTeamId}
+                      onChange={(e) => setSelectedTeamId(e.target.value)}
+                      className="w-full bg-gray-800 text-white border border-gray-600 rounded-md px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer appearance-none"
+                    >
+                      {sortedTeams.map(team => (
+                        <option key={team.teamId} value={team.teamId}>
+                          {team.displayName} {team.userId === userId ? '(You)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                      ▼
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-center text-gray-500 mt-2 font-mono uppercase tracking-tight">{leagueSettings}</p>
+                </div>
+
+                {/* Team Identity Summary */}
+                <div className="text-center pb-4 border-b border-gray-700 shrink-0">
+                  <div className="w-20 h-20 bg-gray-700 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl shadow-lg">
+                    🏀
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-1">{selectedTeam.displayName}</h2>
+                  <div className="text-sm text-gray-400">
+                    {selectedTeam.userId === userId ? 'Your Team' : 'Managed by User'}
                   </div>
                 </div>
-                <p className="text-[10px] text-center text-gray-500 mt-2 font-mono uppercase tracking-tight">{leagueSettings}</p>
-              </div>
 
-              {/* Team Identity Summary */}
-              <div className="text-center pb-4 border-b border-gray-700">
-                <div className="w-20 h-20 bg-gray-700 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl shadow-lg">
-                  🏀
+                {/* Deep Analysis (Traits & Weaknesses) */}
+                <div className="flex-1 bg-gray-900/30 rounded-lg p-1">
+                  {teamAggregations[selectedTeam.teamId] ? (
+                    <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
+                  ) : (
+                    <div className="text-gray-500 text-sm text-center py-12 flex flex-col items-center">
+                      <span className="animate-spin text-2xl mb-2">⚙️</span>
+                      Analyzing roster composition...
+                    </div>
+                  )}
                 </div>
-                <h2 className="text-xl font-bold text-white mb-1">{selectedTeam.displayName}</h2>
-                <div className="text-sm text-gray-400">
-                  {selectedTeam.userId === userId ? 'Your Team' : 'Managed by User'}
-                </div>
-              </div>
-
-              {/* Deep Analysis (Traits & Weaknesses) */}
-              <div className="flex-1 bg-gray-900/30 rounded-lg p-1">
-                {teamAggregations[selectedTeam.teamId] ? (
-                  <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
-                ) : (
-                  <div className="text-gray-500 text-sm text-center py-12 flex flex-col items-center">
-                    <span className="animate-spin text-2xl mb-2">⚙️</span>
-                    Analyzing roster composition...
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* COLUMN 2: Roster Grid (Widest) */}
-            <div className="lg:col-span-6 bg-gray-800 rounded-lg border border-gray-700 flex flex-col h-[600px] lg:h-full overflow-hidden">
-              <div className="p-4 border-b border-gray-700 bg-gray-800 z-10 sticky top-0">
+            {/* COLUMN 2: Roster Grid (Flexible Center) */}
+            <div className="flex-1 min-w-0 bg-gray-800 rounded-lg border border-gray-700 flex flex-col h-[600px] lg:h-full overflow-hidden">
+              <div className="p-4 border-b border-gray-700 bg-gray-800 z-10 sticky top-0 shrink-0">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold">Roster Overview</h3>
                   <span className="text-sm text-gray-400">
@@ -252,8 +254,8 @@ export function DraftRecapPage() {
               </div>
             </div>
 
-            {/* COLUMN 3: Trade Center (Medium) */}
-            <div className="lg:col-span-3 h-[500px] lg:h-full">
+            {/* COLUMN 3: Trade Center (Fixed Width) */}
+            <div className="w-full lg:w-[25%] min-w-[300px] h-[500px] lg:h-full">
               <TradePanel
                 teams={draft.teams}
                 allPlayers={allPlayers}
