@@ -24,6 +24,13 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { getTopArchetypes, formatArchetypeName, getArchetypeColor } from '../archetypes';
 
+// Defensive fallback
+const CONSTRAINTS = DRAFT_CONSTRAINTS || {
+  ROTATION_MIN: 5,
+  ROTATION_MAX: 15,
+  ROTATION_DEFAULT: 8,
+};
+
 export function QuarterCoachingPage() {
   const navigate = useNavigate();
   const { draft, league, allPlayers, userId } = useApp();
@@ -39,7 +46,7 @@ export function QuarterCoachingPage() {
 
   // Coaching decision state (can be adjusted between quarters)
   const [selectedRotation, setSelectedRotation] = useState<string[]>([]);
-  const [rotationDepth, setRotationDepth] = useState<number>(DRAFT_CONSTRAINTS.ROTATION_DEFAULT);
+  const [rotationDepth, setRotationDepth] = useState<number>(CONSTRAINTS.ROTATION_DEFAULT);
   const [lineupStrategy, setLineupStrategy] = useState<LineupStrategy>('balanced');
   const [defensiveStrategy, setDefensiveStrategy] = useState<DefensiveStrategy>('standard');
   const [offensiveStrategy, setOffensiveStrategy] = useState<OffensiveStrategy>('balanced_attack');
@@ -182,9 +189,8 @@ export function QuarterCoachingPage() {
               </p>
             </div>
             {isCoachingWindow && coachingTimeRemaining !== null && (
-              <div className={`text-2xl font-mono font-bold ${
-                coachingTimeRemaining <= 30 ? 'text-red-600 animate-pulse' : 'text-gray-900'
-              }`}>
+              <div className={`text-2xl font-mono font-bold ${coachingTimeRemaining <= 30 ? 'text-red-600 animate-pulse' : 'text-gray-900'
+                }`}>
                 {Math.floor(coachingTimeRemaining / 60)}:{(coachingTimeRemaining % 60).toString().padStart(2, '0')}
               </div>
             )}
@@ -262,8 +268,8 @@ export function QuarterCoachingPage() {
                     <span className="text-sm text-gray-600">Depth:</span>
                     <input
                       type="range"
-                      min={DRAFT_CONSTRAINTS.ROTATION_MIN}
-                      max={DRAFT_CONSTRAINTS.ROTATION_MAX}
+                      min={CONSTRAINTS.ROTATION_MIN}
+                      max={CONSTRAINTS.ROTATION_MAX}
                       value={rotationDepth}
                       onChange={(e) => setRotationDepth(Number(e.target.value))}
                       className="w-24"
@@ -285,11 +291,10 @@ export function QuarterCoachingPage() {
                       <div
                         key={player.playerId}
                         onClick={() => handlePlayerToggle(player.playerId)}
-                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-primary-500 bg-primary-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
@@ -298,11 +303,10 @@ export function QuarterCoachingPage() {
                               {player.position} • Impact: {player.impactRating.toFixed(1)}
                             </div>
                           </div>
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            isSelected
-                              ? 'border-primary-500 bg-primary-500 text-white'
-                              : 'border-gray-300'
-                          }`}>
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected
+                            ? 'border-primary-500 bg-primary-500 text-white'
+                            : 'border-gray-300'
+                            }`}>
                             {isSelected && '✓'}
                           </div>
                         </div>

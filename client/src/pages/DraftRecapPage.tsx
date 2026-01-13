@@ -14,16 +14,15 @@ import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { apiService } from '../services/api';
 import { Button } from '../components/Button';
-import { TradeModal } from '../components/TradeModal';
 import { TeamAnalysis } from '../components/TeamAnalysis';
 import { PlayerCard } from '../components/PlayerCard';
+import { TradePanel } from '../components/TradePanel';
 import { TeamAggregation, Player, DraftPick } from '@nba-draft-sim/shared';
 
 export function DraftRecapPage() {
   const navigate = useNavigate();
   const { draft, league, allPlayers, lobby, userId } = useApp();
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
-  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [startingSeason, setStartingSeason] = useState(false);
   const [teamAggregations, setTeamAggregations] = useState<Record<string, TeamAggregation>>({});
 
@@ -142,139 +141,140 @@ export function DraftRecapPage() {
   const leagueSettings = `${draft.teams.length} team sim, ${draft.config.rosterSize} man rosters`;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1920px] mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">🏀 Draft Complete!</h1>
-            <p className="text-gray-400 text-sm">Review rosters and prepare for the season</p>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Draft Recap</h1>
+            <p className="text-blue-400 text-sm font-medium mt-1 uppercase tracking-wide">Season Preparation Phase</p>
           </div>
-          
+
           {/* Commissioner Controls */}
-          {league.phase === 'draft_recap' && (
+          {league.phase === 'draft_recap' && isCommissioner && (
             <div className="flex gap-3">
-              {/* Trade button visible to all users */}
               <Button
-                onClick={() => {
-                  console.log('🔄 Trade button clicked, opening modal. Current state:', {
-                    allPlayersCount: allPlayers?.length,
-                    teamsCount: draft?.teams?.length,
-                    isTradeModalOpen,
-                  });
-                  setIsTradeModalOpen(true);
-                }}
-                variant="secondary"
+                onClick={handleStartSeason}
+                variant="primary"
                 disabled={startingSeason}
+                className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20"
               >
-                🔄 Trade
+                {startingSeason ? 'Starting Season...' : 'Start Regular Season ▶'}
               </Button>
-              {/* Start Season button only for commissioner */}
-              {isCommissioner && (
-                <Button
-                  onClick={handleStartSeason}
-                  variant="primary"
-                  disabled={startingSeason}
-                >
-                  {startingSeason ? '⏳ Starting...' : '▶️ Start Season'}
-                </Button>
-              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Team Selector Dropdown */}
-        <div className="mb-8">
-          <select
-            value={selectedTeamId}
-            onChange={(e) => setSelectedTeamId(e.target.value)}
-            className="w-full md:w-auto bg-gray-800 text-white border border-gray-600 rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-          >
-            {sortedTeams.map(team => (
-              <option key={team.teamId} value={team.teamId}>
-                {team.displayName} {team.userId === userId ? '(You)' : ''} — {leagueSettings}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Main Content - Responsive Grid */}
+      <div className="h-auto lg:h-[calc(100vh-85px)] max-w-[1920px] mx-auto p-4">
+        {selectedTeam ? (
+          <div className="flex flex-col lg:flex-row gap-4 h-full">
 
-        {selectedTeam && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Team Analysis */}
-            <div className="lg:col-span-1">
-              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 h-fit sticky top-6">
-                {teamAggregations[selectedTeam.teamId] ? (
-                  <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
+            {/* COLUMN 1: Team Identity & Analysis (Fixed width) */}
+            <div className="w-full lg:w-[25%] min-w-[300px] flex flex-col gap-4">
+              <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 h-[500px] lg:h-full overflow-y-auto flex flex-col gap-6 scrollbar-thin scrollbar-thumb-gray-600">
+                {/* Team Selector moved here */}
+                <div className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 shrink-0">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                    Select Team to View
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedTeamId}
+                      onChange={(e) => setSelectedTeamId(e.target.value)}
+                      className="w-full bg-gray-800 text-white border border-gray-600 rounded-md px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer appearance-none"
+                    >
+                      {sortedTeams.map(team => (
+                        <option key={team.teamId} value={team.teamId}>
+                          {team.displayName} {team.userId === userId ? '(You)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+                      ▼
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-center text-gray-500 mt-2 font-mono uppercase tracking-tight">{leagueSettings}</p>
+                </div>
+
+                {/* Team Identity Summary */}
+                <div className="text-center pb-4 border-b border-gray-700 shrink-0">
+                  <div className="w-20 h-20 bg-gray-700 rounded-full mx-auto mb-3 flex items-center justify-center text-3xl shadow-lg">
+                    🏀
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-1">{selectedTeam.displayName}</h2>
+                  <div className="text-sm text-gray-400">
+                    {selectedTeam.userId === userId ? 'Your Team' : 'Managed by User'}
+                  </div>
+                </div>
+
+                {/* Deep Analysis (Traits & Weaknesses) */}
+                <div className="flex-1 bg-gray-900/30 rounded-lg p-1">
+                  {teamAggregations[selectedTeam.teamId] ? (
+                    <TeamAnalysis aggregation={teamAggregations[selectedTeam.teamId]} />
+                  ) : (
+                    <div className="text-gray-500 text-sm text-center py-12 flex flex-col items-center">
+                      <span className="animate-spin text-2xl mb-2">⚙️</span>
+                      Analyzing roster composition...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* COLUMN 2: Roster Grid (Flexible Center) */}
+            <div className="flex-1 min-w-0 bg-gray-800 rounded-lg border border-gray-700 flex flex-col h-[600px] lg:h-full overflow-hidden">
+              <div className="p-4 border-b border-gray-700 bg-gray-800 z-10 sticky top-0 shrink-0">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold">Roster Overview</h3>
+                  <span className="text-sm text-gray-400">
+                    {sortedRoster.length} Players
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-gray-600">
+                {sortedRoster.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+                    {sortedRoster.map(player => (
+                      <PlayerCard
+                        key={player.playerId}
+                        player={player}
+                        teamAggregation={teamAggregations[selectedTeam.teamId]}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-gray-400 text-center py-8">
-                    Loading team analysis...
+                  <div className="text-center py-20 text-gray-500">
+                    <div>No players on this roster yet</div>
+                    <div className="text-sm mt-2">Trades will appear here when completed</div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right: Player Grid */}
-            <div className="lg:col-span-2">
-              {sortedRoster.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sortedRoster.map(player => (
-                    <PlayerCard
-                      key={player.playerId}
-                      player={player}
-                      teamAggregation={teamAggregations[selectedTeam.teamId]}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  No players on this roster yet
-                </div>
-              )}
+            {/* COLUMN 3: Trade Center (Fixed Width) */}
+            <div className="w-full lg:w-[25%] min-w-[300px] h-[500px] lg:h-full">
+              <TradePanel
+                teams={draft.teams}
+                allPlayers={allPlayers}
+                tradeProposals={league.tradeProposals}
+                currentUserId={userId}
+                onTrade={(t1, t2, p1s, p2s) => {
+                  console.log('🔄 Executing trade from Panel:', { t1, t2, p1s, p2s });
+                  wsService.executeTrade(t1, t2, p1s, p2s);
+                }}
+              />
             </div>
+
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center text-gray-500">
+            Loading draft data...
           </div>
         )}
       </div>
-
-      {/* Trade Modal */}
-      {(() => {
-        const shouldRenderModal = allPlayers && allPlayers.length > 0;
-        console.log('🔍 DraftRecapPage modal render check:', {
-          shouldRenderModal,
-          allPlayersCount: allPlayers?.length,
-          teamsCount: draft?.teams?.length,
-          isTradeModalOpen,
-        });
-        return shouldRenderModal ? (
-          <TradeModal
-            teams={draft.teams}
-            allPlayers={allPlayers}
-            isOpen={isTradeModalOpen}
-            onClose={() => {
-              console.log('🔄 Trade modal closed');
-              setIsTradeModalOpen(false);
-            }}
-            onTrade={(team1Id, team2Id, team1PlayerIds, team2PlayerIds) => {
-              console.log('🔄 Executing trade:', {
-                team1Id,
-                team2Id,
-                team1PlayerIds,
-                team2PlayerIds,
-                team1: draft.teams.find(t => t.teamId === team1Id)?.displayName,
-                team2: draft.teams.find(t => t.teamId === team2Id)?.displayName
-              });
-              wsService.executeTrade(team1Id, team2Id, team1PlayerIds, team2PlayerIds);
-              setIsTradeModalOpen(false);
-            }}
-          />
-        ) : (
-          <div className="fixed bottom-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded">
-            Loading player data...
-          </div>
-        );
-      })()}
     </div>
   );
 }

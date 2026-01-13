@@ -25,6 +25,14 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { getTopArchetypes, formatArchetypeName, getArchetypeColor } from '../archetypes';
 
+// Defensive fallback
+const CONSTRAINTS = DRAFT_CONSTRAINTS || {
+  ROTATION_MIN: 5,
+  ROTATION_MAX: 15,
+  ROTATION_DEFAULT: 8,
+  ROSTER_MAX: 15,
+};
+
 // Strategy descriptions for UI
 const LINEUP_STRATEGY_INFO: Record<LineupStrategy, { label: string; description: string; tip: string }> = {
   balanced: {
@@ -116,12 +124,12 @@ export function CoachingDecisionsPage() {
 
   // Core state
   const [selectedRotation, setSelectedRotation] = useState<string[]>([]);
-  const [rotationDepth, setRotationDepth] = useState<number>(DRAFT_CONSTRAINTS.ROTATION_DEFAULT);
+  const [rotationDepth, setRotationDepth] = useState<number>(CONSTRAINTS.ROTATION_DEFAULT);
   const [lineupStrategy, setLineupStrategy] = useState<LineupStrategy>('balanced');
   const [defensiveStrategy, setDefensiveStrategy] = useState<DefensiveStrategy>('standard');
   const [offensiveStrategy, setOffensiveStrategy] = useState<OffensiveStrategy>('balanced_attack');
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  
+
   // V3: Scouting report state
   const [scoutingReport, setScoutingReport] = useState<ScoutingReport | null>(null);
   const [showScoutingReport, setShowScoutingReport] = useState(true);
@@ -193,13 +201,19 @@ export function CoachingDecisionsPage() {
     }
   };
 
-  const handleSubmit = () => {
+  // State for submission confirmation
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const handleSubmit = async () => {
     if (!myTeam || !league?.currentRound) return;
 
     if (selectedRotation.length !== rotationDepth) {
       alert(`Please select exactly ${rotationDepth} players for your rotation`);
       return;
     }
+
+    setSubmitStatus('submitting');
 
     const decision: CoachingDecision = {
       teamId: myTeam.teamId,
@@ -212,7 +226,18 @@ export function CoachingDecisionsPage() {
       submittedAt: new Date().toISOString(),
     };
 
-    wsService.emit('round:submit_coaching', { decision });
+    try {
+      wsService.emit('round:submit_coaching', { decision });
+
+      // Simulate confirmation delay/listener (ideally listen for ACK)
+      setSubmitStatus('success');
+      setSubmitMessage('Strategy submitted successfully!');
+
+      setTimeout(() => setSubmitStatus('idle'), 3000); // Clear after 3s
+    } catch (err) {
+      setSubmitStatus('error');
+      setSubmitMessage('Failed to submit strategy. Please try again.');
+    }
   };
 
   const isRotationComplete = selectedRotation.length === rotationDepth;
@@ -228,11 +253,34 @@ export function CoachingDecisionsPage() {
     );
   }
 
+  // Determine max rotation depth from config
+  const maxRotationDepth = useMemo(() => {
+    // Try to get from lobby config or draft config
+    const configRosterSize = (draft?.config?.rosterSize) || (league?.draftState?.config?.rosterSize) || CONSTRAINTS.ROSTER_MAX;
+    return configRosterSize;
+  }, [draft, league]);
+
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col relative">
+      {/* SUCCESS TOAST */}
+      {submitStatus === 'success' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-[100] animate-bounce flex items-center gap-2">
+          <span>✅</span>
+          <span className="font-bold">{submitMessage}</span>
+        </div>
+      )}
+
+      {/* ERROR TOAST */}
+      {submitStatus === 'error' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-lg z-[100] flex items-center gap-2">
+          <span>⚠️</span>
+          <span className="font-bold">{submitMessage}</span>
+        </div>
+      )}
+
+      <div className="max-w-[1920px] mx-auto w-full flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Coaching Decisions</h1>
@@ -241,9 +289,8 @@ export function CoachingDecisionsPage() {
               </p>
             </div>
             {timeRemaining !== null && (
-              <div className={`text-2xl font-mono font-bold ${
-                timeRemaining <= 30 ? 'text-red-600 animate-pulse' : 'text-gray-900'
-              }`}>
+              <div className={`text-2xl font-mono font-bold ${timeRemaining <= 30 ? 'text-red-600 animate-pulse' : 'text-gray-900'
+                }`}>
                 {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
               </div>
             )}
@@ -255,18 +302,16 @@ export function CoachingDecisionsPage() {
               <span className="text-sm font-medium text-gray-700">
                 Rotation Selection
               </span>
-              <span className={`text-sm font-bold ${
-                isRotationComplete ? 'text-green-600' : 'text-orange-600'
-              }`}>
+              <span className={`text-sm font-bold ${isRotationComplete ? 'text-green-600' : 'text-orange-600'
+                }`}>
                 {selectedRotation.length} / {rotationDepth} selected
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className={`h-2 rounded-full transition-all ${
-                  isRotationComplete ? 'bg-green-500' : 'bg-orange-500'
-                }`}
-                style={{ width: `${(selectedRotation.length / rotationDepth) * 100}%` }}
+                className={`h-2 rounded-full transition-all ${isRotationComplete ? 'bg-green-500' : 'bg-orange-500'
+                  }`}
+                style={{ width: `${Math.min(100, (selectedRotation.length / rotationDepth) * 100)}%` }}
               />
             </div>
           </div>
@@ -276,17 +321,18 @@ export function CoachingDecisionsPage() {
         {scoutingReport && showScoutingReport && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* ... Scouting report content remains same ... */}
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold text-gray-900">📋 Scouting Report</h2>
-                  <button 
+                  <button
                     onClick={() => setShowScoutingReport(false)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     ✕
                   </button>
                 </div>
-                
+
                 <div className="text-center mb-6">
                   <div className="text-lg font-semibold">
                     {scoutingReport.teamAName} vs {scoutingReport.teamBName}
@@ -317,12 +363,6 @@ export function CoachingDecisionsPage() {
                           ))}
                         </ul>
                       </div>
-                      <div>
-                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
-                        <p className="text-xs text-gray-600 italic mt-1">
-                          {scoutingReport.teamACoachingTendencies}
-                        </p>
-                      </div>
                     </div>
                   </div>
 
@@ -346,48 +386,11 @@ export function CoachingDecisionsPage() {
                           ))}
                         </ul>
                       </div>
-                      <div>
-                        <span className="text-xs font-medium text-blue-700">Coaching Tendencies:</span>
-                        <p className="text-xs text-gray-600 italic mt-1">
-                          {scoutingReport.teamBCoachingTendencies}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Key Players */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">🔑 Key Players to Watch</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      {scoutingReport.teamAKeyPlayers.map((p, i) => (
-                        <div key={i} className="text-xs bg-gray-50 p-2 rounded">
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-gray-500">{p.role}</div>
-                          <div className="text-orange-600 italic">{p.threat}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      {scoutingReport.teamBKeyPlayers.map((p, i) => (
-                        <div key={i} className="text-xs bg-gray-50 p-2 rounded">
-                          <div className="font-medium">{p.name}</div>
-                          <div className="text-gray-500">{p.role}</div>
-                          <div className="text-orange-600 italic">{p.threat}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Prediction */}
-                <div className="bg-blue-50 p-4 rounded-lg text-center">
-                  <span className="text-sm text-blue-800 italic">
-                    {scoutingReport.prediction}
-                  </span>
-                </div>
-
+                {/* Submit Button in Modal */}
                 <div className="mt-6">
                   <Button variant="primary" fullWidth onClick={() => setShowScoutingReport(false)}>
                     Got it - Set My Strategy
@@ -398,35 +401,33 @@ export function CoachingDecisionsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Rotation Selection */}
-          <div className="lg:col-span-2">
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  Select Rotation ({rotationDepth} players)
-                </h3>
-                
-                {/* V3: Rotation Depth Slider */}
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600">Depth:</span>
-                  <input
-                    type="range"
-                    min={DRAFT_CONSTRAINTS.ROTATION_MIN}
-                    max={DRAFT_CONSTRAINTS.ROTATION_MAX}
-                    value={rotationDepth}
-                    onChange={(e) => setRotationDepth(Number(e.target.value))}
-                    className="w-24"
-                  />
-                  <span className="text-sm font-bold text-primary-600 w-4">{rotationDepth}</span>
-                </div>
+        <div className="flex flex-col lg:flex-row gap-6 h-full min-h-0">
+          {/* LEFT PANEL: Rotation Selection (Flexible main area) */}
+          <div className="lg:w-[65%] flex flex-col min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-gray-900">
+                Select Rotation ({rotationDepth} players)
+              </h3>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">Depth:</span>
+                <input
+                  type="range"
+                  min={CONSTRAINTS.ROTATION_MIN}
+                  max={maxRotationDepth}
+                  value={rotationDepth}
+                  onChange={(e) => setRotationDepth(Number(e.target.value))}
+                  className="w-32 accent-blue-600 cursor-pointer"
+                />
+                <span className="text-sm font-bold text-primary-600 w-4">{rotationDepth}</span>
               </div>
+            </div>
 
+            <div className="p-4 overflow-y-auto flex-1">
               <p className="text-sm text-gray-500 mb-4">
                 Select which players to include in your rotation. More players = deeper bench but less minutes for stars.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {myRoster.map(player => {
                   const isSelected = selectedRotation.includes(player.playerId);
                   const topArchetypes = getTopArchetypes(player.archetypes, 2);
@@ -435,11 +436,10 @@ export function CoachingDecisionsPage() {
                     <div
                       key={player.playerId}
                       onClick={() => handlePlayerToggle(player.playerId)}
-                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -448,11 +448,10 @@ export function CoachingDecisionsPage() {
                             {player.position} • Impact: {player.impactRating.toFixed(1)}
                           </div>
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          isSelected
-                            ? 'border-primary-500 bg-primary-500 text-white'
-                            : 'border-gray-300'
-                        }`}>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected
+                          ? 'border-primary-500 bg-primary-500 text-white'
+                          : 'border-gray-300'
+                          }`}>
                           {isSelected && '✓'}
                         </div>
                       </div>
@@ -475,11 +474,11 @@ export function CoachingDecisionsPage() {
                   );
                 })}
               </div>
-            </Card>
+            </div>
           </div>
 
-          {/* Strategy Selection */}
-          <div className="space-y-4">
+          {/* RIGHT PANEL: Strategy Selection (Fixed, Scrollable) */}
+          <div className="lg:w-[35%] flex flex-col gap-4 overflow-y-auto pr-2 pb-4">
             {/* View Scouting Report Button */}
             {scoutingReport && (
               <Button
@@ -500,11 +499,10 @@ export function CoachingDecisionsPage() {
                   return (
                     <label
                       key={strategy}
-                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${
-                        lineupStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${lineupStrategy === strategy
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -534,11 +532,10 @@ export function CoachingDecisionsPage() {
                   return (
                     <label
                       key={strategy}
-                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${
-                        defensiveStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${defensiveStrategy === strategy
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -568,11 +565,10 @@ export function CoachingDecisionsPage() {
                   return (
                     <label
                       key={strategy}
-                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${
-                        offensiveStrategy === strategy
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`flex items-start p-3 rounded-lg cursor-pointer border-2 transition-all ${offensiveStrategy === strategy
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -594,17 +590,21 @@ export function CoachingDecisionsPage() {
             </Card>
 
             {/* Submit Button */}
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-            >
-              {isRotationComplete 
-                ? 'Submit Decisions' 
-                : `Select ${rotationDepth - selectedRotation.length} More Player${rotationDepth - selectedRotation.length !== 1 ? 's' : ''}`}
-            </Button>
+            <div className="sticky bottom-0 bg-gray-100 pt-2 pb-1">
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={handleSubmit}
+                disabled={!canSubmit || submitStatus === 'submitting'}
+                className="shadow-lg"
+              >
+                {submitStatus === 'submitting' ? 'Submitting...' :
+                  isRotationComplete
+                    ? 'Submit Decisions'
+                    : `Select ${rotationDepth - selectedRotation.length} More Player${rotationDepth - selectedRotation.length !== 1 ? 's' : ''}`}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

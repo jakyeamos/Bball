@@ -186,6 +186,7 @@ export interface PublicLobbyInfo {
 // ============================================================================
 
 export type RoundPhase =
+  | 'scouting'           // V3: Pre-game analysis
   | 'coaching_window'    // Coach makes decisions
   | 'simulating'         // Server running simulations
   | 'results'            // Showing results
@@ -194,6 +195,7 @@ export type RoundPhase =
 export interface RoundState {
   roundNumber: number;
   phase: RoundPhase;
+  scoutingWindowEndsAt?: string | null; // V3
   coachingWindowEndsAt: string | null;
   matchups: RoundMatchup[];
   coachingDecisions: Record<string, CoachingDecision>;
@@ -268,17 +270,17 @@ export interface ScoutingReport {
   teamBId: string;
   teamAName: string;
   teamBName: string;
-  
+
   // Team strengths/weaknesses analysis
   teamAStrengths: string[];
   teamAWeaknesses: string[];
   teamBStrengths: string[];
   teamBWeaknesses: string[];
-  
+
   // Key players to watch
   teamAKeyPlayers: Array<{ name: string; role: string; threat: string }>;
   teamBKeyPlayers: Array<{ name: string; role: string; threat: string }>;
-  
+
   // Predicted style clash
   styleClash: string;
 
@@ -299,7 +301,7 @@ export interface QuarterResult {
   scoreB: number;       // Points scored by team B this quarter
   totalScoreA: number;  // Running total for team A
   totalScoreB: number;  // Running total for team B
-  
+
   // Coaching effectiveness (hidden from user, used to generate blurb)
   coachingImpactA: number; // -10 to +10
   coachingImpactB: number;
@@ -324,22 +326,22 @@ export interface QuarterBasedGameResult {
   teamAId: string;
   teamBId: string;
   homeTeam: 'A' | 'B';
-  
+
   // Scouting report (pre-game)
   scoutingReport: ScoutingReport;
-  
+
   // Quarter-by-quarter results
   quarters: QuarterResult[];
   quarterBlurbs: QuarterBlurb[];
-  
+
   // Final result
   finalScoreA: number;
   finalScoreB: number;
   winner: 'A' | 'B';
-  
+
   // Game summary editorial
   gameEditorial: string;
-  
+
   // Legacy compatibility
   result: MatchupResult;
 }
@@ -352,15 +354,15 @@ export interface LiveGameState {
   matchupId: string;
   currentQuarter: 0 | 1 | 2 | 3 | 4; // 0 = pre-game
   phase: 'scouting' | 'coaching' | 'simulating_quarter' | 'quarter_results' | 'final';
-  
+
   scoutingReport: ScoutingReport;
   completedQuarters: QuarterResult[];
   quarterBlurbs: QuarterBlurb[];
-  
+
   // Current coaching decisions (can be adjusted between quarters)
   coachingDecisionA?: CoachingDecision;
   coachingDecisionB?: CoachingDecision;
-  
+
   // Timer for coaching window between quarters
   coachingWindowEndsAt?: string;
 }
@@ -759,6 +761,9 @@ export const DRAFT_CONSTRAINTS = {
   TOP_20_AUTO_PICK: 20,
   COACHING_WINDOW_SECONDS: 120,  // Phase 1B (2 minutes)
   TRADE_PROPOSAL_EXPIRY_SECONDS: 300,  // Phase 2.5 (5 minutes)
+  SCOUTING_WINDOW_SECONDS: 10,  // V3: 10s analysis
+  PREGAME_COACHING_SECONDS: 30, // V3: 30s pre-game coaching
+  INTER_QUARTER_COACHING_SECONDS: 10, // V3: 10s between quarters
   QUARTER_COACHING_WINDOW_SECONDS: 60, // V3: Time between quarters
 } as const;
 

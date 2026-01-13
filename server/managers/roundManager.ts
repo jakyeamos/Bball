@@ -141,11 +141,14 @@ export function createRoundState(
 ): RoundState {
   return {
     roundNumber,
-    phase: 'coaching_window',
+    phase: 'scouting', // V3: Start in scouting phase
     matchups,
-    coachingDecisions: {},  // FIX: Use plain object (Record) instead of Map for JSON serialization
+    coachingDecisions: {},
     roundResults: null,
-    coachingWindowEndsAt: new Date(Date.now() + DRAFT_CONSTRAINTS.COACHING_WINDOW_SECONDS * 1000).toISOString(),
+    // Set scouting window (10s)
+    scoutingWindowEndsAt: new Date(Date.now() + DRAFT_CONSTRAINTS.SCOUTING_WINDOW_SECONDS * 1000).toISOString(),
+    // Coaching window starts AFTER scouting
+    coachingWindowEndsAt: null,
   };
 }
 
@@ -295,7 +298,7 @@ function generateGameEditorial(
   const winner = result.winner === 'A' ? teamAName : teamBName;
   const loser = result.winner === 'A' ? teamBName : teamAName;
   const winPct = result.winner === 'A' ? result.winPctA : (1 - result.winPctA);
-  
+
   if (winPct > 0.7) {
     return `${winner} dominated ${loser} in a convincing victory.`;
   } else if (winPct > 0.55) {
