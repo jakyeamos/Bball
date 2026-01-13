@@ -10,7 +10,7 @@
 import { LeagueState, Player, DraftState } from '@nba-draft-sim/shared';
 import { leagueStore } from '../stores/leagueStore';
 import { runRegularSeason } from '../services/season';
-import { runPlayoffs } from '../services/playoffs';
+import { runPlayoffs, PlayoffGameStartPayload } from '../services/playoffs';
 import { aggregateTeam } from '../services/aggregation';
 import { getTop4WithTiebreaker } from '../services/season';
 
@@ -214,7 +214,8 @@ export function startRegularSeason(
 
 export function startPlayoffs(
   leagueId: string,
-  allPlayers: Player[]
+  allPlayers: Player[],
+  onPlayoffGameStart?: (payload: PlayoffGameStartPayload) => void
 ): LeagueState | undefined {
   const league = leagueStore.get(leagueId);
 
@@ -242,7 +243,7 @@ export function startPlayoffs(
     teamNames.set(team.teamId, team.displayName);
   }
 
-  const playoffResults = runPlayoffs(top4Seeds, teamAggregations, teamNames);
+  const playoffResults = runPlayoffs(top4Seeds, teamAggregations, teamNames, onPlayoffGameStart);
 
   return leagueStore.update(leagueId, {
     phase: 'playoffs',

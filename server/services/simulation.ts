@@ -17,6 +17,7 @@ import {
   QuarterBasedGameResult,
   ScoutingReport,
   QuarterBlurb,
+  PlayerFeatures,
   SIMULATION_PARAMS
 } from '@nba-draft-sim/shared';
 
@@ -33,9 +34,45 @@ function clamp(min: number, max: number, value: number): number {
 }
 
 const DEF_INTERACTION = 0.4;
+const COACHING_IMPACT_MULT = 2;
 
 function getMod(mods: TeamModifiers, key: string): number {
   return (mods as any)[key] ?? 0;
+}
+
+type FeatureAdjustments = Partial<Record<keyof PlayerFeatures, number>>;
+
+const FEATURE_CLAMPS: Partial<Record<keyof PlayerFeatures, [number, number]>> = {
+  TS: [0.48, 0.64],
+  THREE_PA_RATE: [0.2, 0.55],
+  FT_RATE: [0.15, 0.35],
+  PAR: [0.5, 0.75],
+  AST: [18, 32],
+  TOV: [10, 18],
+  REB_TOTAL: [36, 55],
+  BLK: [2, 7],
+  STL: [6, 11],
+};
+
+function applyFeatureAdjustments(
+  features: PlayerFeatures,
+  adjustments: FeatureAdjustments
+): PlayerFeatures {
+  const updated: PlayerFeatures = { ...features };
+
+  for (const [key, delta] of Object.entries(adjustments)) {
+    if (typeof delta !== 'number') continue;
+    const featureKey = key as keyof PlayerFeatures;
+    const currentValue = (updated[featureKey] ?? 0) as number;
+    let nextValue = currentValue + delta;
+    const clampRange = FEATURE_CLAMPS[featureKey];
+    if (clampRange) {
+      nextValue = clamp(clampRange[0], clampRange[1], nextValue);
+    }
+    updated[featureKey] = nextValue;
+  }
+
+  return updated;
 }
 
 /**
@@ -154,6 +191,7 @@ interface CoachingModifiers {
   drtgAdjust: number;
   sigmaAdjust: number;
   paceAdjust: number;
+  featureAdjustments: FeatureAdjustments;
 }
 
 /**
@@ -164,25 +202,41 @@ function calculateCoachingModifiers(decision: CoachingDecision): CoachingModifie
   let drtgAdjust = 0;
   let sigmaAdjust = 0;
   let paceAdjust = 0;
+  const featureAdjustments: FeatureAdjustments = {};
+
+  const bump = (key: keyof PlayerFeatures, delta: number) => {
+    featureAdjustments[key] = (featureAdjustments[key] ?? 0) + delta;
+  };
 
   switch (decision.lineupStrategy) {
     case 'small_ball':
       paceAdjust += 3;
       ortgAdjust += 1.5;
       drtgAdjust += 1;
+      bump('THREE_PA_RATE', 0.05);
+      bump('REB_TOTAL', -3);
+      bump('AST', 1.2);
       break;
     case 'big_lineup':
       paceAdjust -= 3;
       drtgAdjust -= 1.5;
       ortgAdjust -= 1;
+      bump('THREE_PA_RATE', -0.04);
+      bump('REB_TOTAL', 3.5);
+      bump('BLK', 0.6);
       break;
     case 'offense_first':
       ortgAdjust += 2.5;
       drtgAdjust += 2;
+      bump('TS', 0.015);
+      bump('FT_RATE', 0.02);
       break;
     case 'defense_first':
       drtgAdjust -= 2.5;
       ortgAdjust -= 2;
+      bump('STL', 0.8);
+      bump('BLK', 0.7);
+      bump('REB_TOTAL', 1.5);
       break;
   }
 
@@ -190,23 +244,59 @@ function calculateCoachingModifiers(decision: CoachingDecision): CoachingModifie
     case 'pace_and_space':
       paceAdjust += 2;
       sigmaAdjust += 1;
+      bump('THREE_PA_RATE', 0.04);
+      bump('AST', 1);
+      bump('REB_TOTAL', -1.5);
       break;
     case 'inside_out':
       paceAdjust -= 2;
       sigmaAdjust -= 0.5;
+      bump('THREE_PA_RATE', -0.03);
+      bump('FT_RATE', 0.02);
+      bump('REB_TOTAL', 1.5);
+      break;
+    case 'motion_offense':
+      sigmaAdjust += 0.5;
+      bump('AST', 1.6);
+      bump('TOV', -0.5);
+      break;
+    case 'isolation':
+      sigmaAdjust += 0.8;
+      bump('TS', 0.01);
+      bump('FT_RATE', 0.015);
+      bump('AST', -1);
+      bump('TOV', 0.8);
       break;
   }
 
   switch (decision.defensiveStrategy) {
     case 'pressure_ball':
       sigmaAdjust += 1.5;
+      bump('STL', 1.2);
       break;
     case 'protect_paint':
       drtgAdjust -= 1;
+      bump('BLK', 1.2);
+      bump('REB_TOTAL', 1.2);
+      break;
+    case 'switch_everything':
+      bump('STL', 0.7);
+      bump('BLK', 0.4);
+      bump('REB_TOTAL', -0.5);
+      break;
+    case 'pack_paint':
+      bump('REB_TOTAL', 1);
+      bump('BLK', 0.5);
       break;
   }
 
-  return { ortgAdjust, drtgAdjust, sigmaAdjust, paceAdjust };
+  return {
+    ortgAdjust: ortgAdjust * COACHING_IMPACT_MULT,
+    drtgAdjust: drtgAdjust * COACHING_IMPACT_MULT,
+    sigmaAdjust: sigmaAdjust * COACHING_IMPACT_MULT,
+    paceAdjust: paceAdjust * COACHING_IMPACT_MULT,
+    featureAdjustments,
+  };
 }
 
 /**
@@ -284,18 +374,25 @@ export function simulateMatchup(
   const modsA = teamA.modifiers;
   const modsB = teamB.modifiers;
 
-  const rA = computeTeamRatings(teamA, modsA);
-  const rB = computeTeamRatings(teamB, modsB);
+  const cModsA = coachingA ? calculateCoachingModifiers(coachingA) : null;
+  const cModsB = coachingB ? calculateCoachingModifiers(coachingB) : null;
+  const teamAView = cModsA
+    ? { ...teamA, features: applyFeatureAdjustments(teamA.features, cModsA.featureAdjustments) }
+    : teamA;
+  const teamBView = cModsB
+    ? { ...teamB, features: applyFeatureAdjustments(teamB.features, cModsB.featureAdjustments) }
+    : teamB;
 
-  if (coachingA) {
-    const cModsA = calculateCoachingModifiers(coachingA);
+  const rA = computeTeamRatings(teamAView, modsA);
+  const rB = computeTeamRatings(teamBView, modsB);
+
+  if (cModsA) {
     rA.ORtg += cModsA.ortgAdjust;
     rA.DRtg += cModsA.drtgAdjust;
     rA.sigma += cModsA.sigmaAdjust;
   }
 
-  if (coachingB) {
-    const cModsB = calculateCoachingModifiers(coachingB);
+  if (cModsB) {
     rB.ORtg += cModsB.ortgAdjust;
     rB.DRtg += cModsB.drtgAdjust;
     rB.sigma += cModsB.sigmaAdjust;
@@ -310,7 +407,10 @@ export function simulateMatchup(
     ORtgB_vs_A += modsB.homeCourtAdvantage;
   }
 
-  const pace = P.BASE_PACE;
+  let pace = P.BASE_PACE;
+  if (cModsA) pace += cModsA.paceAdjust;
+  if (cModsB) pace += cModsB.paceAdjust;
+  pace = clamp(90, 110, pace);
   const muA = pace * (ORtgA_vs_B / 100);
   const muB = pace * (ORtgB_vs_A / 100);
 
@@ -326,7 +426,7 @@ export function simulateMatchup(
   const winPctA = winsA / numSims;
   const winner = winsA > winsB ? 'A' : 'B';
 
-  const drivers = generateMatchupDrivers(teamA, teamB, modsA, modsB);
+  const drivers = generateMatchupDrivers(teamAView, teamBView, modsA, modsB);
 
   // V3: Generate scores with score guard
   // Use provided seed or fallback to Date.now()
@@ -361,22 +461,29 @@ export function simulateQuarter(
   const modsA = teamA.modifiers;
   const modsB = teamB.modifiers;
 
-  const rA = computeTeamRatings(teamA, modsA);
-  const rB = computeTeamRatings(teamB, modsB);
+  const cModsA = coachingA ? calculateCoachingModifiers(coachingA) : null;
+  const cModsB = coachingB ? calculateCoachingModifiers(coachingB) : null;
+  const teamAView = cModsA
+    ? { ...teamA, features: applyFeatureAdjustments(teamA.features, cModsA.featureAdjustments) }
+    : teamA;
+  const teamBView = cModsB
+    ? { ...teamB, features: applyFeatureAdjustments(teamB.features, cModsB.featureAdjustments) }
+    : teamB;
+
+  const rA = computeTeamRatings(teamAView, modsA);
+  const rB = computeTeamRatings(teamBView, modsB);
 
   // Apply coaching modifiers
   let coachingImpactA = 0;
   let coachingImpactB = 0;
 
-  if (coachingA) {
-    const cModsA = calculateCoachingModifiers(coachingA);
+  if (cModsA) {
     rA.ORtg += cModsA.ortgAdjust;
     rA.DRtg += cModsA.drtgAdjust;
     coachingImpactA = cModsA.ortgAdjust - cModsA.drtgAdjust;
   }
 
-  if (coachingB) {
-    const cModsB = calculateCoachingModifiers(coachingB);
+  if (cModsB) {
     rB.ORtg += cModsB.ortgAdjust;
     rB.DRtg += cModsB.drtgAdjust;
     coachingImpactB = cModsB.ortgAdjust - cModsB.drtgAdjust;
@@ -393,7 +500,11 @@ export function simulateQuarter(
   }
 
   // Quarter has ~25 possessions, so scale accordingly
-  const quarterPace = P.BASE_PACE * 0.25;
+  let pace = P.BASE_PACE;
+  if (cModsA) pace += cModsA.paceAdjust;
+  if (cModsB) pace += cModsB.paceAdjust;
+  pace = clamp(90, 110, pace);
+  const quarterPace = pace * 0.25;
   const muA = quarterPace * (ORtgA_vs_B / 100);
   const muB = quarterPace * (ORtgB_vs_A / 100);
 

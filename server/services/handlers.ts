@@ -12,6 +12,8 @@ import {
   ServerMessage,
   WS_EVENTS,
   DraftPick,
+  LiveGameState,
+  ScoutingReport,
 } from '@nba-draft-sim/shared';
 import {
   createLobby,
@@ -41,6 +43,7 @@ import {
 import { startTradeWindowTimer, stopTradeWindowTimer } from '../managers/tradeTimerManager';
 import { rejoinManager } from '../managers/rejoinManager';
 import { handleStartRound } from './handlers-v2';
+import { PlayoffGameStartPayload } from '../services/playoffs';
 
 /**
  * In-memory stores (for v1)
@@ -59,6 +62,26 @@ function joinLobbyRoom(socket: Socket, lobbyId: string) {
 
 function emitToLobby(io: SocketServer, lobbyId: string, event: string, data: ServerMessage) {
   io.to(`lobby:${lobbyId}`).emit(event, data);
+}
+
+function buildPlayoffScoutingReport(payload: PlayoffGameStartPayload): ScoutingReport {
+  return {
+    matchupId: payload.matchupId,
+    teamAId: payload.teamAId,
+    teamBId: payload.teamBId,
+    teamAName: payload.teamAName,
+    teamBName: payload.teamBName,
+    teamAStrengths: ['Balanced playoff approach'],
+    teamAWeaknesses: ['Looking for an early edge'],
+    teamBStrengths: ['Physical two-way identity'],
+    teamBWeaknesses: ['Shot variance could swing momentum'],
+    teamAKeyPlayers: [],
+    teamBKeyPlayers: [],
+    styleClash: 'A tactical playoff duel with momentum swings.',
+    teamACoachingTendencies: 'Mixing lineups to hunt matchups.',
+    teamBCoachingTendencies: 'Controlling tempo and defensive coverages.',
+    prediction: `${payload.teamAName} vs ${payload.teamBName} shapes up as a tight battle.`,
+  };
 }
 
 /**
@@ -474,7 +497,29 @@ export function handleStartPlayoffs(
       throw new Error('Only commissioner can start playoffs');
     }
 
-    const updatedLeague = startPlayoffs(lobbyId, allPlayers);
+    const onPlayoffGameStart = (payload: PlayoffGameStartPayload) => {
+      const scoutingReport = buildPlayoffScoutingReport(payload);
+      const gameState: LiveGameState = {
+        gameId: payload.gameId,
+        matchupId: payload.matchupId,
+        currentQuarter: 0,
+        phase: 'scouting',
+        scoutingReport,
+        completedQuarters: [],
+        quarterBlurbs: [],
+      };
+
+      emitToLobby(io, lobbyId, WS_EVENTS.GAME_START, {
+        type: 'GAME_START',
+        payload: {
+          gameState,
+          seriesId: payload.seriesId,
+          gameNumber: payload.gameNumber,
+        },
+      });
+    };
+
+    const updatedLeague = startPlayoffs(lobbyId, allPlayers, onPlayoffGameStart);
     if (!updatedLeague || !updatedLeague.playoffResults) {
       throw new Error('Failed to start playoffs');
     }

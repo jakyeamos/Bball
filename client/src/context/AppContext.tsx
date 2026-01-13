@@ -225,6 +225,20 @@ export function AppProvider({ children }: AppProviderProps) {
       })
     );
 
+    unsubscribers.push(
+      wsService.on(WS_EVENTS.GAME_START, (data: any) => {
+        console.log('🔵 GAME_START event received:', data);
+        const { gameState } = data.payload;
+        setState((prev) => ({
+          ...prev,
+          league: prev.league ? {
+            ...prev.league,
+            liveGame: gameState,
+          } : prev.league,
+        }));
+      })
+    );
+
     // ═══════════════════════════════════════════════════════════════════════
     // Round-based events for coaching windows
     // ═══════════════════════════════════════════════════════════════════════

@@ -367,6 +367,12 @@ export interface LiveGameState {
   coachingWindowEndsAt?: string;
 }
 
+export interface GameStartPayload {
+  gameState: LiveGameState;
+  seriesId?: string;
+  gameNumber?: number;
+}
+
 // ============================================================================
 // PHASE 2.5: TRADE PROPOSALS
 // ============================================================================
@@ -657,6 +663,7 @@ export type ServerMessage =
   | { type: 'LEAGUE_COMPLETED'; payload: LeagueState }
   | { type: 'ERROR'; payload: { message: string } }
   // V3: Quarter-based game events
+  | { type: 'GAME_START'; payload: GameStartPayload }
   | { type: 'SCOUTING_REPORT'; payload: { scoutingReport: ScoutingReport; gameState: LiveGameState } }
   | { type: 'QUARTER_COACHING_WINDOW'; payload: { quarter: number; gameState: LiveGameState; timeRemaining: number } }
   | { type: 'QUARTER_RESULT'; payload: { quarterResult: QuarterResult; blurb: QuarterBlurb; gameState: LiveGameState } }
@@ -729,6 +736,7 @@ export const WS_EVENTS = {
   LEAGUE_COMPLETED: 'league:completed',
 
   // V3: Quarter-based game events
+  GAME_START: 'game:start',
   GAME_SCOUTING_REPORT: 'game:scouting_report',
   QUARTER_COACHING_WINDOW: 'game:quarter_coaching_window',
   SUBMIT_QUARTER_COACHING: 'game:submit_quarter_coaching',

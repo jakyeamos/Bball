@@ -34,6 +34,7 @@ const CONSTRAINTS = DRAFT_CONSTRAINTS || {
 export function QuarterCoachingPage() {
   const navigate = useNavigate();
   const { draft, league, allPlayers, userId } = useApp();
+  const liveGame = league?.liveGame ?? null;
 
   // Game state
   const [gameState, setGameState] = useState<LiveGameState | null>(null);
@@ -55,6 +56,7 @@ export function QuarterCoachingPage() {
     if (!draft || !userId) return null;
     return draft.teams.find(t => t.userId === userId);
   }, [draft, userId]);
+  const isSpectator = !myTeam;
 
   const myRoster = useMemo(() => {
     if (!myTeam || !allPlayers) return [];
@@ -62,6 +64,14 @@ export function QuarterCoachingPage() {
       .map(pid => allPlayers.find(p => p.playerId === pid))
       .filter((p): p is Player => p !== undefined);
   }, [myTeam, allPlayers]);
+
+  // Hydrate from live game state if present
+  useEffect(() => {
+    if (!liveGame) return;
+    setGameState(liveGame);
+    setQuarterResults(liveGame.completedQuarters ?? []);
+    setQuarterBlurbs(liveGame.quarterBlurbs ?? []);
+  }, [liveGame]);
 
   // Listen for quarter coaching window
   useEffect(() => {
@@ -124,6 +134,7 @@ export function QuarterCoachingPage() {
   }, [rotationDepth, myRoster]);
 
   const handlePlayerToggle = (playerId: string) => {
+    if (isSpectator) return;
     if (selectedRotation.includes(playerId)) {
       setSelectedRotation(selectedRotation.filter(id => id !== playerId));
     } else {
@@ -134,7 +145,8 @@ export function QuarterCoachingPage() {
   };
 
   const handleSubmitQuarterDecision = () => {
-    if (!myTeam || !gameState) return;
+    const activeGameState = gameState ?? liveGame;
+    if (!myTeam || !activeGameState) return;
 
     if (selectedRotation.length !== rotationDepth) {
       alert(`Please select exactly ${rotationDepth} players for your rotation`);
@@ -153,28 +165,31 @@ export function QuarterCoachingPage() {
     };
 
     wsService.emit('game:submit_quarter_coaching', {
-      gameId: gameState.gameId,
-      quarter: gameState.currentQuarter + 1,
+      gameId: activeGameState.gameId,
+      quarter: activeGameState.currentQuarter + 1,
       decision,
     });
 
     setIsCoachingWindow(false);
   };
 
-  if (!draft || !myTeam || !gameState) {
+  if (!userId || !liveGame) {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-gray-500">Waiting for game to start...</p>
+          <p className="text-gray-500">Loading live game...</p>
         </div>
       </div>
     );
   }
 
+  const activeGameState = gameState ?? liveGame;
   const isRotationComplete = selectedRotation.length === rotationDepth;
   const currentScore = quarterResults.length > 0
     ? quarterResults[quarterResults.length - 1]
     : null;
+  const teamAName = activeGameState?.scoutingReport?.teamAName ?? 'Team A';
+  const teamBName = activeGameState?.scoutingReport?.teamBName ?? 'Team B';
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
@@ -185,7 +200,7 @@ export function QuarterCoachingPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Live Game</h1>
               <p className="text-gray-600 mt-1">
-                Quarter {gameState.currentQuarter} of 4
+                Quarter {activeGameState?.currentQuarter ?? 0} of 4
               </p>
             </div>
             {isCoachingWindow && coachingTimeRemaining !== null && (
@@ -202,7 +217,7 @@ export function QuarterCoachingPage() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-sm text-gray-600">
-                    {gameState.scoutingReport.teamAName}
+                    {teamAName}
                   </div>
                   <div className="text-4xl font-bold text-gray-900">
                     {currentScore.totalScoreA}
@@ -213,7 +228,7 @@ export function QuarterCoachingPage() {
                 </div>
                 <div>
                   <div className="text-sm text-gray-600">
-                    {gameState.scoutingReport.teamBName}
+                    {teamBName}
                   </div>
                   <div className="text-4xl font-bold text-gray-900">
                     {currentScore.totalScoreB}
@@ -241,8 +256,8 @@ export function QuarterCoachingPage() {
                       {blurb.momentum !== 'even' && (
                         <div className="mt-2 text-xs text-gray-600">
                           Momentum: {blurb.momentum === 'A'
-                            ? gameState.scoutingReport.teamAName
-                            : gameState.scoutingReport.teamBName}
+                            ? teamAName
+                            : teamBName}
                         </div>
                       )}
                     </div>
@@ -254,7 +269,7 @@ export function QuarterCoachingPage() {
         )}
 
         {/* Coaching Window */}
-        {isCoachingWindow && (
+        {isCoachingWindow && !isSpectator && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Rotation Adjustment */}
             <div className="lg:col-span-2">
@@ -400,12 +415,25 @@ export function QuarterCoachingPage() {
           </div>
         )}
 
-        {/* Waiting for next quarter */}
-        {!isCoachingWindow && gameState.phase === 'simulating_quarter' && (
+        {isCoachingWindow && isSpectator && (
           <Card>
             <div className="text-center py-8">
               <div className="text-xl font-semibold text-gray-900 mb-2">
-                Simulating Quarter {gameState.currentQuarter}...
+                Spectator Mode
+              </div>
+              <div className="text-gray-600">
+                Coaching controls are disabled while you watch this matchup.
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Waiting for next quarter */}
+        {!isCoachingWindow && activeGameState?.phase === 'simulating_quarter' && (
+          <Card>
+            <div className="text-center py-8">
+              <div className="text-xl font-semibold text-gray-900 mb-2">
+                Simulating Quarter {activeGameState?.currentQuarter ?? 0}...
               </div>
               <div className="text-gray-600">Please wait while the quarter is being played</div>
             </div>

@@ -12,12 +12,42 @@ import {
   TeamAggregation,
   PLAYOFF_PARAMS
 } from '@nba-draft-sim/shared';
-import { simulateSeries } from './simulation';
+import { simulateMatchup } from './simulation';
 import {
   generateSeriesEditorial,
   generatePlayoffGameEditorial,
   generateChampionshipEditorial
 } from './playoffEditorial'; // Phase 3: Import editorial
+
+export interface PlayoffGameStartPayload {
+  seriesId: string;
+  gameId: string;
+  matchupId: string;
+  gameNumber: number;
+  homeTeam: 'A' | 'B';
+  teamAId: string;
+  teamBId: string;
+  teamAName: string;
+  teamBName: string;
+  winsA: number;
+  winsB: number;
+  winsNeeded: number;
+}
+
+type PlayoffGameStartHandler = (payload: PlayoffGameStartPayload) => void;
+
+function buildHomeCourtSchedule(winsNeeded: number): Array<'A' | 'B'> {
+  if (winsNeeded === 2) {
+    return ['A', 'A', 'B'];
+  }
+  if (winsNeeded === 3) {
+    return ['A', 'A', 'B', 'A', 'B'];
+  }
+  if (winsNeeded === 4) {
+    return ['A', 'A', 'B', 'B', 'A', 'B', 'A'];
+  }
+  return Array.from({ length: winsNeeded * 2 - 1 }, (_, index) => (index % 2 === 0 ? 'A' : 'B'));
+}
 
 // ============================================================================
 // SIMULATE PLAYOFF SERIES
@@ -32,53 +62,71 @@ function simulatePlayoffSeries(
   teamA: TeamAggregation,
   teamB: TeamAggregation,
   winsNeeded: number, // Phase 3: Flexible series length
-  isUpset: boolean = false
+  isUpset: boolean = false,
+  onGameStart?: PlayoffGameStartHandler
 ): PlayoffSeries {
-  // Run the actual simulation
-  const result = simulateSeries(teamA, teamB, winsNeeded);
-
-  // Phase 3: Generate game editorials
+  const games: SeriesGame[] = [];
   const gameEditorials: string[] = [];
-  let currentWinsA = 0;
-  let currentWinsB = 0;
+  let winsA = 0;
+  let winsB = 0;
+  let gameNum = 0;
+  const homeCourtSchedule = buildHomeCourtSchedule(winsNeeded);
 
-  const games: SeriesGame[] = result.games.map((game, index) => {
-    // Update current wins
-    if (game.winner === 'A') currentWinsA++;
-    else currentWinsB++;
+  while (winsA < winsNeeded && winsB < winsNeeded) {
+    const gameNumber = gameNum + 1;
+    const homeTeam = homeCourtSchedule[gameNum] ?? (gameNum % 2 === 0 ? 'A' : 'B');
+    const gameId = `${seriesId}-game-${gameNumber}`;
 
-    // Generate editorial for this game
+    onGameStart?.({
+      seriesId,
+      gameId,
+      matchupId: gameId,
+      gameNumber,
+      homeTeam,
+      teamAId,
+      teamBId,
+      teamAName,
+      teamBName,
+      winsA,
+      winsB,
+      winsNeeded,
+    });
+
+    const gameResult = simulateMatchup(teamA, teamB, homeTeam);
+    if (gameResult.winner === 'A') winsA++;
+    else winsB++;
+
     const editorial = generatePlayoffGameEditorial(
       teamAName,
       teamBName,
       {
-        gameNumber: index + 1,
-        winner: game.winner,
-        result: game,
+        gameNumber,
+        winner: gameResult.winner,
+        result: gameResult,
       },
-      currentWinsA,
-      currentWinsB,
+      winsA,
+      winsB,
       winsNeeded
     );
 
     gameEditorials.push(editorial);
-
-    return {
-      gameNumber: index + 1,
-      winner: game.winner,
-      result: game,
-    };
-  });
+    games.push({
+      gameNumber,
+      winner: gameResult.winner,
+      result: gameResult,
+    });
+    gameNum++;
+  }
 
   // Determine favorite for UI display
-  const favoriteIsA = result.games[0].winPctA >= 0.5;
-  const favWinPct = favoriteIsA ? result.games[0].winPctA : (1 - result.games[0].winPctA);
+  const favoriteIsA = games[0].result.winPctA >= 0.5;
+  const favWinPct = favoriteIsA ? games[0].result.winPctA : (1 - games[0].result.winPctA);
 
   // Map to displayed series length
   const displayedLength = mapWinPctToSeriesLength(favWinPct);
 
   // Generate series path for UI
-  const seriesPath = generateSeriesPath(result.winsA, result.winsB, result.games[0].winPctA);
+  const seriesPath = generateSeriesPath(winsA, winsB, games[0].result.winPctA);
 
   // Phase 3: Generate series-level editorial
   const seriesEditorial = generateSeriesEditorial(
@@ -88,9 +136,9 @@ function simulatePlayoffSeries(
       seriesId,
       teamAId,
       teamBId,
-      winsA: result.winsA,
-      winsB: result.winsB,
-      winner: result.winner === 'A' ? teamAId : teamBId,
+      winsA,
+      winsB,
+      winner: winsA >= winsNeeded ? teamAId : teamBId,
       games,
       displayedSeriesLength: displayedLength,
       seriesPath,
@@ -104,9 +152,9 @@ function simulatePlayoffSeries(
     seriesId,
     teamAId,
     teamBId,
-    winsA: result.winsA,
-    winsB: result.winsB,
-    winner: result.winner === 'A' ? teamAId : teamBId,
+    winsA,
+    winsB,
+    winner: winsA >= winsNeeded ? teamAId : teamBId,
     games,
     displayedSeriesLength: displayedLength,
     seriesPath,
@@ -122,7 +170,8 @@ function simulatePlayoffSeries(
 export function runPlayoffs(
   topFourSeeds: string[],
   teams: Map<string, TeamAggregation>,
-  teamNames: Map<string, string> // Phase 3: Added parameter for editorial
+  teamNames: Map<string, string>, // Phase 3: Added parameter for editorial
+  onGameStart?: PlayoffGameStartHandler
 ): PlayoffResults {
   if (topFourSeeds.length !== 4) {
     throw new Error('Playoffs require exactly 4 teams');
@@ -140,7 +189,8 @@ export function runPlayoffs(
     teams.get(seed1)!,
     teams.get(seed4)!,
     PLAYOFF_PARAMS.SEMIFINALS_WINS_NEEDED,
-    false
+    false,
+    onGameStart
   );
 
   // Semi-final 2: #2 vs #3 (Best-of-3, need 2 wins)
@@ -153,7 +203,8 @@ export function runPlayoffs(
     teams.get(seed2)!,
     teams.get(seed3)!,
     PLAYOFF_PARAMS.SEMIFINALS_WINS_NEEDED,
-    false
+    false,
+    onGameStart
   );
 
   // Determine finalists
@@ -174,7 +225,8 @@ export function runPlayoffs(
     teams.get(finalistA)!,
     teams.get(finalistB)!,
     PLAYOFF_PARAMS.FINALS_WINS_NEEDED,
-    isUpset
+    isUpset,
+    onGameStart
   );
 
   // Phase 3: Generate championship editorial
