@@ -141,7 +141,7 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
  * Load fallback sample data (for development/testing)
  */
 async function loadFallbackData(): Promise<PlayerRawStats[]> {
-  const fallbackPath = path.join(__dirname, '../../data/sample_players.json');
+  const fallbackPath = path.join(__dirname, '../../../data/sample_players.json');
   
   try {
     const data = await fs.readFile(fallbackPath, 'utf-8');
