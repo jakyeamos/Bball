@@ -68,9 +68,9 @@ const GameRouting = () => {
 function App() {
   return (
     <AppProvider>
-      <DebugOverlay />
-      <GameTimer />
       <BrowserRouter>
+        <DebugOverlay />
+        <GameTimer />
         <GameRouting />
         <Routes>
           <Route path="/" element={<LobbyPage />} />
