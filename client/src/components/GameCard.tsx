@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { RegularSeasonGame } from '@nba-draft-sim/shared';
-import { Card } from './Card';
 
 interface GameCardProps {
   game: RegularSeasonGame;
@@ -10,22 +9,38 @@ interface GameCardProps {
 export const GameCard: React.FC<GameCardProps> = ({ game }) => {
   const isWinnerA = game.result.winner === 'A';
 
-  const teamAClasses = `text-center ${isWinnerA ? 'font-bold' : 'opacity-50'}`;
-  const teamBClasses = `text-center ${!isWinnerA ? 'font-bold' : 'opacity-50'}`;
+  const teamANameClasses = `text-sm truncate ${
+    isWinnerA ? 'font-semibold' : 'text-gray-500'
+  }`;
+  const teamBNameClasses = `text-sm truncate ${
+    !isWinnerA ? 'font-semibold' : 'text-gray-500'
+  }`;
+  const teamAScoreClasses = `text-xl ${
+    isWinnerA ? 'font-bold' : 'text-gray-500'
+  }`;
+  const teamBScoreClasses = `text-xl ${
+    !isWinnerA ? 'font-bold' : 'text-gray-500'
+  }`;
 
   return (
-    <Card>
-      <div className="grid grid-cols-3 items-center text-sm">
-        <div className={teamAClasses}>
-          <p className="truncate">{game.teamAId}</p>
-          <p className="text-lg">{game.result.finalScoreA?.toFixed(0)}</p>
+    <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 text-left">
+          <p className={teamANameClasses}>{game.teamAId}</p>
         </div>
-        <div className="text-center text-xs opacity-75 mt-4">VS</div>
-        <div className={teamBClasses}>
-          <p className="truncate">{game.teamBId}</p>
-          <p className="text-lg">{game.result.finalScoreB?.toFixed(0)}</p>
+        <div className="flex items-center space-x-2 text-center">
+          <p className={teamAScoreClasses}>
+            {game.result.finalScoreA?.toFixed(0)}
+          </p>
+          <p className="text-gray-400">-</p>
+          <p className={teamBScoreClasses}>
+            {game.result.finalScoreB?.toFixed(0)}
+          </p>
+        </div>
+        <div className="flex-1 text-right">
+          <p className={teamBNameClasses}>{game.teamBId}</p>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

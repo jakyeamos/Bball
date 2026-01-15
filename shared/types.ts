@@ -520,6 +520,15 @@ export interface RegularSeasonResults {
   summary: string;
 }
 
+export interface Matchup {
+  matchupId: string;
+  teamAId: string;
+  teamBId: string;
+  winsA: number;
+  winsB: number;
+  games: RegularSeasonGame[];
+}
+
 // ============================================================================
 // PLAYOFFS
 // ============================================================================
