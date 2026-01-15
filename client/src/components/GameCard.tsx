@@ -17,17 +17,13 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
     <Card>
       <div className="grid grid-cols-3 items-center text-sm">
         <div className={teamAClasses}>
-          <p>{game.teamAId}</p>
-          <p className="text-xs">
-            ({(game.result.winPctA * 100).toFixed(0)}% to win)
-          </p>
+          <p className="truncate">{game.teamAId}</p>
+          <p className="text-lg">{game.result.finalScoreA?.toFixed(0)}</p>
         </div>
-        <div className="text-center text-xs opacity-75">VS</div>
+        <div className="text-center text-xs opacity-75 mt-4">VS</div>
         <div className={teamBClasses}>
-          <p>{game.teamBId}</p>
-          <p className="text-xs">
-            ({((1 - game.result.winPctA) * 100).toFixed(0)}% to win)
-          </p>
+          <p className="truncate">{game.teamBId}</p>
+          <p className="text-lg">{game.result.finalScoreB?.toFixed(0)}</p>
         </div>
       </div>
     </Card>
