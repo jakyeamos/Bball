@@ -4,6 +4,7 @@ import { RegularSeasonGame } from '@nba-draft-sim/shared';
 
 interface GameCardProps {
   game: RegularSeasonGame;
+  gameNumber: number;
 }
 
 const TeamRow: React.FC<{
@@ -36,11 +37,14 @@ const TeamRow: React.FC<{
   </div>
 );
 
-export const GameCard: React.FC<GameCardProps> = ({ game }) => {
+export const GameCard: React.FC<GameCardProps> = ({ game, gameNumber }) => {
   const isWinnerA = game.result.winner === 'A';
 
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-2">
+    <div className="rounded-md border border-gray-200 bg-white p-3">
+      <h4 className="text-sm font-semibold text-center text-gray-500 mb-2">
+        Game {gameNumber}
+      </h4>
       <TeamRow
         teamId={game.teamAId}
         score={game.result.finalScoreA}
