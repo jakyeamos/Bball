@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@nba-draft-sim/shared": "file:../shared",
     "framer-motion": "^12.24.10",
     "js-cookie": "^3.0.5",
