@@ -12,16 +12,14 @@ interface MatchupCardProps {
 export const MatchupCard: React.FC<MatchupCardProps> = ({ matchup }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const getSeriesScoreText = () => {
-    if (matchup.winsA === matchup.winsB) {
-      return `Series tied ${matchup.winsA}-${matchup.winsB}`;
-    }
-    const winningTeam =
-      matchup.winsA > matchup.winsB ? matchup.teamAId : matchup.teamBId;
-    const winningScore = Math.max(matchup.winsA, matchup.winsB);
-    const losingScore = Math.min(matchup.winsA, matchup.winsB);
-    return `${winningTeam} wins series ${winningScore}-${losingScore}`;
-  };
+  const { winsA, winsB, teamAId, teamBId } = matchup;
+  const isTie = winsA === winsB;
+  const teamAWon = winsA > winsB;
+
+  const winnerId = teamAWon ? teamAId : teamBId;
+  const loserId = teamAWon ? teamBId : teamAId;
+  const winnerWins = Math.max(winsA, winsB);
+  const loserWins = Math.min(winsA, winsB);
 
   return (
     <Card>
@@ -31,10 +29,30 @@ export const MatchupCard: React.FC<MatchupCardProps> = ({ matchup }) => {
       >
         <div className="flex justify-between items-center">
           <div className="flex-1 text-center">
-            <h3 className="text-xl font-bold text-gray-800">{`${matchup.teamAId} vs ${matchup.teamBId}`}</h3>
-            <p className="text-md font-semibold text-indigo-600">
-              {getSeriesScoreText()}
-            </p>
+            {isTie ? (
+              <>
+                <h3 className="text-xl font-bold text-gray-800">{`${teamAId} vs ${teamBId}`}</h3>
+                <p className="text-md font-semibold text-gray-600">
+                  Series Tied {winsA}-{winsB}
+                </p>
+              </>
+            ) : (
+              <h3 className="text-xl text-gray-800">
+                <span className="font-bold text-indigo-600">
+                  {winnerId}{' '}
+                  <span className="text-sm font-semibold text-indigo-500">
+                    ({winnerWins})
+                  </span>
+                </span>
+                <span className="mx-2 font-normal text-gray-400">vs</span>
+                <span className="font-semibold text-gray-500">
+                  {loserId}{' '}
+                  <span className="text-sm font-normal text-gray-400">
+                    ({loserWins})
+                  </span>
+                </span>
+              </h3>
+            )}
           </div>
           <ChevronDownIcon
             className={`w-6 h-6 text-gray-400 transform transition-transform ${
