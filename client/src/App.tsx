@@ -6,6 +6,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { HomePage } from './pages/HomePage';
 import { LobbyPage } from './pages/LobbyPage';
 import { WaitingRoomPage } from './pages/WaitingRoomPage';
 import { DraftPage } from './pages/DraftPage';
@@ -18,6 +19,7 @@ import { RoundResultsPage } from './pages/RoundResultsPage';
 import { DebugOverlay } from './components/DebugOverlay';
 import { GameTimer } from './components/GameTimer';
 import { ScoutingReportPage } from './pages/ScoutingReportPage';
+import { NavBar } from './components/NavBar';
 
 const GameRouting = () => {
   const { league } = useApp();
@@ -69,22 +71,26 @@ function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        <DebugOverlay />
-        <GameTimer />
-        <GameRouting />
-        <Routes>
-          <Route path="/" element={<LobbyPage />} />
-          <Route path="/browse" element={<LobbyBrowserPage />} />
-          <Route path="/scouting-report" element={<ScoutingReportPage />} />
-          <Route path="/coaching" element={<CoachingDecisionsPage />} />
-          <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
-          <Route path="/waiting-room" element={<WaitingRoomPage />} />
-          <Route path="/draft" element={<DraftPage />} />
-          <Route path="/draft-recap" element={<DraftRecapPage />} />
-          <Route path="/results" element={<ResultsPage />} />
-          <Route path="/round-results" element={<RoundResultsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div className="min-h-screen bg-cv-navy">
+          <NavBar />
+          <DebugOverlay />
+          <GameTimer />
+          <GameRouting />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/lobby" element={<LobbyPage />} />
+            <Route path="/browse" element={<LobbyBrowserPage />} />
+            <Route path="/scouting-report" element={<ScoutingReportPage />} />
+            <Route path="/coaching" element={<CoachingDecisionsPage />} />
+            <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
+            <Route path="/waiting-room" element={<WaitingRoomPage />} />
+            <Route path="/draft" element={<DraftPage />} />
+            <Route path="/draft-recap" element={<DraftRecapPage />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="/round-results" element={<RoundResultsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </AppProvider>
   );
