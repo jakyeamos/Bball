@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-03-PLAN.md (Court Vision rebrand + Tailwind design tokens)
-last_updated: "2026-03-10T03:46:18.083Z"
+stopped_at: Completed 01-02-PLAN.md (quarter coaching WebSocket events)
+last_updated: "2026-03-10T13:55:33.326Z"
 last_activity: 2026-03-09 — Roadmap created (10 phases, 59 requirements mapped)
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 20
 ---
 
@@ -51,6 +51,7 @@ Progress: [██░░░░░░░░] 20%
 
 *Updated after each plan completion*
 | Phase 01-foundation-and-bug-fixes P03 | 2 | 2 tasks | 3 files |
+| Phase 01-foundation-and-bug-fixes P02 | 15 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Roadmap]: OSIM-* split across two phases — Phase 9 (save/resume + team context foundation) and Phase 10 (full 7-phase decision loop)
 - [Phase 01-03]: Used theme.extend (not theme) in tailwind.config.js to avoid wiping built-in Tailwind utilities
 - [Phase 01-03]: Did not rename @nba-draft-sim/shared package identifier — only user-visible UI text was in scope for rebrand
+- [Phase 01-02]: quarterReadyFlags stored at module level (not on LeagueState) to avoid schema churn for ephemeral per-quarter ready state
+- [Phase 01-02]: READY_FOR_QUARTER emits QUARTER_COACHING_WINDOW when both teams ready, not on first signal — symmetric coaching window for all players
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T03:46:18.081Z
-Stopped at: Completed 01-03-PLAN.md (Court Vision rebrand + Tailwind design tokens)
+Last session: 2026-03-10T13:55:33.324Z
+Stopped at: Completed 01-02-PLAN.md (quarter coaching WebSocket events)
 Resume file: None
