@@ -14,7 +14,7 @@ Court Vision expands an existing NBA Draft Simulator monorepo into a full basket
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation and Bug Fixes** - Fix simulation correctness bug, wire coaching WebSocket events, rebrand to Court Vision, establish homepage with all three role lenses
+- [x] **Phase 1: Foundation and Bug Fixes** - Fix simulation correctness bug, wire coaching WebSocket events, rebrand to Court Vision, establish homepage with all three role lenses (completed 2026-03-10)
 - [ ] **Phase 2: Infrastructure — Supabase and Auth** - Initialize Supabase project, establish anonymous auth, define full DB schema with RLS, add TanStack Query and Zod validation
 - [ ] **Phase 3: Data Layer** - BallDontLie build-time seed, disk cache, coach profiles seed, player stats to PlayerFeatures mapping
 - [ ] **Phase 4: Lesson Components and CMS** - All lesson UI interaction types plus admin authoring tools; 15–20 seed lessons authored and published
@@ -158,7 +158,7 @@ Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Bug Fixes | 4/5 | In Progress|  |
+| 1. Foundation and Bug Fixes | 5/5 | Complete   | 2026-03-10 |
 | 2. Infrastructure — Supabase and Auth | 0/TBD | Not started | - |
 | 3. Data Layer | 0/TBD | Not started | - |
 | 4. Lesson Components and CMS | 0/TBD | Not started | - |
