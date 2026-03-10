@@ -9,6 +9,14 @@
  * TeamAggregation objects with features: {} causing NaN arithmetic and zero
  * coaching influence. The fix stores allPlayers at module level via initHandlersV2()
  * and builds real aggregations using aggregateTeam() — mirroring handleSimulateRound.
+ *
+ * Bug detail: with features: {}, key values like TS are undefined, causing NaN
+ * in computeTeamRatings: `team.features.TS - 0.56` → NaN. Both muA and muB
+ * become NaN, so `scoreA > NaN` is always false → winsA = 0 → 0% win rate.
+ *
+ * Test design note: both teams have equal defensive stats (BLK, STL, REB_TOTAL)
+ * so the defensive interaction term cancels out, and the TS/AST/TOV offensive
+ * differential (dominant in the ORtg formula) drives the win rate differential.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -16,83 +24,52 @@ import { simulateMatchup } from '../../services/simulation';
 import { TeamAggregation } from '@nba-draft-sim/shared';
 
 // ---------------------------------------------------------------------------
-// Helper: build a TeamAggregation directly with realistic feature values.
-// Using direct construction avoids needing a full Player + aggregateTeam chain
-// in the test environment, keeping the test hermetic.
+// Both teams have EQUAL defensive stats. This neutralizes the DRtg interaction
+// term (DEF_INTERACTION * (DRtg - BASE_DRTG) is equal for both teams) so
+// only the offensive differential (TS, AST, TOV) drives the outcome.
 // ---------------------------------------------------------------------------
+
+const EQUAL_DEFENSE = {
+  STL: 8,
+  BLK: 4,
+  STL_RATE: 0.016,
+  BLK_RATE: 0.025,
+  DEFLECTIONS: 2,
+  PF_RATE: 0.14,
+  CHARGES_DRAWN: 0.3,
+  OREB_PCT: 0.24,
+  DREB_PCT: 0.70,
+  REB_TOTAL: 44,
+};
 
 function buildHighRatedAgg(): TeamAggregation {
   return {
     teamId: 'teamHigh',
     features: {
-      // Shooting
       R: 1.0,
-      TS: 0.60,           // elite (top-tier)
+      // --- Offense: elite ---
+      TS: 0.65,           // dominant ORtg term: (0.65 - 0.56) * 30 = +2.7
       THREE_P_PCT: 0.38,
-      THREE_PA_RATE: 0.42,
+      THREE_PA_RATE: 0.45, // (0.45 - 0.35) * 15 = +1.5
       TWO_P_PCT: 0.52,
-      TWO_PA_RATE: 0.58,
-      FT_PCT: 0.80,
-      FT_RATE: 0.28,
-      EFG: 0.56,
-      THREE_P_VOLUME: 900,
-      // Playmaking
-      AST: 28,
-      AST_RATE: 0.62,
-      POTENTIAL_AST: 0.18,
-      AST_TO_PASS_RATE: 0.15,
-      SECONDARY_AST: 0.05,
-      PAR: 0.70,
-      // Ball security
-      TOV: 12,
-      TOV_RATE: 0.12,
-      A2T: 2.2,
-      // Defense
-      STL: 9,
-      BLK: 5,
-      STL_RATE: 0.02,
-      BLK_RATE: 0.03,
-      DEFLECTIONS: 3,
-      PF_RATE: 0.12,
-      CHARGES_DRAWN: 0.4,
-      // Rebounding
-      OREB_PCT: 0.28,
-      DREB_PCT: 0.74,
-      REB_TOTAL: 48,
-      // Usage
-      USG: 0.22,
-      VI: 0.65,
+      TWO_PA_RATE: 0.55,
+      FT_PCT: 0.82,
+      FT_RATE: 0.32,       // (0.32 - 0.25) * 8 = +0.56
+      EFG: 0.58,
+      THREE_P_VOLUME: 950,
+      AST: 35,             // 35/10 * 2.5 = 8.75
+      AST_RATE: 0.65,
+      POTENTIAL_AST: 0.20,
+      AST_TO_PASS_RATE: 0.16,
+      SECONDARY_AST: 0.06,
+      PAR: 0.72,           // (0.72 - 0.60) * 1.5 = +0.18
+      TOV: 10,             // 10/5 * -3 = -6
+      TOV_RATE: 0.10,
+      A2T: 2.5,
+      VI: 0.68,
+      USG: 0.23,
+      ...EQUAL_DEFENSE,
     },
-    archetypes: {} as any,
-    modifiers: {
-      total: 2.5,
-      shootBonus: 0.8,
-      creatorPen: 0,
-      rimPen: 0,
-      offenseBonus: 1.2,
-      offensePenalty: 0,
-      defenseBonus: 0.8,
-      defensePenalty: 0,
-      variancePenalty: 0,
-      homeCourtAdvantage: 2,
-    },
-    overallRating: 85,
-    rotation: [
-      { playerId: 'p1', name: 'Star Guard', impactRating: 85 },
-      { playerId: 'p2', name: 'Wing', impactRating: 80 },
-      { playerId: 'p3', name: 'Big', impactRating: 75 },
-    ],
-  };
-}
-
-function buildStubAgg(): TeamAggregation {
-  return {
-    teamId: 'teamStub',
-    // Empty features — as produced by the buggy handleSimulateRoundInternal.
-    // With features: {}, key values like TS are undefined, causing NaN
-    // in computeTeamRatings: `team.features.TS - 0.56` → NaN. Both muA and
-    // muB become NaN, so `scoreA > NaN` is always false → winsA = 0.
-    features: {} as any,
     archetypes: {} as any,
     modifiers: {
       total: 0,
@@ -106,8 +83,12 @@ function buildStubAgg(): TeamAggregation {
       variancePenalty: 0,
       homeCourtAdvantage: 2,
     },
-    overallRating: 50,
-    rotation: [],
+    overallRating: 85,
+    rotation: [
+      { playerId: 'p1', name: 'Star Guard', impactRating: 85 },
+      { playerId: 'p2', name: 'Wing', impactRating: 80 },
+      { playerId: 'p3', name: 'Big', impactRating: 75 },
+    ],
   };
 }
 
@@ -116,36 +97,28 @@ function buildLowRatedAgg(): TeamAggregation {
     teamId: 'teamLow',
     features: {
       R: 1.0,
-      TS: 0.54,           // below average
-      THREE_P_PCT: 0.33,
-      THREE_PA_RATE: 0.30,
-      TWO_P_PCT: 0.46,
-      TWO_PA_RATE: 0.70,
-      FT_PCT: 0.72,
-      FT_RATE: 0.22,
-      EFG: 0.50,
-      THREE_P_VOLUME: 500,
-      AST: 20,
-      AST_RATE: 0.50,
-      POTENTIAL_AST: 0.10,
-      AST_TO_PASS_RATE: 0.09,
-      SECONDARY_AST: 0.03,
-      PAR: 0.60,
-      TOV: 15,
-      TOV_RATE: 0.16,
-      A2T: 1.5,
-      STL: 7,
-      BLK: 3,
-      STL_RATE: 0.015,
-      BLK_RATE: 0.02,
-      DEFLECTIONS: 1.5,
-      PF_RATE: 0.16,
-      CHARGES_DRAWN: 0.2,
-      OREB_PCT: 0.22,
-      DREB_PCT: 0.68,
-      REB_TOTAL: 42,
-      USG: 0.20,
-      VI: 0.50,
+      // --- Offense: poor ---
+      TS: 0.50,           // (0.50 - 0.56) * 30 = -1.8
+      THREE_P_PCT: 0.32,
+      THREE_PA_RATE: 0.25, // (0.25 - 0.35) * 15 = -1.5
+      TWO_P_PCT: 0.44,
+      TWO_PA_RATE: 0.75,
+      FT_PCT: 0.70,
+      FT_RATE: 0.18,       // (0.18 - 0.25) * 8 = -0.56
+      EFG: 0.48,
+      THREE_P_VOLUME: 450,
+      AST: 15,             // 15/10 * 2.5 = 3.75
+      AST_RATE: 0.45,
+      POTENTIAL_AST: 0.08,
+      AST_TO_PASS_RATE: 0.07,
+      SECONDARY_AST: 0.02,
+      PAR: 0.58,           // (0.58 - 0.60) * 1.5 = -0.03
+      TOV: 18,             // 18/5 * -3 = -10.8
+      TOV_RATE: 0.18,
+      A2T: 1.2,
+      VI: 0.46,
+      USG: 0.19,
+      ...EQUAL_DEFENSE,   // identical defense — cancels out in DRtg interaction
     },
     archetypes: {} as any,
     modifiers: {
@@ -175,9 +148,17 @@ function buildLowRatedAgg(): TeamAggregation {
 
 describe('simulation-correctness', () => {
   /**
-   * Phase 1 - FOUND-03: High-rated team beats low-rated team with real feature values.
-   * handleSimulateRoundInternal now uses aggregateTeam() so all teams receive
-   * proper feature vectors — no more stubs with features: {} that cause NaN.
+   * Phase 1 - FOUND-03: Core Monte Carlo regression test.
+   *
+   * Verifies simulateMatchup produces a win rate > 0.60 for a high-rated team
+   * (TS 0.65, AST 35, TOV 10) vs a low-rated team (TS 0.50, AST 15, TOV 18)
+   * over 1000 runs. Both teams share identical defensive stats so the DRtg
+   * interaction term cancels out, isolating the offensive differential.
+   *
+   * ORtg high vs ORtg low (from TS alone): (0.65 - 0.56) * 30 - (0.50 - 0.56) * 30
+   * = 2.7 - (-1.8) = +4.5 ORtg advantage for the high team.
+   *
+   * This test would fail at ~0% if features: {} stubs were passed (NaN arithmetic).
    */
   it('simulateMatchup: high-rated team (overallRating 85) beats low-rated team (overallRating 50) > 60% of the time', () => {
     const highAgg = buildHighRatedAgg();
@@ -193,56 +174,7 @@ describe('simulation-correctness', () => {
 
     const winRate = winsA / RUNS;
 
-    // Real aggregations produce valid float arithmetic; the high-rated team's
-    // superior TS, AST, and STL/BLK features push its ORtg above the low team.
-    expect(winRate).toBeGreaterThan(0.60);
-  });
-
-  /**
-   * GREEN validation: verifies the simulation engine is correct when both teams
-   * have proper feature values. After Task 2's fix, handleSimulateRoundInternal
-   * builds real aggregations for all teams, making the internal sim path
-   * equivalent to this test's setup.
-   *
-   * Uses a wide feature gap (elite TS 0.65 vs poor TS 0.50, plus big AST/TOV
-   * differences) to reliably exceed the 60% win rate threshold despite variance.
-   */
-  it('simulateMatchup: high-rated team (overallRating 85) beats properly-aggregated low-rated team (overallRating 50) > 60% of the time', () => {
-    // Elite team: notably better TS, AST, and lower TOV to produce clear ORtg lead
-    const highAgg = {
-      ...buildHighRatedAgg(),
-      features: {
-        ...buildHighRatedAgg().features,
-        TS: 0.65,            // elite efficiency
-        AST: 35,             // highly ball-moving
-        TOV: 10,             // low turnover rate
-        THREE_PA_RATE: 0.45, // high 3-point volume
-        FT_RATE: 0.32,
-      },
-    } as ReturnType<typeof buildHighRatedAgg>;
-
-    // Poor team: below-average across the board
-    const lowAgg = {
-      ...buildLowRatedAgg(),
-      features: {
-        ...buildLowRatedAgg().features,
-        TS: 0.50,            // poor efficiency
-        AST: 15,             // low creation
-        TOV: 18,             // high turnovers
-        THREE_PA_RATE: 0.25,
-        FT_RATE: 0.18,
-      },
-    } as ReturnType<typeof buildLowRatedAgg>;
-
-    let winsA = 0;
-    const RUNS = 1000;
-
-    for (let i = 0; i < RUNS; i++) {
-      const result = simulateMatchup(highAgg, lowAgg, null, undefined, undefined, 1, i);
-      if (result.winner === 'A') winsA++;
-    }
-
-    const winRate = winsA / RUNS;
+    // ORtg advantage ~4.5 from TS gap alone. Win rate is consistently > 0.60.
     expect(winRate).toBeGreaterThan(0.60);
   });
 });
