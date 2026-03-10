@@ -144,75 +144,75 @@
 
 ## Traceability
 
-*(Populated during roadmap creation; see .planning/ROADMAP.md)*
+*(Updated after roadmap creation — 10-phase fine granularity)*
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1: Foundation | Pending |
-| FOUND-02 | Phase 1: Foundation | Pending |
-| FOUND-03 | Phase 1: Foundation | Pending |
-| FOUND-04 | Phase 1: Foundation | Pending |
-| FOUND-05 | Phase 1: Foundation | Pending |
-| FOUND-06 | Phase 1: Foundation | Pending |
-| INFRA-01 | Phase 2: Infrastructure | Pending |
-| INFRA-02 | Phase 2: Infrastructure | Pending |
-| INFRA-03 | Phase 2: Infrastructure | Pending |
-| INFRA-04 | Phase 2: Infrastructure | Pending |
-| INFRA-05 | Phase 2: Infrastructure | Pending |
-| INFRA-06 | Phase 2: Infrastructure | Pending |
-| DATA-01 | Phase 2: Infrastructure | Pending |
-| DATA-02 | Phase 2: Infrastructure | Pending |
-| DATA-03 | Phase 2: Infrastructure | Pending |
-| DATA-04 | Phase 2: Infrastructure | Pending |
-| DATA-05 | Phase 2: Infrastructure | Pending |
-| LEARN-01 | Phase 3: Core Learning System | Pending |
-| LEARN-02 | Phase 3: Core Learning System | Pending |
-| LEARN-03 | Phase 3: Core Learning System | Pending |
-| LEARN-04 | Phase 3: Core Learning System | Pending |
-| LEARN-05 | Phase 3: Core Learning System | Pending |
-| LEARN-06 | Phase 3: Core Learning System | Pending |
-| LEARN-07 | Phase 3: Core Learning System | Pending |
-| LEARN-08 | Phase 3: Core Learning System | Pending |
-| CMS-01 | Phase 3: Core Learning System | Pending |
-| CMS-02 | Phase 3: Core Learning System | Pending |
-| CMS-03 | Phase 3: Core Learning System | Pending |
-| CMS-04 | Phase 3: Core Learning System | Pending |
-| CMS-05 | Phase 3: Core Learning System | Pending |
-| DAILY-01 | Phase 3: Core Learning System | Pending |
-| DAILY-02 | Phase 3: Core Learning System | Pending |
-| DAILY-03 | Phase 3: Core Learning System | Pending |
-| DAILY-04 | Phase 3: Core Learning System | Pending |
-| DAILY-05 | Phase 3: Core Learning System | Pending |
-| DAILY-06 | Phase 5: User Profile and Engagement | Pending |
-| DISC-01 | Phase 3: Core Learning System | Pending |
-| DISC-02 | Phase 3: Core Learning System | Pending |
-| DISC-03 | Phase 3: Core Learning System | Pending |
-| ONBD-01 | Phase 3: Core Learning System | Pending |
-| ONBD-02 | Phase 3: Core Learning System | Pending |
-| ONBD-03 | Phase 3: Core Learning System | Pending |
-| PROF-01 | Phase 5: User Profile and Engagement | Pending |
-| PROF-02 | Phase 5: User Profile and Engagement | Pending |
-| PROF-03 | Phase 5: User Profile and Engagement | Pending |
-| DRAFT-01 | Phase 4: Draft Simulator Teaching Layer | Pending |
-| DRAFT-02 | Phase 4: Draft Simulator Teaching Layer | Pending |
-| DRAFT-03 | Phase 4: Draft Simulator Teaching Layer | Pending |
-| DRAFT-04 | Phase 4: Draft Simulator Teaching Layer | Pending |
-| OSIM-01 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-02 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-03 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-04 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-05 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-06 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-07 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-08 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-09 | Phase 6: NBA Offseason Simulator | Pending |
-| OSIM-10 | Phase 6: NBA Offseason Simulator | Pending |
+| FOUND-01 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-02 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-03 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-04 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-05 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-06 | Phase 1: Foundation and Bug Fixes | Pending |
+| INFRA-01 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| INFRA-02 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| INFRA-03 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| INFRA-04 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| INFRA-05 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| INFRA-06 | Phase 2: Infrastructure — Supabase and Auth | Pending |
+| DATA-01 | Phase 3: Data Layer | Pending |
+| DATA-02 | Phase 3: Data Layer | Pending |
+| DATA-03 | Phase 3: Data Layer | Pending |
+| DATA-04 | Phase 3: Data Layer | Pending |
+| DATA-05 | Phase 3: Data Layer | Pending |
+| LEARN-01 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-02 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-03 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-04 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-05 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-06 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-07 | Phase 4: Lesson Components and CMS | Pending |
+| CMS-01 | Phase 4: Lesson Components and CMS | Pending |
+| CMS-02 | Phase 4: Lesson Components and CMS | Pending |
+| CMS-03 | Phase 4: Lesson Components and CMS | Pending |
+| CMS-04 | Phase 4: Lesson Components and CMS | Pending |
+| CMS-05 | Phase 4: Lesson Components and CMS | Pending |
+| LEARN-08 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| ONBD-01 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| ONBD-02 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| ONBD-03 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| DISC-01 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| DISC-02 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| DISC-03 | Phase 5: Progress, Onboarding, and Content Discovery | Pending |
+| DAILY-01 | Phase 6: Daily Engagement | Pending |
+| DAILY-02 | Phase 6: Daily Engagement | Pending |
+| DAILY-03 | Phase 6: Daily Engagement | Pending |
+| DAILY-04 | Phase 6: Daily Engagement | Pending |
+| DAILY-05 | Phase 6: Daily Engagement | Pending |
+| DAILY-06 | Phase 6: Daily Engagement | Pending |
+| DRAFT-01 | Phase 7: Draft Simulator Teaching Layer | Pending |
+| DRAFT-02 | Phase 7: Draft Simulator Teaching Layer | Pending |
+| DRAFT-03 | Phase 7: Draft Simulator Teaching Layer | Pending |
+| DRAFT-04 | Phase 7: Draft Simulator Teaching Layer | Pending |
+| PROF-01 | Phase 8: User Profile and Account Upgrade | Pending |
+| PROF-02 | Phase 8: User Profile and Account Upgrade | Pending |
+| PROF-03 | Phase 8: User Profile and Account Upgrade | Pending |
+| OSIM-01 | Phase 9: Offseason Simulator — Foundation | Pending |
+| OSIM-08 | Phase 9: Offseason Simulator — Foundation | Pending |
+| OSIM-09 | Phase 9: Offseason Simulator — Foundation | Pending |
+| OSIM-10 | Phase 9: Offseason Simulator — Foundation | Pending |
+| OSIM-02 | Phase 10: Offseason Simulator — Decision Loop | Pending |
+| OSIM-03 | Phase 10: Offseason Simulator — Decision Loop | Pending |
+| OSIM-04 | Phase 10: Offseason Simulator — Decision Loop | Pending |
+| OSIM-05 | Phase 10: Offseason Simulator — Decision Loop | Pending |
+| OSIM-06 | Phase 10: Offseason Simulator — Decision Loop | Pending |
+| OSIM-07 | Phase 10: Offseason Simulator — Decision Loop | Pending |
 
 **Coverage:**
-- v1 requirements: 57 total
-- Mapped to phases: 57
+- v1 requirements: 59 total
+- Mapped to phases: 59
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after roadmap creation (traceability)*
+*Last updated: 2026-03-09 after roadmap creation (10-phase fine granularity)*
