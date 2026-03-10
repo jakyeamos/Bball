@@ -1,310 +1,121 @@
-# 🏀 NBA Draft Simulator - Complete Project Summary
+# Court Vision — Project Summary
 
-## 📊 Project Statistics
+## What This Is
 
-- **Total Files**: 61
-- **Lines of Code**: ~10,000+
-- **Languages**: TypeScript, Python, JavaScript, YAML, Shell
-- **Time to Deploy**: 5 minutes (with Vercel + Railway)
-- **Cost**: $5/month (or free for local development)
+Court Vision is a free, web-first basketball IQ training platform. Users learn to see the game like a player, coach, and GM through structured lessons, real film with pause-and-predict interactions, scenario simulations, an NBA Draft Simulator capstone, and a full NBA Offseason Simulator.
+
+**Core value:** The platform only succeeds if users' basketball IQ genuinely improves. Education comes before surface polish.
 
 ---
 
-## 📁 Project Structure
+## Tech Stack
 
-\`\`\`
-nba-draft-sim/
-├── 📚 Documentation (4 files)
-│   ├── README.md              # Project overview
-│   ├── DEPLOYMENT.md          # Full deployment guide (all platforms)
-│   ├── QUICKSTART.md          # 5-minute deploy guide
-│   └── PROJECT_SUMMARY.md     # This file
-│
-├── 🔧 Deployment Configs (9 files)
-│   ├── docker-compose.yml     # Docker orchestration
-│   ├── railway.json           # Railway configuration
-│   ├── render.yaml            # Render configuration
-│   ├── deploy.sh              # Interactive deploy helper
-│   ├── .gitignore             # Git ignore rules
-│   ├── server/Dockerfile      # Backend container
-│   ├── server/.env.production # Backend production config
-│   ├── client/Dockerfile      # Frontend container
-│   └── client/.env.production # Frontend production config
-│
-├── 📦 shared/ (5 files)       # Shared TypeScript types
-│   ├── types.ts               # All interfaces (343 lines)
-│   ├── constants.ts           # Simulation parameters (254 lines)
-│   ├── index.ts               # Exports
-│   ├── package.json           # Package config
-│   └── tsconfig.json          # TypeScript config
-│
-├── 🖥️ server/ (31 files)      # Backend (Node.js + Express + Socket.io)
-│   ├── 📊 src/data/           # Player data pipeline
-│   │   ├── scraper.ts         # NBA API wrapper
-│   │   ├── snapshot.ts        # League snapshot creation
-│   │   └── index.ts
-│   │
-│   ├── 🧮 src/engine/         # Simulation engine (10 files)
-│   │   ├── utils.ts           # Math utilities
-│   │   ├── reliability.ts     # Shrinkage functions
-│   │   ├── features.ts        # Feature construction
-│   │   ├── archetypes.ts      # 18 archetypes
-│   │   ├── aggregation.ts     # Team aggregation
-│   │   ├── modifiers.ts       # Anti-domination
-│   │   ├── simulation.ts      # Matchup simulation
-│   │   ├── season.ts          # Regular season
-│   │   ├── playoffs.ts        # Playoffs
-│   │   └── index.ts
-│   │
-│   ├── 🔧 src/services/       # Business logic
-│   │   ├── sessionManager.ts  # User sessions
-│   │   ├── lobbyManager.ts    # Lobby creation/joining
-│   │   ├── draftState.ts      # Draft state management
-│   │   ├── leagueManager.ts   # League lifecycle
-│   │   └── index.ts
-│   │
-│   ├── 🔌 src/socket/         # WebSocket layer
-│   │   ├── handlers.ts        # Event handlers
-│   │   ├── timerManager.ts    # Pick timer
-│   │   ├── socketManager.ts   # Socket.io setup
-│   │   └── index.ts
-│   │
-│   ├── src/index.ts           # Main server
-│   ├── scripts/               # Python scraper
-│   ├── data/                  # Sample player data (50 players)
-│   └── Configuration files    # package.json, tsconfig, etc.
-│
-└── 💻 client/ (24 files)      # Frontend (React + TypeScript + Tailwind)
-    ├── src/services/
-    │   └── websocket.ts       # Socket.io client
-    │
-    ├── src/contexts/
-    │   └── AppContext.tsx     # Global state
-    │
-    ├── src/components/common/
-    │   ├── Button.tsx         # Button component
-    │   ├── Card.tsx           # Card container
-    │   └── Input.tsx          # Input field
-    │
-    ├── src/pages/
-    │   ├── LobbyPage.tsx      # Create/join lobby
-    │   ├── WaitingRoomPage.tsx# Wait for players
-    │   ├── DraftPage.tsx      # Live draft interface
-    │   ├── DraftRecapPage.tsx # View rosters
-    │   └── ResultsPage.tsx    # Regular season & playoffs
-    │
-    ├── src/App.tsx            # Main app with routing
-    ├── src/main.tsx           # React entry point
-    └── Configuration files    # vite.config, tailwind.config, etc.
-\`\`\`
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, TypeScript strict, Tailwind CSS, Vite |
+| Backend | Node.js, Express 4, Socket.io 4, TypeScript |
+| Shared | TypeScript workspace package (types + Zod schemas) |
+| Persistence | Supabase (auth + database + storage) — migration in progress |
+| Real-time | Socket.io (draft sim and live coaching) |
+| Video | YouTube IFrame API embeds (v1) |
+| Data | BallDontLie API (build-time seed) + curated static coach profiles |
 
 ---
 
-## ✨ Features Implemented
+## Three Learning Tracks
 
-### 🎮 Core Gameplay
-- ✅ **Lobby System**: Create/join with invite codes, auto team assignment
-- ✅ **Snake Draft**: Alternating rounds, pick timer, auto-pick
-- ✅ **Player Queue**: Pre-plan picks
-- ✅ **Real-time Updates**: All users see same state instantly
-- ✅ **Draft Recap**: View all rosters after draft
-- ✅ **Trade Window**: 5-minute trade period (backend ready)
-- ✅ **Regular Season**: Round-robin tournament
-- ✅ **Playoffs**: Top 4, best-of-3 series
-- ✅ **Champion**: Winner crowned with trophy 🏆
-
-### 🧮 Simulation Engine
-- ✅ **18 Player Archetypes**: PrimaryCreator, ThreeAndD, RimProtector, etc.
-- ✅ **Reliability Shrinkage**: Prevents low-minute players from dominating
-- ✅ **Anti-Domination Modifiers**: Creator penalty, shooting bonus, rim protection penalty
-- ✅ **Matchup Simulation**: 100 sims per game with variance
-- ✅ **Team Aggregation**: Weighted by impact rating
-- ✅ **Series Presentation**: Suspenseful game-by-game results
-
-### 🎨 UI/UX
-- ✅ **Responsive Design**: Works on desktop, tablet, mobile
-- ✅ **Real-time Timer**: Pick countdown with auto-pick
-- ✅ **Player Search**: Filter by name, position, team
-- ✅ **Live Standings**: Win%, rankings
-- ✅ **Playoff Bracket**: Semi-finals + finals display
-
-### 🔧 Technical
-- ✅ **Type-Safe**: 100% TypeScript (except Python scraper)
-- ✅ **WebSocket**: Socket.io for real-time communication
-- ✅ **Session Management**: Cookie-based, no accounts needed
-- ✅ **Player Data**: NBA stats scraper + 50 fallback players
-- ✅ **Production Ready**: Docker, Railway, Vercel configs
+| Track | Purpose | Topics |
+|-------|---------|--------|
+| **Player IQ** | Read the floor like a player | Offensive reads, pick-and-roll, spacing, transition, help defense, decision windows |
+| **Coach IQ** | See the game through structure and adjustment | Actions, coverages, adjustments, lineup logic, after-timeout ideas, counters |
+| **GM IQ** | Understand team-building logic | Trade value, archetypes, roster construction, asset logic, scouting, offseason planning |
 
 ---
 
-## 🚀 Deployment Options
+## Existing Foundation (Validated)
 
-### **Option 1: Vercel + Railway** (Recommended)
-- **Frontend**: Vercel (free)
-- **Backend**: Railway ($5/month)
-- **Setup Time**: 5 minutes
-- **Difficulty**: ⭐ Easy
-- **Best For**: Quick launch, hassle-free hosting
+The simulation engine already exists and is production-ready:
 
-### **Option 2: Render**
-- **Frontend**: Render Static Site (free)
-- **Backend**: Render Web Service (free tier available)
-- **Setup Time**: 10 minutes
-- **Difficulty**: ⭐ Easy
-- **Best For**: All-in-one platform, free tier
-
-### **Option 3: Docker**
-- **Any Docker Host**: Railway, Render, DigitalOcean
-- **Setup Time**: 5 minutes (with docker-compose)
-- **Difficulty**: ⭐⭐ Moderate
-- **Best For**: Consistent deployments, easy scaling
-
-### **Option 4: VPS (Manual)**
-- **Server**: DigitalOcean, AWS, Linode
-- **Setup Time**: 30 minutes
-- **Difficulty**: ⭐⭐⭐ Advanced
-- **Best For**: Full control, custom configuration
+- Real-time multiplayer draft with WebSocket sync (Socket.io)
+- Snake draft: pick timer, auto-pick, commissioner controls
+- Monte Carlo simulation engine: 30 player features, 13 archetypes, 100-sim matchups
+- Team aggregation with impact weighting and reliability shrinkage
+- Regular season round-robin + playoff bracket simulation
+- Round-based coaching with quarter-by-quarter gameplay (partially wired)
+- Scouting reports generated from league history
+- Trade proposal system
+- Cookie-based session management, no accounts required
+- Monorepo architecture with shared TypeScript types
 
 ---
 
-## 📈 What's Working
+## Build Roadmap (10 Phases)
 
-### ✅ Backend
-- Express server with health checks
-- Socket.io WebSocket server
-- Complete simulation engine (all pseudocode implemented)
-- Snake draft with timer
-- Auto-pick system
-- Regular season simulation
-- Playoff simulation
-- Session management
-- Player data loading (NBA API + fallback)
+| Phase | Name | Key Deliverables |
+|-------|------|-----------------|
+| 1 | Foundation and Bug Fixes | Fix coaching sim bug, wire quarter coaching events, rebrand to Court Vision, homepage with three lenses |
+| 2 | Infrastructure — Supabase and Auth | Anonymous Supabase identity, DB schema + RLS, TanStack Query, Zod validation |
+| 3 | Data Layer | BallDontLie build-time seed, coach profiles, 30-feature PlayerFeatures mapping |
+| 4 | Lesson Components and CMS | Lesson cards, film breakdowns, pause-and-predict, scenario sims, admin CMS, 15+ seed lessons |
+| 5 | Progress, Onboarding, and Content Discovery | Completion persistence, onboarding flow, searchable library, discussion board |
+| 6 | Daily Engagement | Daily challenge, streaks, badges, shareable cards, friend leaderboard |
+| 7 | Draft Simulator Teaching Layer | Court Vision reskin, teaching overlay, post-draft analysis, capstone positioning |
+| 8 | User Profile and Account Upgrade | Skill profile, optional account creation, cross-device sync |
+| 9 | Offseason Simulator — Foundation | Save/resume infra, schema versioning, Team Context phase, GM lens entry |
+| 10 | Offseason Simulator — Decision Loop | Coaching market, scouting, trades, draft night, free agency, post-offseason recap |
 
-### ✅ Frontend
-- React with TypeScript
-- Real-time WebSocket integration
-- Lobby creation/joining
-- Waiting room with live player list
-- Draft board with search/filter
-- Pick timer with countdown
-- Draft recap with rosters
-- Regular season standings
-- Playoff bracket with finals
-- Champion display
-
-### ✅ Deployment
-- Docker configurations (both services)
-- Railway auto-deploy
-- Render configuration
-- Vercel configuration
-- nginx setup for SPA
-- Environment templates
-- Quick deploy script
+Full details: `.planning/ROADMAP.md`
 
 ---
 
-## 🎯 Quick Start Commands
+## NBA Offseason Simulator
 
-### Local Development
-\`\`\`bash
-# Install and build shared types
-cd shared && npm install && npm run build
+The flagship feature: a full 7-phase offseason loop for one real NBA team.
 
-# Terminal 1: Backend
-cd ../server && npm install && npm run dev
+| Phase | What the user does | What they learn |
+|-------|-------------------|----------------|
+| Team Context | Select a real team, inherit roster/picks/needs | Every move starts from context |
+| Coaching Market | Interview and hire real coaches | How scheme reshapes roster value |
+| Scouting and Pre-Draft | Build a board with uncertainty signals | Drafts are informed, not solved |
+| Trade Market | Explore player/pick trades | Asset logic, timeline, fit |
+| Draft Night | Pick via existing engine + teaching overlays | Process discipline under pressure |
+| Free Agency | Fill needs with realistic constraints | Opportunity cost and role balance |
+| Post-Offseason Recap | Team grade, fit report, projected direction | Why it worked or didn't |
 
-# Terminal 2: Frontend
-cd ../client && npm install && npm run dev
-\`\`\`
-
-### Docker Deployment
-\`\`\`bash
-docker-compose up -d --build
-\`\`\`
-
-### Quick Deploy
-\`\`\`bash
-./deploy.sh
-\`\`\`
+**Key rules:**
+- Real names for teams, players, and coaches
+- Single difficulty level — ambiguity creates challenge, not artificial tiers
+- Coaching hires affect grades and recommendations, not deterministic outcomes
+- Draft outcomes are probabilistic — stats improve process, never eliminate risk
+- Save and resume required — runs span multiple sessions
 
 ---
 
-## 📚 Documentation
+## Out of Scope (v1)
 
-1. **README.md** - Project overview, architecture, features
-2. **QUICKSTART.md** - 5-minute deploy guide (Vercel + Railway)
-3. **DEPLOYMENT.md** - Comprehensive deployment guide (all platforms)
-4. **PROJECT_SUMMARY.md** - This file
-5. **server/README.md** - Backend documentation
-6. **client/README.md** - Frontend documentation
-7. **server/SCRAPER_README.md** - Python scraper setup
-
----
-
-## 💰 Estimated Costs
-
-### Development
-- **Free**: Local development
-
-### Production (Small Scale)
-- **Vercel**: Free (frontend)
-- **Railway**: $5/month (backend)
-- **Total**: **$5/month**
-
-### Production (Medium Scale)
-- **Vercel Pro**: $20/month (frontend)
-- **Railway Pro**: $20/month (backend)
-- **Redis Cloud**: $5/month (when you add persistence)
-- **Total**: **$45/month**
-
-### Production (Large Scale)
-- **Cloudflare Pages**: Free (frontend)
-- **AWS/DigitalOcean**: $50+/month (backend + database)
-- **Redis**: $10+/month
-- **Total**: **$60+/month**
+- Native mobile apps
+- Heavy social mechanics (feeds, upvoting, hot takes)
+- Full gamification economy (loot boxes, rank ladders, complex XP)
+- Fantasy basketball integrations
+- Perfect CBA/salary-cap replica in offseason sim
+- User-generated lesson creation
+- Live game companion mode
+- Multi-year franchise mode
 
 ---
 
-## 🔮 Future Enhancements
+## Key Decisions
 
-### Already Requested
-- [ ] Archetype visualization (color tags + team composition)
-- [ ] Enhanced draft UI with player cards
-- [ ] Advanced stats display
-- [ ] Trade interface UI
-- [ ] Playoff bracket animations
-
-### Possible Additions
-- [ ] Persistent state (Redis/PostgreSQL)
-- [ ] User accounts (optional)
-- [ ] Replay system
-- [ ] Historical leagues
-- [ ] Team composition analysis
-- [ ] Player detail modals
-- [ ] Mobile app (React Native)
-- [ ] AI opponent (single player mode)
+| Decision | Rationale |
+|----------|-----------|
+| Extend existing monorepo | PRD: "extend the monorepo, not rebuild the stack" |
+| YouTube embeds for film (v1) | Start simple, optimize once usage patterns are known |
+| BallDontLie + static seed for real names | Free tier, documented, no enterprise cost in v1 |
+| Single difficulty in offseason sim | Realism and ambiguity create challenge more honestly than tiers |
+| Anonymous-first progress tracking | Keep the learning wedge broad, reduce friction |
+| Fix coaching sim bug in Phase 1 | Silent correctness bug undermines the core learning value |
 
 ---
 
-## 🏆 Achievements
-
-You've built a **fully functional, production-ready web application** with:
-
-- ✅ Advanced simulation engine
-- ✅ Real-time multiplayer
-- ✅ Complete frontend and backend
-- ✅ Multiple deployment options
-- ✅ Type-safe codebase
-- ✅ Professional documentation
-- ✅ Docker support
-- ✅ Cloud-ready architecture
-
-**This is a portfolio-worthy project!**
-
----
-
-## 🎉 Ready to Launch!
-
-Follow **QUICKSTART.md** to deploy in 5 minutes, or check **DEPLOYMENT.md** for more options.
-
-Your NBA Draft Simulator is production-ready and waiting to go live! 🚀
+*Last updated: 2026-03-09*
+*Planning documents: `.planning/`*
