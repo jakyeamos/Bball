@@ -37,7 +37,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The app loads with "Court Vision" in the browser tab title, page headings, and meta tags — no legacy draft-sim branding visible anywhere in the user-facing UI
   4. The homepage renders Player IQ, Coach IQ, and GM IQ as three distinct visible lanes without any click or navigation required
   5. A user can navigate from any role lens section to either of the other two without being locked into a single-track flow
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Fix handleSimulateRoundInternal bug + Monte Carlo regression test (FOUND-03)
+- [ ] 01-02-PLAN.md — Wire SUBMIT_QUARTER_COACHING and READY_FOR_QUARTER WebSocket events (FOUND-04)
+- [ ] 01-03-PLAN.md — Court Vision rebrand strings + Tailwind design tokens (FOUND-01, FOUND-02)
+- [ ] 01-04-PLAN.md — Homepage three-lane layout + NavBar cross-lens navigation (FOUND-05, FOUND-06)
+- [ ] 01-05-PLAN.md — Human verification checkpoint for all Phase 1 success criteria
 
 ### Phase 2: Infrastructure — Supabase and Auth
 **Goal**: Every visitor gets a durable anonymous Supabase identity on first load; the full database schema and RLS policies are in place for all three user states; all REST calls from the learning layer use TanStack Query; shared Zod schemas validate all data shapes at the API boundary
