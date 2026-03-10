@@ -9,7 +9,7 @@
 
 - [x] **FOUND-01**: Codebase is rebranded to Court Vision (app name, page titles, meta tags, repo identity)
 - [x] **FOUND-02**: Court Vision visual identity is established: color tokens, typography scale, and Tailwind theme configured in a design system layer
-- [ ] **FOUND-03**: Coaching simulation bug is fixed — `handleSimulateRoundInternal` uses real `TeamAggregation` objects, not blank stubs, so auto-sim produces correct results
+- [x] **FOUND-03**: Coaching simulation bug is fixed — `handleSimulateRoundInternal` uses real `TeamAggregation` objects, not blank stubs, so auto-sim produces correct results
 - [x] **FOUND-04**: Quarter-by-quarter coaching WebSocket events are wired — `SUBMIT_QUARTER_COACHING` and `READY_FOR_QUARTER` are handled in `socketManager.ts`
 - [ ] **FOUND-05**: Homepage shows all three role lenses (Player IQ, Coach IQ, GM IQ) immediately on load
 - [ ] **FOUND-06**: Top-level navigation allows fluid browsing across all three role lenses without locking the user into one
@@ -150,7 +150,7 @@
 |-------------|-------|--------|
 | FOUND-01 | Phase 1: Foundation and Bug Fixes | Complete |
 | FOUND-02 | Phase 1: Foundation and Bug Fixes | Complete |
-| FOUND-03 | Phase 1: Foundation and Bug Fixes | Pending |
+| FOUND-03 | Phase 1: Foundation and Bug Fixes | Complete |
 | FOUND-04 | Phase 1: Foundation and Bug Fixes | Complete |
 | FOUND-05 | Phase 1: Foundation and Bug Fixes | Pending |
 | FOUND-06 | Phase 1: Foundation and Bug Fixes | Pending |

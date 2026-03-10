@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-02-PLAN.md (quarter coaching WebSocket events)
-last_updated: "2026-03-10T13:55:33.326Z"
+stopped_at: Completed 01-01-PLAN.md (simulation correctness bug fix + Monte Carlo regression test)
+last_updated: "2026-03-10T14:01:18.128Z"
 last_activity: 2026-03-09 — Roadmap created (10 phases, 59 requirements mapped)
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
   percent: 20
 ---
 
@@ -52,6 +52,7 @@ Progress: [██░░░░░░░░] 20%
 *Updated after each plan completion*
 | Phase 01-foundation-and-bug-fixes P03 | 2 | 2 tasks | 3 files |
 | Phase 01-foundation-and-bug-fixes P02 | 15 | 2 tasks | 5 files |
+| Phase 01-foundation-and-bug-fixes P01 | 9 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase 01-03]: Did not rename @nba-draft-sim/shared package identifier — only user-visible UI text was in scope for rebrand
 - [Phase 01-02]: quarterReadyFlags stored at module level (not on LeagueState) to avoid schema churn for ephemeral per-quarter ready state
 - [Phase 01-02]: READY_FOR_QUARTER emits QUARTER_COACHING_WINDOW when both teams ready, not on first signal — symmetric coaching window for all players
+- [Phase 01-01]: Equal defense in Monte Carlo test: both teams share identical BLK/STL/REB stats to neutralize DRtg interaction, isolating TS/AST/TOV offensive differential as win rate driver
+- [Phase 01-01]: handleSubmitQuarterCoaching also uses real aggregations: FOUND-03 fix extended beyond handleSimulateRoundInternal to cover live-game quarter simulation path
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:55:33.324Z
-Stopped at: Completed 01-02-PLAN.md (quarter coaching WebSocket events)
+Last session: 2026-03-10T14:01:18.126Z
+Stopped at: Completed 01-01-PLAN.md (simulation correctness bug fix + Monte Carlo regression test)
 Resume file: None
