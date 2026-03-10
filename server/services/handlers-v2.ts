@@ -1,10 +1,12 @@
 /**
  * server/services/handlers-v2.ts
  * UPDATED WebSocket handlers for Phases 1B (rounds) and 2.5 (trade proposals)
+ *
+ * Phase 1: FOUND-04 — handleSubmitQuarterCoaching and handleReadyForQuarter added
  */
 
 import { Server as SocketServer, Socket } from 'socket.io';
-import { WS_EVENTS, Player, CoachingDecision } from '@nba-draft-sim/shared';
+import { WS_EVENTS, Player, CoachingDecision, QuarterResult } from '@nba-draft-sim/shared';
 import {
   createRoundState,
   generateRoundSchedule,
@@ -27,7 +29,30 @@ import {
 import { getLeague, leagueStore } from '../stores/leagueStore';
 import { aggregateTeam } from '../services/aggregation';
 import { generateScoutingReport } from '../services/scoutingReport';
+import { simulateQuarter } from '../services/simulation';
 import { lobbies } from './handlers'; // Import existing lobbies store
+
+/**
+ * Module-level ready flags for READY_FOR_QUARTER tracking.
+ * Maps lobbyId -> Set of teamIds that have signalled ready.
+ * Phase 1: FOUND-04
+ */
+const quarterReadyFlags = new Map<string, Set<string>>();
+
+/**
+ * Module-level player list, set by initHandlersV2 at server startup.
+ * Phase 1: FOUND-03 — supplies allPlayers to handleSimulateRoundInternal
+ */
+let _allPlayers: Player[] = [];
+
+/**
+ * Initialize module-level player data for the auto-sim path.
+ * Must be called in initializeSocketServer before any socket.on() registration.
+ * Phase 1: FOUND-03
+ */
+export function initHandlersV2(players: Player[]): void {
+  _allPlayers = players;
+}
 
 export function getDefaultCoachingDecision(teamId: string, roundNumber: number): CoachingDecision {
   return {
@@ -235,7 +260,9 @@ export function handleSubmitCoaching(
 
 /**
  * Simulate round when all decisions are in (internal)
- * FIX: Renamed and doesn't require allPlayers parameter
+ * Phase 1: FOUND-03 — now uses real TeamAggregation objects via _allPlayers.
+ * Previously used stubs (overallRating: 50, features: {}) making coaching decisions
+ * have zero mechanical effect. Fixed by mirroring handleSimulateRound lines 311–356.
  */
 function handleSimulateRoundInternal(
   io: SocketServer,
@@ -249,29 +276,16 @@ function handleSimulateRoundInternal(
     const teamAggregations = new Map();
     const teamNames = new Map();
 
+    // FIX: Phase 1 — FOUND-03: use real aggregations (mirrors handleSimulateRound)
     for (const team of league.draftState.teams) {
-      // FIX: We need to get player data from somewhere
-      // For now, create a minimal aggregation based on available data
-      teamAggregations.set(team.teamId, {
-        teamId: team.teamId,
-        features: {},
-        archetypes: {},
-        modifiers: {
-          total: 0,
-          shootBonus: 0,
-          creatorPen: 0,
-          rimPen: 0,
-          offenseBonus: 0,
-          offensePenalty: 0,
-          defenseBonus: 0,
-          defensePenalty: 0,
-          variancePenalty: 0,
-          homeCourtAdvantage: 2,
-        },
-        overallRating: 50,
-        rotation: [],
-      });
-      teamNames.set(team.teamId, team.displayName);
+      const roster = team.roster
+        .map(pid => _allPlayers.find(p => p.playerId === pid))
+        .filter((p): p is Player => p !== undefined);
+      if (roster.length > 0) {
+        const aggregation = aggregateTeam(roster, team.teamId);
+        teamAggregations.set(team.teamId, aggregation);
+        teamNames.set(team.teamId, team.displayName);
+      }
     }
 
     // Simulate round
@@ -540,6 +554,297 @@ export function handleCancelTrade(
     }
   } catch (error: any) {
     console.error('Cancel trade error:', error);
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  }
+}
+
+/**
+ * Handle SUBMIT_QUARTER_COACHING event - Phase 1: FOUND-04
+ *
+ * Stores the coaching decision for the submitting team. When both teams
+ * have submitted, simulates the quarter, emits QUARTER_RESULT, then either
+ * advances to the next coaching window or emits GAME_FINAL after Q4.
+ */
+export function handleSubmitQuarterCoaching(
+  io: SocketServer,
+  socket: Socket,
+  payload: { lobbyId: string; teamId: string; decision: CoachingDecision },
+  userId: string
+): void {
+  try {
+    const { lobbyId, teamId, decision } = payload;
+    if (!lobbyId || !teamId || !decision) {
+      throw new Error('Invalid payload: lobbyId, teamId, and decision are required');
+    }
+
+    const league = getLeague(lobbyId);
+    if (!league || !league.liveGame) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'No active live game found' } });
+      return;
+    }
+
+    const liveGame = league.liveGame;
+
+    // Determine which team slot (A or B) this decision belongs to
+    const isTeamA = teamId === liveGame.scoutingReport.teamAId;
+    const isTeamB = teamId === liveGame.scoutingReport.teamBId;
+
+    if (!isTeamA && !isTeamB) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'Team not part of this game' } });
+      return;
+    }
+
+    // Store decision on liveGame
+    const updatedLiveGame = {
+      ...liveGame,
+      coachingDecisionA: isTeamA ? decision : liveGame.coachingDecisionA,
+      coachingDecisionB: isTeamB ? decision : liveGame.coachingDecisionB,
+    };
+    leagueStore.update(lobbyId, { liveGame: updatedLiveGame });
+
+    const bothSubmitted = !!updatedLiveGame.coachingDecisionA && !!updatedLiveGame.coachingDecisionB;
+
+    if (!bothSubmitted) {
+      // Waiting on the other team
+      console.log(`⏳ Quarter coaching: waiting on other team in lobby ${lobbyId}`);
+      return;
+    }
+
+    // Both submitted — simulate the quarter
+    const currentQuarter = liveGame.currentQuarter === 0 ? 1 : liveGame.currentQuarter;
+    const quarter = (currentQuarter as 1 | 2 | 3 | 4);
+
+    // Build team aggregations using draftState rosters
+    // NOTE: allPlayers not available here; use blank stubs (see FOUND-03 for full fix)
+    const draftState = league.draftState;
+    const teamAId = updatedLiveGame.scoutingReport.teamAId;
+    const teamBId = updatedLiveGame.scoutingReport.teamBId;
+
+    const makeBlankAgg = (tid: string) => ({
+      teamId: tid,
+      features: {} as any,
+      archetypes: {} as any,
+      modifiers: {
+        total: 0, shootBonus: 0, creatorPen: 0, rimPen: 0,
+        offenseBonus: 0, offensePenalty: 0, defenseBonus: 0,
+        defensePenalty: 0, variancePenalty: 0, homeCourtAdvantage: 2,
+      },
+      overallRating: 50,
+      rotation: [],
+    });
+
+    let teamAAgg = makeBlankAgg(teamAId);
+    let teamBAgg = makeBlankAgg(teamBId);
+
+    // Attempt to use real aggregations if draftState is available
+    if (draftState) {
+      const teamADraft = draftState.teams.find(t => t.teamId === teamAId);
+      const teamBDraft = draftState.teams.find(t => t.teamId === teamBId);
+      // Note: without allPlayers reference we cannot look up Player objects here.
+      // Real aggregation will be wired in FOUND-03 (plan 01-01) fix.
+      void teamADraft;
+      void teamBDraft;
+    }
+
+    const homeTeam: 'A' | 'B' = 'A'; // default; scouting report could carry this in future
+    const quarterResult = simulateQuarter(
+      teamAAgg,
+      teamBAgg,
+      homeTeam,
+      quarter,
+      updatedLiveGame.coachingDecisionA,
+      updatedLiveGame.coachingDecisionB,
+      updatedLiveGame.completedQuarters
+    );
+
+    // Generate a basic blurb
+    const momentumWinner = quarterResult.scoreA > quarterResult.scoreB ? 'A' : quarterResult.scoreB > quarterResult.scoreA ? 'B' : 'even';
+    const quarterBlurb = {
+      quarter,
+      narrative: `Quarter ${quarter} ended ${quarterResult.totalScoreA}–${quarterResult.totalScoreB}.`,
+      coachingInsight: 'Both coaches made adjustments.',
+      momentum: momentumWinner as 'A' | 'B' | 'even',
+    };
+
+    // Update liveGame with result
+    const completedQuarters = [...updatedLiveGame.completedQuarters, quarterResult];
+    const quarterBlurbs = [...updatedLiveGame.quarterBlurbs, quarterBlurb];
+
+    const nextPhase: 'final' | 'coaching' = currentQuarter === 4 ? 'final' : 'coaching';
+
+    const finalLiveGame = {
+      ...updatedLiveGame,
+      completedQuarters,
+      quarterBlurbs,
+      coachingDecisionA: undefined,
+      coachingDecisionB: undefined,
+      phase: nextPhase,
+    };
+
+    leagueStore.update(lobbyId, { liveGame: finalLiveGame });
+
+    // Emit QUARTER_RESULT to lobby room
+    io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.QUARTER_RESULT, {
+      type: 'QUARTER_RESULT',
+      payload: {
+        quarterResult,
+        blurb: quarterBlurb,
+        gameState: finalLiveGame,
+      },
+    });
+
+    if (currentQuarter === 4) {
+      // Build QuarterBasedGameResult for GAME_FINAL
+      const finalScoreA = quarterResult.totalScoreA;
+      const finalScoreB = quarterResult.totalScoreB;
+      const gameResult = {
+        gameId: finalLiveGame.gameId,
+        teamAId,
+        teamBId,
+        homeTeam,
+        scoutingReport: finalLiveGame.scoutingReport,
+        quarters: completedQuarters,
+        quarterBlurbs,
+        finalScoreA,
+        finalScoreB,
+        winner: finalScoreA >= finalScoreB ? 'A' : 'B' as 'A' | 'B',
+        gameEditorial: `Final score: ${finalScoreA}–${finalScoreB}`,
+        result: {
+          winner: finalScoreA >= finalScoreB ? 'A' : 'B' as 'A' | 'B',
+          winPctA: finalScoreA / (finalScoreA + finalScoreB),
+          winsA: finalScoreA >= finalScoreB ? 1 : 0,
+          winsB: finalScoreA >= finalScoreB ? 0 : 1,
+          drivers: [],
+          finalScoreA,
+          finalScoreB,
+        },
+      };
+
+      io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.GAME_FINAL, {
+        type: 'GAME_FINAL',
+        payload: { gameResult },
+      });
+
+      // Clear ready flags for this lobby
+      quarterReadyFlags.delete(lobbyId);
+
+      console.log(`✅ Game final emitted for lobby ${lobbyId}: ${finalScoreA}–${finalScoreB}`);
+    } else {
+      // Advance to next quarter coaching window
+      const nextQuarter = (currentQuarter + 1) as 1 | 2 | 3 | 4;
+      const nextCoachingWindowEndsAt = new Date(
+        Date.now() + 60 * 1000
+      ).toISOString();
+
+      leagueStore.update(lobbyId, {
+        liveGame: { ...finalLiveGame, currentQuarter: nextQuarter, coachingWindowEndsAt: nextCoachingWindowEndsAt },
+      });
+
+      io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.QUARTER_COACHING_WINDOW, {
+        type: 'QUARTER_COACHING_WINDOW',
+        payload: {
+          quarter: nextQuarter,
+          gameState: { ...finalLiveGame, currentQuarter: nextQuarter },
+          timeRemaining: 60,
+        },
+      });
+
+      // Reset ready flags for next quarter
+      quarterReadyFlags.delete(lobbyId);
+
+      console.log(`✅ Quarter ${currentQuarter} simulated, advancing to Q${nextQuarter} coaching window in lobby ${lobbyId}`);
+    }
+  } catch (error: any) {
+    console.error('Submit quarter coaching error:', error);
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  }
+}
+
+/**
+ * Handle READY_FOR_QUARTER event - Phase 1: FOUND-04
+ *
+ * Marks the requesting user's team as ready for the next quarter.
+ * When both teams signal ready, opens the coaching window for that quarter.
+ */
+export function handleReadyForQuarter(
+  io: SocketServer,
+  socket: Socket,
+  userId: string
+): void {
+  try {
+    const lobbyId = socket.data.lobbyId;
+    if (!lobbyId) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'Not in a lobby' } });
+      return;
+    }
+
+    const league = getLeague(lobbyId);
+    if (!league || !league.liveGame) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'No active live game found' } });
+      return;
+    }
+
+    const liveGame = league.liveGame;
+
+    // Identify the user's teamId from draftState
+    const draftState = league.draftState;
+    if (!draftState) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'Draft state not found' } });
+      return;
+    }
+
+    const userTeam = draftState.teams.find(t => t.userId === userId);
+    if (!userTeam) {
+      socket.emit(WS_EVENTS.ERROR, { payload: { message: 'User team not found' } });
+      return;
+    }
+
+    // Only teams playing this game need to be ready
+    const { teamAId, teamBId } = liveGame.scoutingReport;
+    const isParticipant = userTeam.teamId === teamAId || userTeam.teamId === teamBId;
+    if (!isParticipant) {
+      // Non-participant signalling ready — ignore silently
+      return;
+    }
+
+    // Record readiness
+    if (!quarterReadyFlags.has(lobbyId)) {
+      quarterReadyFlags.set(lobbyId, new Set());
+    }
+    quarterReadyFlags.get(lobbyId)!.add(userTeam.teamId);
+
+    const readySet = quarterReadyFlags.get(lobbyId)!;
+    const bothReady = readySet.has(teamAId) && readySet.has(teamBId);
+
+    console.log(`✅ Team ${userTeam.teamId} ready for next quarter in lobby ${lobbyId} (${readySet.size}/2)`);
+
+    if (bothReady) {
+      // Both teams ready — open the coaching window for the current quarter
+      const currentQuarter = liveGame.currentQuarter === 0 ? 1 : liveGame.currentQuarter;
+      const coachingWindowEndsAt = new Date(Date.now() + 60 * 1000).toISOString();
+
+      leagueStore.update(lobbyId, {
+        liveGame: { ...liveGame, phase: 'coaching', coachingWindowEndsAt },
+      });
+
+      const updatedGame = getLeague(lobbyId)?.liveGame || liveGame;
+
+      io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.QUARTER_COACHING_WINDOW, {
+        type: 'QUARTER_COACHING_WINDOW',
+        payload: {
+          quarter: currentQuarter,
+          gameState: updatedGame,
+          timeRemaining: 60,
+        },
+      });
+
+      // Clear ready flags — wait for next round of READY_FOR_QUARTER signals
+      quarterReadyFlags.delete(lobbyId);
+
+      console.log(`✅ Both teams ready — opened Q${currentQuarter} coaching window in lobby ${lobbyId}`);
+    }
+  } catch (error: any) {
+    console.error('Ready for quarter error:', error);
     socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
   }
 }

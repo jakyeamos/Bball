@@ -31,6 +31,9 @@ import {
   handleProposeTrade,
   handleRespondToTrade,
   handleCancelTrade,
+  initHandlersV2,
+  handleSubmitQuarterCoaching,
+  handleReadyForQuarter,
 } from '../services/handlers-v2';
 import { startDraftTimer, stopDraftTimer, stopAllTimers } from './timerManager';
 import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
@@ -99,6 +102,9 @@ export function initializeSocketServer(
       next(new Error('Authentication failed'));
     }
   });
+
+  // Phase 1: FOUND-03 — provide allPlayers to handlers-v2 auto-sim path
+  initHandlersV2(allPlayers);
 
   // Connection handler
   io.on(WS_EVENTS.CONNECT, (socket: Socket) => {
@@ -247,6 +253,14 @@ export function initializeSocketServer(
 
     socket.on(WS_EVENTS.CANCEL_TRADE_PROPOSAL, (payload: any) => {
       handleCancelTrade(io, socket, payload, userId);
+    });
+
+    // Phase 1: FOUND-04 — wire missing quarter coaching WebSocket events
+    socket.on(WS_EVENTS.SUBMIT_QUARTER_COACHING, (payload: any) => {
+      handleSubmitQuarterCoaching(io, socket, payload, userId);
+    });
+    socket.on(WS_EVENTS.READY_FOR_QUARTER, () => {
+      handleReadyForQuarter(io, socket, userId);
     });
 
     // START_PLAYOFFS
