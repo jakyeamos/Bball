@@ -114,7 +114,7 @@ export function LobbyPage() {
         <Card className="max-w-md w-full" padding="lg">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              NBA Draft Simulator
+              Court Vision
             </h1>
             <p className="text-gray-600">
               Draft your team, coach to victory, win the championship
