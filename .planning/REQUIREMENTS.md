@@ -144,27 +144,75 @@
 
 ## Traceability
 
-*(Populated during roadmap creation)*
+*(Populated during roadmap creation; see .planning/ROADMAP.md)*
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 through FOUND-06 | Phase TBD | Pending |
-| INFRA-01 through INFRA-06 | Phase TBD | Pending |
-| DATA-01 through DATA-05 | Phase TBD | Pending |
-| LEARN-01 through LEARN-08 | Phase TBD | Pending |
-| CMS-01 through CMS-05 | Phase TBD | Pending |
-| DAILY-01 through DAILY-06 | Phase TBD | Pending |
-| DISC-01 through DISC-03 | Phase TBD | Pending |
-| ONBD-01 through ONBD-03 | Phase TBD | Pending |
-| PROF-01 through PROF-03 | Phase TBD | Pending |
-| DRAFT-01 through DRAFT-04 | Phase TBD | Pending |
-| OSIM-01 through OSIM-10 | Phase TBD | Pending |
+| FOUND-01 | Phase 1: Foundation | Pending |
+| FOUND-02 | Phase 1: Foundation | Pending |
+| FOUND-03 | Phase 1: Foundation | Pending |
+| FOUND-04 | Phase 1: Foundation | Pending |
+| FOUND-05 | Phase 1: Foundation | Pending |
+| FOUND-06 | Phase 1: Foundation | Pending |
+| INFRA-01 | Phase 2: Infrastructure | Pending |
+| INFRA-02 | Phase 2: Infrastructure | Pending |
+| INFRA-03 | Phase 2: Infrastructure | Pending |
+| INFRA-04 | Phase 2: Infrastructure | Pending |
+| INFRA-05 | Phase 2: Infrastructure | Pending |
+| INFRA-06 | Phase 2: Infrastructure | Pending |
+| DATA-01 | Phase 2: Infrastructure | Pending |
+| DATA-02 | Phase 2: Infrastructure | Pending |
+| DATA-03 | Phase 2: Infrastructure | Pending |
+| DATA-04 | Phase 2: Infrastructure | Pending |
+| DATA-05 | Phase 2: Infrastructure | Pending |
+| LEARN-01 | Phase 3: Core Learning System | Pending |
+| LEARN-02 | Phase 3: Core Learning System | Pending |
+| LEARN-03 | Phase 3: Core Learning System | Pending |
+| LEARN-04 | Phase 3: Core Learning System | Pending |
+| LEARN-05 | Phase 3: Core Learning System | Pending |
+| LEARN-06 | Phase 3: Core Learning System | Pending |
+| LEARN-07 | Phase 3: Core Learning System | Pending |
+| LEARN-08 | Phase 3: Core Learning System | Pending |
+| CMS-01 | Phase 3: Core Learning System | Pending |
+| CMS-02 | Phase 3: Core Learning System | Pending |
+| CMS-03 | Phase 3: Core Learning System | Pending |
+| CMS-04 | Phase 3: Core Learning System | Pending |
+| CMS-05 | Phase 3: Core Learning System | Pending |
+| DAILY-01 | Phase 3: Core Learning System | Pending |
+| DAILY-02 | Phase 3: Core Learning System | Pending |
+| DAILY-03 | Phase 3: Core Learning System | Pending |
+| DAILY-04 | Phase 3: Core Learning System | Pending |
+| DAILY-05 | Phase 3: Core Learning System | Pending |
+| DAILY-06 | Phase 5: User Profile and Engagement | Pending |
+| DISC-01 | Phase 3: Core Learning System | Pending |
+| DISC-02 | Phase 3: Core Learning System | Pending |
+| DISC-03 | Phase 3: Core Learning System | Pending |
+| ONBD-01 | Phase 3: Core Learning System | Pending |
+| ONBD-02 | Phase 3: Core Learning System | Pending |
+| ONBD-03 | Phase 3: Core Learning System | Pending |
+| PROF-01 | Phase 5: User Profile and Engagement | Pending |
+| PROF-02 | Phase 5: User Profile and Engagement | Pending |
+| PROF-03 | Phase 5: User Profile and Engagement | Pending |
+| DRAFT-01 | Phase 4: Draft Simulator Teaching Layer | Pending |
+| DRAFT-02 | Phase 4: Draft Simulator Teaching Layer | Pending |
+| DRAFT-03 | Phase 4: Draft Simulator Teaching Layer | Pending |
+| DRAFT-04 | Phase 4: Draft Simulator Teaching Layer | Pending |
+| OSIM-01 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-02 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-03 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-04 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-05 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-06 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-07 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-08 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-09 | Phase 6: NBA Offseason Simulator | Pending |
+| OSIM-10 | Phase 6: NBA Offseason Simulator | Pending |
 
 **Coverage:**
 - v1 requirements: 57 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 57 ⚠️
+- Mapped to phases: 57
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation (traceability)*
