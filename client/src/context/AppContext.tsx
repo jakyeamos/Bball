@@ -1,6 +1,6 @@
 /**
  * App Context
- * Global state management for the NBA Draft Simulator
+ * Global state management for Court Vision
  * 
  * FIXED: 
  * - Added TRADE_EXECUTED handler
