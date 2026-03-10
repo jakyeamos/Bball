@@ -158,7 +158,7 @@ Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Bug Fixes | 3/5 | In Progress|  |
+| 1. Foundation and Bug Fixes | 4/5 | In Progress|  |
 | 2. Infrastructure — Supabase and Auth | 0/TBD | Not started | - |
 | 3. Data Layer | 0/TBD | Not started | - |
 | 4. Lesson Components and CMS | 0/TBD | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-01-PLAN.md (simulation correctness bug fix + Monte Carlo regression test)
-last_updated: "2026-03-10T14:01:18.128Z"
+stopped_at: Completed 01-04-PLAN.md (Court Vision homepage and NavBar)
+last_updated: "2026-03-10T14:04:11.682Z"
 last_activity: 2026-03-09 — Roadmap created (10 phases, 59 requirements mapped)
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 20
 ---
 
@@ -53,6 +53,7 @@ Progress: [██░░░░░░░░] 20%
 | Phase 01-foundation-and-bug-fixes P03 | 2 | 2 tasks | 3 files |
 | Phase 01-foundation-and-bug-fixes P02 | 15 | 2 tasks | 5 files |
 | Phase 01-foundation-and-bug-fixes P01 | 9 | 2 tasks | 4 files |
+| Phase 01-foundation-and-bug-fixes P04 | 10 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 01-02]: READY_FOR_QUARTER emits QUARTER_COACHING_WINDOW when both teams ready, not on first signal — symmetric coaching window for all players
 - [Phase 01-01]: Equal defense in Monte Carlo test: both teams share identical BLK/STL/REB stats to neutralize DRtg interaction, isolating TS/AST/TOV offensive differential as win rate driver
 - [Phase 01-01]: handleSubmitQuarterCoaching also uses real aggregations: FOUND-03 fix extended beyond handleSimulateRoundInternal to cover live-game quarter simulation path
+- [Phase 01-04]: NavBar links use react-router-dom Link (not native a) for hash anchors — consistent with SPA routing
+- [Phase 01-04]: No mobile hamburger menu on NavBar — four links fit inline; deferred to future phase
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T14:01:18.126Z
-Stopped at: Completed 01-01-PLAN.md (simulation correctness bug fix + Monte Carlo regression test)
+Last session: 2026-03-10T14:04:11.680Z
+Stopped at: Completed 01-04-PLAN.md (Court Vision homepage and NavBar)
 Resume file: None
