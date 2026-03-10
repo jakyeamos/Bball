@@ -6,7 +6,7 @@
  */
 
 import { Server as SocketServer, Socket } from 'socket.io';
-import { WS_EVENTS, Player, CoachingDecision, QuarterResult } from '@nba-draft-sim/shared';
+import { WS_EVENTS, Player, CoachingDecision, QuarterResult, TeamAggregation } from '@nba-draft-sim/shared';
 import {
   createRoundState,
   generateRoundSchedule,
@@ -615,12 +615,14 @@ export function handleSubmitQuarterCoaching(
     const quarter = (currentQuarter as 1 | 2 | 3 | 4);
 
     // Build team aggregations using draftState rosters
-    // NOTE: allPlayers not available here; use blank stubs (see FOUND-03 for full fix)
+    // FIX: Phase 1 — FOUND-03: use real aggregations via module-level _allPlayers
     const draftState = league.draftState;
     const teamAId = updatedLiveGame.scoutingReport.teamAId;
     const teamBId = updatedLiveGame.scoutingReport.teamBId;
 
-    const makeBlankAgg = (tid: string) => ({
+    // Safe neutral fallback if roster data not yet available (pre-draft or empty lobby)
+    const DEFAULT_RATING = 50;
+    const makeNeutralAgg = (tid: string) => ({
       teamId: tid,
       features: {} as any,
       archetypes: {} as any,
@@ -629,21 +631,35 @@ export function handleSubmitQuarterCoaching(
         offenseBonus: 0, offensePenalty: 0, defenseBonus: 0,
         defensePenalty: 0, variancePenalty: 0, homeCourtAdvantage: 2,
       },
-      overallRating: 50,
+      overallRating: DEFAULT_RATING,
       rotation: [],
     });
 
-    let teamAAgg = makeBlankAgg(teamAId);
-    let teamBAgg = makeBlankAgg(teamBId);
+    let teamAAgg: TeamAggregation = makeNeutralAgg(teamAId) as TeamAggregation;
+    let teamBAgg: TeamAggregation = makeNeutralAgg(teamBId) as TeamAggregation;
 
-    // Attempt to use real aggregations if draftState is available
-    if (draftState) {
+    // Use real aggregations from _allPlayers (available via initHandlersV2)
+    if (draftState && _allPlayers.length > 0) {
       const teamADraft = draftState.teams.find(t => t.teamId === teamAId);
       const teamBDraft = draftState.teams.find(t => t.teamId === teamBId);
-      // Note: without allPlayers reference we cannot look up Player objects here.
-      // Real aggregation will be wired in FOUND-03 (plan 01-01) fix.
-      void teamADraft;
-      void teamBDraft;
+
+      if (teamADraft) {
+        const rosterA = teamADraft.roster
+          .map(pid => _allPlayers.find(p => p.playerId === pid))
+          .filter((p): p is Player => p !== undefined);
+        if (rosterA.length > 0) {
+          teamAAgg = aggregateTeam(rosterA, teamAId);
+        }
+      }
+
+      if (teamBDraft) {
+        const rosterB = teamBDraft.roster
+          .map(pid => _allPlayers.find(p => p.playerId === pid))
+          .filter((p): p is Player => p !== undefined);
+        if (rosterB.length > 0) {
+          teamBAgg = aggregateTeam(rosterB, teamBId);
+        }
+      }
     }
 
     const homeTeam: 'A' | 'B' = 'A'; // default; scouting report could carry this in future
