@@ -749,6 +749,7 @@ export const WS_EVENTS = {
   GAME_SCOUTING_REPORT: 'game:scouting_report',
   QUARTER_COACHING_WINDOW: 'game:quarter_coaching_window',
   SUBMIT_QUARTER_COACHING: 'game:submit_quarter_coaching',
+  READY_FOR_QUARTER: 'game:ready_for_quarter', // Phase 1: FOUND-04 — was missing from WS_EVENTS (existed only in ClientMessage union)
   QUARTER_RESULT: 'game:quarter_result',
   GAME_FINAL: 'game:final',
 
