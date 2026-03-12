@@ -26,11 +26,11 @@ npm run dev
 
 Project planning lives in `.planning/`:
 
-- `PROJECT.md` — vision, requirements, key decisions
-- `ROADMAP.md` — 10-phase build plan
-- `REQUIREMENTS.md` — full v1 requirement list with traceability
-- `research/` — stack, features, architecture, and pitfalls research
-- `codebase/` — existing codebase map
+- `PROJECT.md` ??? vision, requirements, key decisions
+- `ROADMAP.md` ??? 10-phase build plan
+- `REQUIREMENTS.md` ??? full v1 requirement list with traceability
+- `research/` ??? stack, features, architecture, and pitfalls research
+- `codebase/` ??? existing codebase map
 
 ## Current Status
 
@@ -41,4 +41,5 @@ Existing foundation (validated):
 - Snake draft with timer, auto-pick, commissioner controls
 - Session management (cookie-based, no accounts required)
 
-Next up: Phase 1 — Foundation and Bug Fixes (`/gsd:plan-phase 1`)
+Next up: Phase 1 ??? Foundation and Bug Fixes (`/gsd:plan-phase 1`)
+
