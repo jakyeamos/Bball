@@ -12,6 +12,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@nba-draft-sim/shared": "file:../shared",
+    "@supabase/supabase-js": "^2.100.0",
     "framer-motion": "^12.24.10",
     "js-cookie": "^3.0.5",
     "react": "^18.2.0",
