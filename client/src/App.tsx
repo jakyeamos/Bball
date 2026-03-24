@@ -20,6 +20,7 @@ import { DebugOverlay } from './components/DebugOverlay';
 import { GameTimer } from './components/GameTimer';
 import { ScoutingReportPage } from './pages/ScoutingReportPage';
 import { NavBar } from './components/NavBar';
+import { LessonPage } from './pages/LessonPage';
 
 const GameRouting = () => {
   const { league } = useApp();
@@ -78,6 +79,7 @@ function App() {
           <GameRouting />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/lessons/:lessonId" element={<LessonPage />} />
             <Route path="/lobby" element={<LobbyPage />} />
             <Route path="/browse" element={<LobbyBrowserPage />} />
             <Route path="/scouting-report" element={<ScoutingReportPage />} />
