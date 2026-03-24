@@ -9,6 +9,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import process from 'process';
+import dotenv from 'dotenv';
+
+/** Repo-root `.env` (monoreparent: server/scripts → ../..). */
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 /** Canonical schema version written into nba-seed.meta.json */
 export const NBA_SEED_SCHEMA_VERSION = 1;

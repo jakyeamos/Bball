@@ -7,7 +7,7 @@ The build-time seed produces `server/data/nba-seed.json` plus `server/data/nba-s
 ## Prerequisites
 
 - Node 20+
-- `BALLDONTLIE_API_KEY` in the environment for a full refresh (API returns `401` without a key)
+- For a full API refresh: copy [.env.example](../../.env.example) to **`.env`** at the repo root and set `BALLDONTLIE_API_KEY` (the seed script loads that file automatically). The API returns `401` without a key.
 
 ## Commands
 
