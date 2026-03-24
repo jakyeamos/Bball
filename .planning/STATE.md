@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Planning complete for Phases 2-10 (multi-plan inventory authored)
-last_updated: "2026-03-10T21:45:00.000Z"
-last_activity: 2026-03-10 - Multi-plan phase inventory finalized for Phases 2-10
+status: unknown
+stopped_at: Completed 02-01-PLAN.md (Supabase client setup and anonymous auth bootstrap)
+last_updated: "2026-03-24T20:21:58.683Z"
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 33
-  completed_plans: 5
-  percent: 15
+  completed_plans: 15
 ---
 
 # Project State
@@ -21,20 +19,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** The platform only succeeds if users' basketball IQ genuinely improves - education comes before surface polish.
-**Current focus:** Phase 2 - Infrastructure - Supabase and Auth
+**Current focus:** Phase 02 — infrastructure-supabase-and-auth
 
 ## Current Position
 
-Phase: 2 of 10 (Infrastructure - Supabase and Auth)
-Plan: 0 of 3 in current phase
-Status: Ready to execute Phase 2 plans
-Last activity: 2026-03-10 - Multi-plan phase inventory finalized for Phases 2-10
-
-Progress: [##--------] 15%
+Phase: 02 (infrastructure-supabase-and-auth) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 5
 - Average duration: -
 - Total execution time: 0 hours
@@ -46,6 +41,7 @@ Progress: [##--------] 15%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: -
 
@@ -55,6 +51,7 @@ Progress: [##--------] 15%
 | Phase 01-foundation-and-bug-fixes P01 | 9 | 2 tasks | 4 files |
 | Phase 01-foundation-and-bug-fixes P04 | 10 | 2 tasks | 3 files |
 | Phase 01-foundation-and-bug-fixes P05 | 5 | 2 tasks | 0 files |
+| Phase 02-infrastructure-supabase-and-auth P01 | 4 | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -77,6 +74,10 @@ Recent decisions affecting current work:
 - [Phase 01-04]: No mobile hamburger menu on NavBar - four links fit inline; deferred to future phase
 - [Phase 01-05]: Phase 1 human verification gate: all six FOUND-* requirements confirmed by user before advancing to Phase 2/3
 - [Phase 01-05]: Phase 2 (Supabase/Auth) and Phase 3 (Data Layer) confirmed independent and can be parallelized after Phase 1 gate
+- [Phase 02-01]: supabaseClient.ts validates env at import time so missing vars throw immediately on dev startup rather than producing silent 401s
+- [Phase 02-01]: AuthContext bootstrap never blocks app: isLoading resolves to false even on signInAnonymously error, exposing recoverable error state
+- [Phase 02-01]: supabaseAdmin uses lazy init factory so module can be imported before dotenv.config(); validateSupabaseAdminEnv() is the explicit startup gate
+- [Phase 02-01]: validateSupabaseAdminEnv() never logs SUPABASE_SERVICE_ROLE_KEY value — only the variable name appears in error messages to prevent secret leakage
 
 ### Pending Todos
 
@@ -90,8 +91,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T14:10:01.830Z
-Stopped at: Completed 01-05-PLAN.md (Phase 1 verification gate) - Phase 1 complete
+Last session: 2026-03-24T20:21:58.679Z
+Stopped at: Completed 02-01-PLAN.md (Supabase client setup and anonymous auth bootstrap)
 Resume file: None
 
 ## Planning Update (2026-03-10)
@@ -99,6 +100,7 @@ Resume file: None
 Canonical multi-plan inventory authored for Phases 2-10 using source-of-truth format.
 
 Plan counts by phase:
+
 - Phase 2: 3 plans (02-01 through 02-03)
 - Phase 3: 3 plans (03-01 through 03-03)
 - Phase 4: 5 plans (04-01 through 04-05)
@@ -110,4 +112,3 @@ Plan counts by phase:
 - Phase 10: 4 plans (10-01 through 10-04)
 
 Next execution target: Phase 2 Plan 01 (02-01-PLAN.md).
-

@@ -58,8 +58,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md - Supabase bootstrap + anonymous auth (INFRA-01, INFRA-02)
-- [ ] 02-02-PLAN.md - Schema + RLS + account upgrade continuity (INFRA-03, INFRA-04)
+- [x] 02-01-PLAN.md - Supabase bootstrap + anonymous auth (INFRA-01, INFRA-02)
+- [x] 02-02-PLAN.md - Schema + RLS + account upgrade continuity (INFRA-03, INFRA-04)
 - [ ] 02-03-PLAN.md - Shared Zod contracts + TanStack Query migration (INFRA-05, INFRA-06)
 
 ### Phase 3: Data Layer
@@ -205,7 +205,7 @@ Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Bug Fixes | 5/5 | Complete   | 2026-03-10 |
-| 2. Infrastructure - Supabase and Auth | 0/3 | Not started | - |
+| 2. Infrastructure - Supabase and Auth | 2/3 | In Progress|  |
 | 3. Data Layer | 0/3 | Not started | - |
 | 4. Lesson Components and CMS | 0/5 | Not started | - |
 | 5. Progress, Onboarding, and Content Discovery | 0/3 | Not started | - |
