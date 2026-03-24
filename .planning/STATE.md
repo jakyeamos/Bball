@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-02-PLAN.md (Schema migrations, RLS policies, account-upgrade route)
-last_updated: "2026-03-24T20:28:21.785Z"
+stopped_at: Completed 02-03-PLAN.md (Shared schemas, TanStack Query, learning-layer hooks)
+last_updated: "2026-03-24T20:37:28.728Z"
 progress:
   total_phases: 10
   completed_phases: 2
   total_plans: 33
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -53,6 +53,7 @@ Plan: 3 of 3
 | Phase 01-foundation-and-bug-fixes P05 | 5 | 2 tasks | 0 files |
 | Phase 02-infrastructure-supabase-and-auth P01 | 4 | 3 tasks | 8 files |
 | Phase 02-infrastructure-supabase-and-auth P02 | 4 | 3 tasks | 6 files |
+| Phase 02 P03 | 6 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 02-02]: users.id mirrors auth.users.id for zero-join RLS; auth.uid() = user_id pattern consistent on all user-scoped tables
 - [Phase 02-02]: Anonymous upgrade uses auth.updateUser() not re-signup — Supabase preserves user.id so zero SQL row migration required
 - [Phase 02-02]: validateAccountUpgradePayload in shared/schemas.ts uses manual type guards to keep shared package dependency-free
+- [Phase 02-03]: safeParse API on manual validators (not Zod) — preserves shared package dependency-free constraint while matching the plan's specified safeParse call-site pattern
+- [Phase 02-03]: In-memory progressStore in progress route — Supabase upsert deferred to Phase 4 when auth JWT extraction is wired
 
 ### Pending Todos
 
@@ -95,8 +98,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T20:28:21.782Z
-Stopped at: Completed 02-02-PLAN.md (Schema migrations, RLS policies, account-upgrade route)
+Last session: 2026-03-24T20:37:28.725Z
+Stopped at: Completed 02-03-PLAN.md (Shared schemas, TanStack Query, learning-layer hooks)
 Resume file: None
 
 ## Planning Update (2026-03-10)
