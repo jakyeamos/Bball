@@ -15,6 +15,7 @@ import { createLeagueSnapshot } from './services/snapshot';
 import lobbiesRouter from './routes/lobbies';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
+import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
 
 // Load environment variables
 dotenv.config();
@@ -127,12 +128,16 @@ async function startServer() {
   try {
     console.log('🚀 Starting NBA Draft Simulator server...');
 
-    // Step 1: Fetch player data
+    // Step 1: Validate Supabase env vars (fails fast with descriptive error when missing)
+    validateSupabaseAdminEnv();
+    console.log('[supabaseAdmin] Supabase admin client environment validated');
+
+    // Step 2: Fetch player data
     console.log('📊 Fetching player data...');
     const rawPlayers = await fetchPlayerData('2025-26');
     console.log(`✅ Loaded ${rawPlayers.length} players`);
 
-    // Step 2: Create league snapshot
+    // Step 3: Create league snapshot
     console.log('📸 Creating league snapshot...');
     leagueSnapshot = await createLeagueSnapshot(rawPlayers, '2025-26');
     console.log(`✅ Snapshot created with ${leagueSnapshot.players.length} players`);
@@ -145,22 +150,22 @@ async function startServer() {
       }
     }
 
-    // Step 3: Create HTTP server
+    // Step 4: Create HTTP server
     const httpServer = http.createServer(app);
 
-    // Step 4: Initialize Socket.io
+    // Step 5: Initialize Socket.io
     console.log('🔌 Initializing WebSocket server...');
     initializeSocketServer(httpServer, leagueSnapshot.players);
     console.log('✅ WebSocket server ready');
 
-    // Step 5: Start listening
+    // Step 6: Start listening
     httpServer.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌐 Client URL: ${CLIENT_URL}`);
       console.log(`📡 WebSocket ready for connections`);
     });
 
-    // Step 6: Start periodic cleanup
+    // Step 7: Start periodic cleanup
     setInterval(() => {
       const deleted = cleanupOldSessions();
       if (deleted > 0) {
