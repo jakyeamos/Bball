@@ -13,6 +13,8 @@ import { initializeSocketServer } from './managers/socketManager';
 import { fetchPlayerData } from '../scripts/scraper';
 import { createLeagueSnapshot } from './services/snapshot';
 import lobbiesRouter from './routes/lobbies';
+import lessonsRouter from './src/routes/lessons';
+import progressRouter from './src/routes/progress';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
@@ -61,6 +63,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api', lobbiesRouter);
+app.use('/api/lessons', lessonsRouter);
+app.use('/api/progress', progressRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

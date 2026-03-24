@@ -1,13 +1,24 @@
 /**
  * shared/schemas.ts
  * Phase 02-02: Validated payload schemas for Court Vision API routes.
+ * Phase 02-03: Added lesson, progress, and offseason payload schemas.
  *
  * Uses manual type-guard validation rather than a runtime library (zod/yup) to
  * keep the shared package dependency-free. Server-side route handlers call these
  * validators and return 400 errors on failure before any database work begins.
  *
+ * Each schema object exposes a `safeParse(body)` method that returns a
+ * ValidationResult, compatible with the middleware in
+ * server/src/middleware/validateBody.ts.
+ *
  * Schemas exported here:
- *   AccountUpgradePayload  — body for POST /internal/account-upgrade
+ *   AccountUpgradePayload        — body for POST /internal/account-upgrade
+ *   LessonRecord                 — server-returned lesson shape
+ *   ProgressWritePayload         — body for POST /api/progress
+ *   OffseasonRunPayload          — body for POST /api/offseason/runs
+ *   lessonRecordSchema           — safeParse adapter for LessonRecord
+ *   progressWriteSchema          — safeParse adapter for ProgressWritePayload
+ *   offseasonRunSchema           — safeParse adapter for OffseasonRunPayload
  *   validateAccountUpgradePayload() — returns parsed payload or ValidationError
  */
 
@@ -47,6 +58,233 @@ export interface AccountUpgradePayload {
   email: string;
   password: string;
 }
+
+// ---------------------------------------------------------------------------
+// Schema helper — wraps a validator function with a safeParse entry-point
+// so callers can use the same pattern as zod: schema.safeParse(body)
+// ---------------------------------------------------------------------------
+
+export interface Schema<T> {
+  safeParse(body: unknown): ValidationResult<T>;
+}
+
+function makeSchema<T>(
+  validator: (body: unknown) => ValidationResult<T>
+): Schema<T> {
+  return { safeParse: validator };
+}
+
+// ---------------------------------------------------------------------------
+// LessonRecord — shape returned by GET /api/lessons and GET /api/lessons/:id
+// ---------------------------------------------------------------------------
+//
+// This is primarily a response type but having a shared validator lets the
+// client sanity-check API responses before rendering them.
+//
+// Fields:
+//   id           — UUID primary key
+//   title        — display title for the lesson card
+//   role_lens    — one of "player" | "coach" | "gm"
+//   difficulty   — one of "beginner" | "intermediate" | "advanced"
+//   description  — short plaintext summary shown on the card
+//   content_url  — optional YouTube embed URL or external link
+// ---------------------------------------------------------------------------
+
+export type RoleLens = 'player' | 'coach' | 'gm';
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface LessonRecord {
+  id: string;
+  title: string;
+  role_lens: RoleLens;
+  difficulty: Difficulty;
+  description: string;
+  content_url?: string;
+}
+
+const ROLE_LENS_VALUES: RoleLens[] = ['player', 'coach', 'gm'];
+const DIFFICULTY_VALUES: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
+
+function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { valid: false, errors: ['Lesson body must be a JSON object.'] };
+  }
+
+  const raw = body as Record<string, unknown>;
+  const errors: string[] = [];
+
+  if (typeof raw.id !== 'string' || raw.id.trim() === '') {
+    errors.push('id is required and must be a non-empty string.');
+  }
+
+  if (typeof raw.title !== 'string' || raw.title.trim() === '') {
+    errors.push('title is required and must be a non-empty string.');
+  }
+
+  if (!ROLE_LENS_VALUES.includes(raw.role_lens as RoleLens)) {
+    errors.push(`role_lens must be one of: ${ROLE_LENS_VALUES.join(', ')}.`);
+  }
+
+  if (!DIFFICULTY_VALUES.includes(raw.difficulty as Difficulty)) {
+    errors.push(`difficulty must be one of: ${DIFFICULTY_VALUES.join(', ')}.`);
+  }
+
+  if (typeof raw.description !== 'string' || raw.description.trim() === '') {
+    errors.push('description is required and must be a non-empty string.');
+  }
+
+  if (raw.content_url !== undefined && typeof raw.content_url !== 'string') {
+    errors.push('content_url must be a string when provided.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      id: (raw.id as string).trim(),
+      title: (raw.title as string).trim(),
+      role_lens: raw.role_lens as RoleLens,
+      difficulty: raw.difficulty as Difficulty,
+      description: (raw.description as string).trim(),
+      ...(raw.content_url !== undefined
+        ? { content_url: (raw.content_url as string).trim() }
+        : {}),
+    },
+  };
+}
+
+/** Validates a lesson record body or response payload. */
+export const lessonRecordSchema: Schema<LessonRecord> =
+  makeSchema(validateLessonRecord);
+
+// ---------------------------------------------------------------------------
+// ProgressWritePayload — body for POST /api/progress
+// ---------------------------------------------------------------------------
+//
+// Written when a user completes or partially completes a lesson.
+//
+// Fields:
+//   lesson_id    — UUID of the lesson being tracked
+//   completed    — whether the lesson was fully completed
+//   score        — optional 0–100 accuracy score
+// ---------------------------------------------------------------------------
+
+export interface ProgressWritePayload {
+  lesson_id: string;
+  completed: boolean;
+  score?: number;
+}
+
+const UUID_REGEX_PROGRESS =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateProgressWritePayload(
+  body: unknown
+): ValidationResult<ProgressWritePayload> {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { valid: false, errors: ['Progress body must be a JSON object.'] };
+  }
+
+  const raw = body as Record<string, unknown>;
+  const errors: string[] = [];
+
+  if (typeof raw.lesson_id !== 'string' || raw.lesson_id.trim() === '') {
+    errors.push('lesson_id is required and must be a non-empty string.');
+  } else if (!UUID_REGEX_PROGRESS.test(raw.lesson_id)) {
+    errors.push('lesson_id must be a valid UUID.');
+  }
+
+  if (typeof raw.completed !== 'boolean') {
+    errors.push('completed is required and must be a boolean.');
+  }
+
+  if (raw.score !== undefined) {
+    if (typeof raw.score !== 'number' || !Number.isFinite(raw.score)) {
+      errors.push('score must be a finite number when provided.');
+    } else if (raw.score < 0 || raw.score > 100) {
+      errors.push('score must be between 0 and 100.');
+    }
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      lesson_id: (raw.lesson_id as string).trim(),
+      completed: raw.completed as boolean,
+      ...(raw.score !== undefined ? { score: raw.score as number } : {}),
+    },
+  };
+}
+
+/** Validates a progress write request body. */
+export const progressWriteSchema: Schema<ProgressWritePayload> =
+  makeSchema(validateProgressWritePayload);
+
+// ---------------------------------------------------------------------------
+// OffseasonRunPayload — body for POST /api/offseason/runs
+// ---------------------------------------------------------------------------
+//
+// Creates a new offseason simulation run for a user.
+//
+// Fields:
+//   team_id      — short team identifier (e.g. "LAL", "BOS")
+//   season_year  — four-digit year the offseason is for (2020–2099)
+// ---------------------------------------------------------------------------
+
+export interface OffseasonRunPayload {
+  team_id: string;
+  season_year: number;
+}
+
+function validateOffseasonRunPayload(
+  body: unknown
+): ValidationResult<OffseasonRunPayload> {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return { valid: false, errors: ['Offseason run body must be a JSON object.'] };
+  }
+
+  const raw = body as Record<string, unknown>;
+  const errors: string[] = [];
+
+  if (typeof raw.team_id !== 'string' || raw.team_id.trim() === '') {
+    errors.push('team_id is required and must be a non-empty string.');
+  } else if (raw.team_id.trim().length > 10) {
+    errors.push('team_id must be 10 characters or fewer.');
+  }
+
+  if (typeof raw.season_year !== 'number' || !Number.isInteger(raw.season_year)) {
+    errors.push('season_year is required and must be an integer.');
+  } else if (raw.season_year < 2020 || raw.season_year > 2099) {
+    errors.push('season_year must be between 2020 and 2099.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      team_id: (raw.team_id as string).trim().toUpperCase(),
+      season_year: raw.season_year as number,
+    },
+  };
+}
+
+/** Validates an offseason run creation payload. */
+export const offseasonRunSchema: Schema<OffseasonRunPayload> =
+  makeSchema(validateOffseasonRunPayload);
+
+// ---------------------------------------------------------------------------
+// AccountUpgradePayload (unchanged from Phase 02-02)
+// ---------------------------------------------------------------------------
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_REGEX =
