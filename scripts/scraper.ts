@@ -2,16 +2,22 @@
  * NBA Stats Scraper
  * Fetches player stats using nba_api Python library via child process
  * Falls back to sample data if scraping fails
- * 
- * UPDATED for Phase 2: Added missing fields (FTM, THREE_PM, TWO_PA, TWO_PM, TWO_P_PCT)
  */
-import { PlayerRawStats } from '@nba-draft-sim/shared';
+
+import type { PlayerRawStats, NbaScraperSeasonStatsRow } from '@nba-draft-sim/shared';
+import { nbaSeasonJsonRowToPlayerRawStats } from '../server/services/playerFeaturesMapping';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
 const execAsync = promisify(exec);
+
+function serverPackageRoot(): string {
+  return __dirname.includes(`${path.sep}dist${path.sep}scripts`)
+    ? path.join(__dirname, '..', '..')
+    : path.join(__dirname, '..', 'server');
+}
 
 export interface NBAPlayerData {
   playerId: string;
@@ -37,75 +43,46 @@ export interface NBAPlayerData {
   PF: number;
 }
 
-/**
- * Convert NBA API data to PlayerRawStats format
- */
-function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
-  const fgPct = data.FGA > 0 ? data.FGM / data.FGA : 0;
-  const ftPct = data.FTA > 0 ? data.FTM / data.FTA : 0;
-  const threePct = data.THREE_PA > 0 ? data.THREE_PM / data.THREE_PA : 0;
-  
-  // ✅ PHASE 2: Calculate two-point stats
-  const twoPA = data.FGA - data.THREE_PA;
-  const twoPM = data.FGM - data.THREE_PM;
+/** sample_players.json shape → mapping-ready row (mirrors Python-derived fields). */
+function legacyNbaPlayerDataToSeasonRow(d: NBAPlayerData): NbaScraperSeasonStatsRow {
+  const twoPA = d.FGA - d.THREE_PA;
+  const twoPM = d.FGM - d.THREE_PM;
   const twoPct = twoPA > 0 ? twoPM / twoPA : 0;
-
-  // Calculate True Shooting %: PTS / (2 * (FGA + 0.44 * FTA))
-  const tsPct = data.FGA + 0.44 * data.FTA > 0
-    ? data.PTS / (2 * (data.FGA + 0.44 * data.FTA))
-    : 0;
+  const threePct = d.THREE_PA > 0 ? d.THREE_PM / d.THREE_PA : 0;
+  const ftPct = d.FTA > 0 ? d.FTM / d.FTA : 0;
+  const tsDenom = d.FGA + 0.44 * d.FTA;
+  const tsPct = tsDenom > 0 ? d.PTS / (2 * tsDenom) : 0;
+  const possEst = Math.max(1, 0.96 * (d.FGA + 0.44 * d.FTA + d.TOV - d.ORB));
 
   return {
-    playerId: data.playerId,
-    name: data.name,
-    team: data.team,
-    position: data.position || 'G', // Default to guard if missing
-    
-    // Displayed stats
-    PTS: data.PTS,
-    REB: data.REB,
-    AST: data.AST,
-    STL: data.STL,
-    BLK: data.BLK,
-    TS_PCT: tsPct,
-    
-    // Core stats
-    MP_TOTAL: data.MIN,
-    GP: data.GP,
-    FGA: data.FGA,
-    FTA: data.FTA,
-    FTM: data.FTM,           // ✅ PHASE 2: Added
-    TOV: data.TOV,
-    THREE_PA: data.THREE_PA,
-    THREE_PM: data.THREE_PM, // ✅ PHASE 2: Added
-    THREE_P_PCT: threePct,
-    FT_PCT: ftPct,
-    ORB: data.ORB,
-    DRB: data.DRB,
-    PF: data.PF,
-    
-    // ✅ PHASE 2: Two-point stats (calculated)
+    playerId: d.playerId,
+    name: d.name,
+    team: d.team,
+    position: d.position || 'PG',
+    GP: d.GP,
+    MIN: d.MIN,
+    PTS: d.PTS,
+    REB: d.REB,
+    AST: d.AST,
+    STL: d.STL,
+    BLK: d.BLK,
+    FGA: d.FGA,
+    FGM: d.FGM,
+    FTA: d.FTA,
+    FTM: d.FTM,
+    THREE_PA: d.THREE_PA,
+    THREE_PM: d.THREE_PM,
+    TOV: d.TOV,
+    ORB: d.ORB,
+    DRB: d.DRB,
+    PF: d.PF,
     TWO_PA: twoPA,
     TWO_PM: twoPM,
     TWO_P_PCT: twoPct,
-    
-    // Optional advanced stats (not available from basic scraper)
-    POTENTIAL_AST: undefined,
-    SECONDARY_AST: undefined,
-    PASSES_MADE: undefined,
-    PASSES_RECEIVED: undefined,
-    DEFLECTIONS: undefined,
-    CHARGES_DRAWN: undefined,
-    CONTESTED_SHOTS: undefined,
-    POSSESSIONS: undefined,
-    TOUCHES: undefined,
-    SCREEN_ASSISTS: undefined,
-    USG_PROXY: undefined,
-    AST_PCT_PROXY: undefined,
-    TOV_PCT_PROXY: undefined,
-    OREB_PCT: undefined,
-    DREB_PCT: undefined,
-    REB_PCT: undefined,
+    THREE_P_PCT: threePct,
+    FT_PCT: ftPct,
+    TS_PCT: tsPct,
+    POSS_EST: possEst,
   };
 }
 
@@ -114,9 +91,9 @@ function convertToRawStats(data: NBAPlayerData): PlayerRawStats {
  */
 export async function scrapeNBAStats(season: string = '2025-26'): Promise<PlayerRawStats[]> {
   try {
-    const pythonScriptPath = path.join(__dirname, '../../scripts/scrape_nba_stats.py');
-    
-    // Check if Python script exists
+    const pkgRoot = serverPackageRoot();
+    const pythonScriptPath = path.join(pkgRoot, 'scripts', 'scrape_nba_stats.py');
+
     try {
       await fs.access(pythonScriptPath);
     } catch {
@@ -124,12 +101,11 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
       return loadFallbackData();
     }
 
-    // Execute Python script
     const { stdout } = await execAsync(`python3 ${pythonScriptPath} --season ${season}`);
-    const data: NBAPlayerData[] = JSON.parse(stdout);
-    
+    const data = JSON.parse(stdout) as NbaScraperSeasonStatsRow[];
+
     console.log(`Scraped ${data.length} players for season ${season}`);
-    return data.map(convertToRawStats);
+    return data.map((row) => nbaSeasonJsonRowToPlayerRawStats(row));
   } catch (error) {
     console.error('Error scraping NBA stats:', error);
     console.warn('Falling back to sample data');
@@ -141,13 +117,15 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
  * Load fallback sample data (for development/testing)
  */
 async function loadFallbackData(): Promise<PlayerRawStats[]> {
-  const fallbackPath = path.join(__dirname, '../../../data/sample_players.json');
-  
+  const fallbackPath = path.join(serverPackageRoot(), '..', 'data', 'sample_players.json');
+
   try {
-    const data = await fs.readFile(fallbackPath, 'utf-8');
-    const players: NBAPlayerData[] = JSON.parse(data);
+    const raw = await fs.readFile(fallbackPath, 'utf-8');
+    const players: NBAPlayerData[] = JSON.parse(raw);
     console.log(`Loaded ${players.length} players from fallback data`);
-    return players.map(convertToRawStats);
+    return players.map((p) =>
+      nbaSeasonJsonRowToPlayerRawStats(legacyNbaPlayerDataToSeasonRow(p)),
+    );
   } catch (error) {
     console.error('Error loading fallback data:', error);
     throw new Error('Failed to load player data');

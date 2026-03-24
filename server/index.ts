@@ -18,6 +18,7 @@ import progressRouter from './src/routes/progress';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
+import { getNbaDataCache } from './services/dataCache';
 
 // Load environment variables
 dotenv.config();
@@ -135,6 +136,11 @@ async function startServer() {
     // Step 1: Validate Supabase env vars (fails fast with descriptive error when missing)
     validateSupabaseAdminEnv();
     console.log('[supabaseAdmin] Supabase admin client environment validated');
+
+    // Warm NBA identity cache from disk (non-blocking; no BallDontLie on request path)
+    void getNbaDataCache()
+      .warmUp()
+      .catch((err) => console.error('[dataCache] warm-up failed', err));
 
     // Step 2: Fetch player data
     console.log('📊 Fetching player data...');

@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "coaches": [
+    {
+      "teamAbbreviation": "ATL",
+      "headCoachName": "Quin Snyder",
+      "pace": "medium",
+      "scheme": "motion-spread",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "BOS",
+      "headCoachName": "Joe Mazzulla",
+      "pace": "fast",
+      "scheme": "five-out",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "BKN",
+      "headCoachName": "Jordi Fernández",
+      "pace": "medium",
+      "scheme": "spread-pnr",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "CHA",
+      "headCoachName": "Charles Lee",
+      "pace": "medium",
+      "scheme": "motion",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "CHI",
+      "headCoachName": "Billy Donovan",
+      "pace": "slow",
+      "scheme": "hi-pnr",
+      "youthDevelopment": false,
+      "driverFriendly": false,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "CLE",
+      "headCoachName": "Kenny Atkinson",
+      "pace": "medium",
+      "scheme": "motion-three",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "DAL",
+      "headCoachName": "Jason Kidd",
+      "pace": "slow",
+      "scheme": "spread-pnr",
+      "youthDevelopment": false,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "DEN",
+      "headCoachName": "Michael Malone",
+      "pace": "slow",
+      "scheme": "two-man-game",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "DET",
+      "headCoachName": "J.B. Bickerstaff",
+      "pace": "medium",
+      "scheme": "physical-pnr",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": false
+    },
+    {
+      "teamAbbreviation": "GSW",
+      "headCoachName": "Steve Kerr",
+      "pace": "fast",
+      "scheme": "motion-cut",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "HOU",
+      "headCoachName": "Ime Udoka",
+      "pace": "fast",
+      "scheme": "switch-heavy",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "IND",
+      "headCoachName": "Rick Carlisle",
+      "pace": "medium",
+      "scheme": "pace-space",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "LAC",
+      "headCoachName": "Tyronn Lue",
+      "pace": "medium",
+      "scheme": "star-isolation",
+      "youthDevelopment": false,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "LAL",
+      "headCoachName": "JJ Redick",
+      "pace": "fast",
+      "scheme": "spread-drive",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "MEM",
+      "headCoachName": "Taylor Jenkins",
+      "pace": "medium",
+      "scheme": "grit-pnr",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": false
+    },
+    {
+      "teamAbbreviation": "MIA",
+      "headCoachName": "Erik Spoelstra",
+      "pace": "slow",
+      "scheme": "movement-skills",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "MIL",
+      "headCoachName": "Doc Rivers",
+      "pace": "slow",
+      "scheme": "drop-pnr",
+      "youthDevelopment": false,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "MIN",
+      "headCoachName": "Chris Finch",
+      "pace": "medium",
+      "scheme": "motion-three",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "NOP",
+      "headCoachName": "Willie Green",
+      "pace": "fast",
+      "scheme": "transition-pnr",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "NYK",
+      "headCoachName": "Tom Thibodeau",
+      "pace": "slow",
+      "scheme": "villanova-shell",
+      "youthDevelopment": false,
+      "driverFriendly": false,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "OKC",
+      "headCoachName": "Mark Daigneault",
+      "pace": "fast",
+      "scheme": "drive-kick",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "ORL",
+      "headCoachName": "Jamahl Mosley",
+      "pace": "medium",
+      "scheme": "length-switch",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": false
+    },
+    {
+      "teamAbbreviation": "PHI",
+      "headCoachName": "Nick Nurse",
+      "pace": "medium",
+      "scheme": "switch-five",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "PHX",
+      "headCoachName": "Mike Budenholzer",
+      "pace": "medium",
+      "scheme": "five-out-pnr",
+      "youthDevelopment": false,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "POR",
+      "headCoachName": "Chauncey Billups",
+      "pace": "fast",
+      "scheme": "young-tempo",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "SAC",
+      "headCoachName": "Mike Brown",
+      "pace": "fast",
+      "scheme": "pace-attack",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "SAS",
+      "headCoachName": "Gregg Popovich",
+      "pace": "medium",
+      "scheme": "motion-pass",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "TOR",
+      "headCoachName": "Darko Rajaković",
+      "pace": "fast",
+      "scheme": "pass-cut",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "UTA",
+      "headCoachName": "Will Hardy",
+      "pace": "medium",
+      "scheme": "develop-shoot",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": true
+    },
+    {
+      "teamAbbreviation": "WAS",
+      "headCoachName": "Brian Keefe",
+      "pace": "fast",
+      "scheme": "youth-tempo",
+      "youthDevelopment": true,
+      "driverFriendly": true,
+      "shooterFriendly": false
+    }
+  ]
+}

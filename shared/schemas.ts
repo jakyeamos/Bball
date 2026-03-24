@@ -339,3 +339,82 @@ export function validateAccountUpgradePayload(
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// NbaScraperSeasonStatsRow — Python league-dash JSON → PlayerRawStats bridge
+// ---------------------------------------------------------------------------
+
+/** Season totals row emitted by server/scripts/scrape_nba_stats.py (nba_api). */
+export interface NbaScraperSeasonStatsRow {
+  playerId: string;
+  name: string;
+  team: string;
+  position: string;
+  GP: number;
+  MIN: number;
+  PTS: number;
+  REB: number;
+  AST: number;
+  STL: number;
+  BLK: number;
+  FGA: number;
+  FGM: number;
+  FTA: number;
+  FTM: number;
+  THREE_PA: number;
+  THREE_PM: number;
+  TOV: number;
+  ORB: number;
+  DRB: number;
+  PF: number;
+  TWO_PA: number;
+  TWO_PM: number;
+  TWO_P_PCT: number;
+  THREE_P_PCT: number;
+  FT_PCT: number;
+  TS_PCT: number;
+  POSS_EST: number;
+  USG_PCT?: number | null;
+  OREB_PCT?: number | null;
+  DREB_PCT?: number | null;
+  REB_PCT?: number | null;
+  AST_PCT?: number | null;
+  TOV_PCT?: number | null;
+}
+
+/** Keys on PlayerFeatures that must be populated by the mapping pipeline (excludes index signature noise). */
+export const PLAYER_FEATURES_CORE_KEYS = [
+  'R',
+  'TS',
+  'THREE_P_PCT',
+  'THREE_PA_RATE',
+  'TWO_P_PCT',
+  'TWO_PA_RATE',
+  'FT_PCT',
+  'FT_RATE',
+  'EFG',
+  'THREE_P_VOLUME',
+  'AST',
+  'AST_RATE',
+  'POTENTIAL_AST',
+  'AST_TO_PASS_RATE',
+  'SECONDARY_AST',
+  'PAR',
+  'TOV',
+  'TOV_RATE',
+  'A2T',
+  'STL',
+  'BLK',
+  'STL_RATE',
+  'BLK_RATE',
+  'DEFLECTIONS',
+  'PF_RATE',
+  'CHARGES_DRAWN',
+  'OREB_PCT',
+  'DREB_PCT',
+  'REB_TOTAL',
+  'USG',
+  'VI',
+] as const;
+
+export type PlayerFeaturesCoreKey = (typeof PLAYER_FEATURES_CORE_KEYS)[number];

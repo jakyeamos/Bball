@@ -25,11 +25,11 @@
 
 ### Data Layer
 
-- [ ] **DATA-01**: BallDontLie build-time seed script fetches all active NBA teams and players and writes to `server/data/nba-seed.json` ??? never called at runtime
-- [ ] **DATA-02**: BallDontLie disk cache is implemented with a background warm-up on server start and a seasonal refresh mechanism
-- [ ] **DATA-03**: Static coach profiles seed file (`server/data/coaches-seed.json`) contains real NBA head coaches with tendency tags: pace, scheme, youth development flag, driver-friendly flag, shooter-friendly flag
-- [ ] **DATA-04**: Existing Python `nba_api` scraper is retained and extended to pull player season averages and map them to the existing 30-feature `PlayerFeatures` schema
-- [ ] **DATA-05**: BallDontLie player stats fields are mapped to the existing 30-feature `PlayerFeatures` schema with explicit field-by-field documentation
+- [x] **DATA-01**: BallDontLie build-time seed script fetches all active NBA teams and players and writes to `server/data/nba-seed.json` — never called at runtime
+- [x] **DATA-02**: BallDontLie disk cache is implemented with a background warm-up on server start and a seasonal refresh mechanism
+- [x] **DATA-03**: Static coach profiles seed file (`server/data/coaches-seed.json`) contains real NBA head coaches with tendency tags: pace, scheme, youth development flag, driver-friendly flag, shooter-friendly flag
+- [x] **DATA-04**: Existing Python `nba_api` scraper is retained and extended to pull player season averages and map them to the existing 30-feature `PlayerFeatures` schema
+- [x] **DATA-05**: nba_api / scrape pipeline stats fields are mapped to the existing 30-feature `PlayerFeatures` schema with explicit field-by-field documentation (`docs/data/player-feature-mapping.md`)
 
 ### Core Learning System
 
@@ -160,11 +160,11 @@
 | INFRA-04 | Phase 2: Infrastructure ??? Supabase and Auth | Pending |
 | INFRA-05 | Phase 2: Infrastructure ??? Supabase and Auth | Pending |
 | INFRA-06 | Phase 2: Infrastructure ??? Supabase and Auth | Pending |
-| DATA-01 | Phase 3: Data Layer | Pending |
-| DATA-02 | Phase 3: Data Layer | Pending |
-| DATA-03 | Phase 3: Data Layer | Pending |
-| DATA-04 | Phase 3: Data Layer | Pending |
-| DATA-05 | Phase 3: Data Layer | Pending |
+| DATA-01 | Phase 3: Data Layer | Complete |
+| DATA-02 | Phase 3: Data Layer | Complete |
+| DATA-03 | Phase 3: Data Layer | Complete |
+| DATA-04 | Phase 3: Data Layer | Complete |
+| DATA-05 | Phase 3: Data Layer | Complete |
 | LEARN-01 | Phase 4: Lesson Components and CMS | Pending |
 | LEARN-02 | Phase 4: Lesson Components and CMS | Pending |
 | LEARN-03 | Phase 4: Lesson Components and CMS | Pending |

@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation and Bug Fixes** - Fix simulation correctness bug, wire coaching WebSocket events, rebrand to Court Vision, establish homepage with all three role lenses (completed 2026-03-10)
 - [x] **Phase 2: Infrastructure - Supabase and Auth** - Initialize Supabase project, establish anonymous auth, define full DB schema with RLS, add TanStack Query and Zod validation (completed 2026-03-24)
-- [ ] **Phase 3: Data Layer** - BallDontLie build-time seed, disk cache, coach profiles seed, player stats to PlayerFeatures mapping
+- [x] **Phase 3: Data Layer** - BallDontLie build-time seed, disk cache, coach profiles seed, player stats to PlayerFeatures mapping (completed 2026-03-24)
 - [ ] **Phase 4: Lesson Components and CMS** - All lesson UI interaction types plus admin authoring tools; 15-20 seed lessons authored and published
 - [ ] **Phase 5: Progress, Onboarding, and Content Discovery** - Lesson completion persistence, onboarding flow, searchable content library, discussion board
 - [ ] **Phase 6: Daily Engagement** - Rotating daily challenge, streak tracking, badge milestones, shareable result cards, friend leaderboard
@@ -74,9 +74,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md - Build-time BallDontLie seed artifacts (DATA-01)
-- [ ] 03-02-PLAN.md - Disk cache warm/refresh + coach seed (DATA-02, DATA-03)
-- [ ] 03-03-PLAN.md - nba_api extension + 30-field mapping docs/tests (DATA-04, DATA-05)
+- [x] 03-01-PLAN.md - Build-time BallDontLie seed artifacts (DATA-01)
+- [x] 03-02-PLAN.md - Disk cache warm/refresh + coach seed (DATA-02, DATA-03)
+- [x] 03-03-PLAN.md - nba_api extension + 30-field mapping docs/tests (DATA-04, DATA-05)
 
 ### Phase 4: Lesson Components and CMS
 **Goal**: All lesson interaction types render correctly and handle failure states gracefully; admins can create, edit, and publish lessons through a protected CMS; at least 15 seed lessons are live at launch distributed across all three role lenses
@@ -206,7 +206,7 @@ Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each 
 |-------|----------------|--------|-----------|
 | 1. Foundation and Bug Fixes | 5/5 | Complete   | 2026-03-10 |
 | 2. Infrastructure - Supabase and Auth | 4/3 | Complete   | 2026-03-24 |
-| 3. Data Layer | 0/3 | Not started | - |
+| 3. Data Layer | 3/3 | Complete   | 2026-03-24 |
 | 4. Lesson Components and CMS | 0/5 | Not started | - |
 | 5. Progress, Onboarding, and Content Discovery | 0/3 | Not started | - |
 | 6. Daily Engagement | 0/3 | Not started | - |
