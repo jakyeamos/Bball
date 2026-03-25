@@ -46,6 +46,8 @@ completed: 2026-03-24
 
 **Python emits mapping-ready rates; TypeScript bridges into PlayerRawStats then reuses buildPlayerFeatures with locked-down tests.**
 
+**Living docs:** [`docs/data/nba-stats-stack-delta-todos.md`](../../../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../../../docs/data/external-data-sources.md).
+
 ## Accomplishments
 
 - Extended `leaguedashplayerstats` export with TS%, split stats, poss estimate, and optional NBA rate columns.

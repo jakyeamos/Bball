@@ -6,6 +6,8 @@ Court Vision expands an existing NBA Draft Simulator monorepo into a full basket
 
 **Core value:** The platform only succeeds if users' basketball IQ genuinely improves - education comes before surface polish.
 
+**Cross-cutting — stat utilization:** Player evaluation across the **draft sim** (retroactive updates), **Phase 7** teaching layer, **Phases 9–10** offseason, and any lesson or profile UI that cites stats must follow **DATA-06** and the living docs [`docs/data/player-feature-mapping.md`](../docs/data/player-feature-mapping.md), [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md). The legacy sim must not drift from the shared pipeline when new metrics land. **Phase 6** daily challenges follow the same rule **when** they include stat-backed NBA content (optional per challenge design).
+
 ## Phases
 
 **Phase Numbering:**
@@ -16,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation and Bug Fixes** - Fix simulation correctness bug, wire coaching WebSocket events, rebrand to Court Vision, establish homepage with all three role lenses (completed 2026-03-10)
 - [x] **Phase 2: Infrastructure - Supabase and Auth** - Initialize Supabase project, establish anonymous auth, define full DB schema with RLS, add TanStack Query and Zod validation (completed 2026-03-24)
-- [x] **Phase 3: Data Layer** - BallDontLie build-time seed, disk cache, coach profiles seed, player stats to PlayerFeatures mapping (completed 2026-03-24)
+- [x] **Phase 3: Data Layer** - `nba_api` build-time identity + scrape, disk cache, coach profiles seed, player stats to PlayerFeatures mapping (completed 2026-03-24). See [data stack delta todos](../docs/data/nba-stats-stack-delta-todos.md) and [external / free sources](../docs/data/external-data-sources.md).
 - [ ] **Phase 4: Lesson Components and CMS** - All lesson UI interaction types plus admin authoring tools; 15-20 seed lessons authored and published
 - [ ] **Phase 5: Progress, Onboarding, and Content Discovery** - Lesson completion persistence, onboarding flow, searchable content library, discussion board
 - [ ] **Phase 6: Daily Engagement** - Rotating daily challenge, streak tracking, badge milestones, shareable result cards, friend leaderboard
@@ -63,23 +65,25 @@ Plans:
 - [x] 02-03-PLAN.md - Shared Zod contracts + TanStack Query migration (INFRA-05, INFRA-06)
 
 ### Phase 3: Data Layer
-**Goal**: Real NBA player, team, and coach data is available to the server at startup via disk cache and static seed files; player stats are mapped to the existing 30-feature PlayerFeatures schema with explicit field-by-field documentation; the BallDontLie API is never called on the request path
+**Goal**: Real NBA player, team, and coach data is available to the server at startup via disk cache and static seed files; player stats are mapped to the existing 30-feature PlayerFeatures schema with explicit field-by-field documentation; **stats.nba.com / `nba_api`** traffic for identity and scrape runs **only** at build time or via operator refresh — never on the HTTP request path
 **Depends on**: Phase 1
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05
 **Success Criteria** (what must be TRUE):
-  1. Running the build-time seed script produces `server/data/nba-seed.json` containing all active NBA teams and players; subsequent server restarts never trigger BallDontLie API calls on the request path
-  2. Server startup logs show the BallDontLie disk cache warming up in the background; any server endpoint that needs player or team data responds from cache with no outbound API call
+  1. Running the build-time seed script produces `server/data/nba-seed.json` containing all active NBA teams and players; subsequent server restarts never trigger live NBA stats HTTP calls on the request path for identity
+  2. Server startup logs show the NBA identity disk cache warming up from JSON; any server endpoint that needs player or team identity responds from cache with no outbound stats API call
   3. `server/data/coaches-seed.json` contains real NBA head coaches, each with at minimum: pace preference, scheme tag, youth development flag, driver-friendly flag, and shooter-friendly flag
-  4. Every one of the 30 fields in the existing PlayerFeatures schema has an explicit documented mapping from a BallDontLie or nba_api source field - no silent null-fill or unmapped gaps
+  4. Every one of the 30 fields in the existing PlayerFeatures schema has an explicit documented mapping from an `nba_api` source field or documented derivation — no silent null-fill or unmapped gaps
 **Plans**: 3 plans
 
 Plans:
-- [x] 03-01-PLAN.md - Build-time BallDontLie seed artifacts (DATA-01)
+- [x] 03-01-PLAN.md - Build-time NBA identity seed artifacts (DATA-01)
 - [x] 03-02-PLAN.md - Disk cache warm/refresh + coach seed (DATA-02, DATA-03)
 - [x] 03-03-PLAN.md - nba_api extension + 30-field mapping docs/tests (DATA-04, DATA-05)
 
+**Follow-on sourcing (not phase-3 gates):** Future stats depth and third-party / public non-stats sources are tracked in [docs/data/nba-stats-stack-delta-todos.md](../docs/data/nba-stats-stack-delta-todos.md) (on-stack deltas) and [docs/data/external-data-sources.md](../docs/data/external-data-sources.md) (impact models, cap pages, injuries, G League / NCAA, etc.).
+
 ### Phase 4: Lesson Components and CMS
-**Goal**: All lesson interaction types render correctly and handle failure states gracefully; admins can create, edit, and publish lessons through a protected CMS; at least 15 seed lessons are live at launch distributed across all three role lenses
+**Goal**: All lesson interaction types render correctly and handle failure states gracefully; admins can create, edit, and publish lessons through a protected CMS; at least 15 seed lessons are live at launch distributed across all three role lenses. **Optional:** lesson copy that references NBA player evaluation should align terminology with `PlayerFeatures` / [`player-feature-mapping.md`](../docs/data/player-feature-mapping.md) so Phase 7 draft teaching stays consistent (DATA-06).
 **Depends on**: Phase 2, Phase 3
 **Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04, LEARN-05, LEARN-06, LEARN-07, CMS-01, CMS-02, CMS-03, CMS-04, CMS-05
 **Success Criteria** (what must be TRUE):
@@ -116,7 +120,7 @@ Plans:
 - [ ] 05-03-PLAN.md - Library search/filter, recaps, discussion + SEO-Max gate (DISC-01, DISC-02, DISC-03)
 
 ### Phase 6: Daily Engagement
-**Goal**: Every day a single challenge is surfaced on the homepage; completing it records the user's streak, awards badges at defined milestones, generates a shareable result card, and contributes to a friend leaderboard scoped to that day only
+**Goal**: Every day a single challenge is surfaced on the homepage; completing it records the user's streak, awards badges at defined milestones, generates a shareable result card, and contributes to a friend leaderboard scoped to that day only. **Optional (DATA-06):** If a CMS-authored challenge uses **NBA statistics** in the prompt, answer key, or recap, terminology and numbers align with the shared `PlayerFeatures` / mapping docs — not one-off stat jargon.
 **Depends on**: Phase 5
 **Requirements**: DAILY-01, DAILY-02, DAILY-03, DAILY-04, DAILY-05, DAILY-06
 **Success Criteria** (what must be TRUE):
@@ -133,14 +137,15 @@ Plans:
 - [ ] 06-03-PLAN.md - Friend completion leaderboard + phase verification gate (DAILY-06)
 
 ### Phase 7: Draft Simulator Teaching Layer
-**Goal**: The existing draft simulator feels native to Court Vision's visual identity; contextual teaching appears during drafting tied to lesson taxonomy tags; a post-draft analysis page closes the educational loop; the simulator is positioned as a capstone accessible from all three IQ tracks after a completion threshold
+**Goal**: The existing draft simulator feels native to Court Vision's visual identity; contextual teaching appears during drafting tied to lesson taxonomy tags; a post-draft analysis page closes the educational loop; the simulator is positioned as a capstone accessible from all three IQ tracks after a completion threshold. **DATA-06:** Draft UI, scouting, and post-draft analysis **use** the shared `PlayerFeatures` / `nba_api` pipeline (not a forked stat model); when the data layer adds metrics, **draft sim is updated** in the same release or a blocking gap is tracked.
 **Depends on**: Phase 5
-**Requirements**: DRAFT-01, DRAFT-02, DRAFT-03, DRAFT-04
+**Requirements**: DRAFT-01, DRAFT-02, DRAFT-03, DRAFT-04, DATA-06
 **Success Criteria** (what must be TRUE):
   1. Loading the draft simulator shows Court Vision color tokens, typography, and component patterns consistent with the rest of the platform - no legacy draft-sim visual identity visible
   2. During a draft, a contextual tip or strategy note appears at key moments - each tip is tagged to a lesson in the content library so users can follow up
   3. After completing a draft, the post-draft analysis page identifies at least one decision the user got right and one they missed, framed in terms of Player IQ, Coach IQ, and GM IQ rubrics
   4. A user who has completed a threshold number of lessons sees the draft simulator surfaced as a prominent recommended next activity in all three IQ track pages
+  5. Player-facing stats and explanations in the draft flow (including cards, tooltips, or post-draft recap) are **consistent** with `PlayerFeatures` and [`player-feature-mapping.md`](../docs/data/player-feature-mapping.md); any **new** pipeline metrics from [`nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md) are either wired into the draft sim or explicitly deferred with a tracked issue
 **Plans**: 2 plans
 
 Plans:
@@ -148,7 +153,7 @@ Plans:
 - [ ] 07-02-PLAN.md - Post-draft analysis + capstone surfacing + release gate (DRAFT-03, DRAFT-04)
 
 ### Phase 8: User Profile and Account Upgrade
-**Goal**: Users have a skill profile showing learning progress broken down by role lens with actionable next-lesson suggestions; anonymous users can optionally create an email/password account and keep all their data; account holders can log in from any device and see their progress
+**Goal**: Users have a skill profile showing learning progress broken down by role lens with actionable next-lesson suggestions; anonymous users can optionally create an email/password account and keep all their data; account holders can log in from any device and see their progress. If the profile surfaces **basketball stat literacy** or compares user understanding to lesson topics, align copy with the same `PlayerFeatures` vocabulary as DATA-06 (avoid inventing new metric names).
 **Depends on**: Phase 6, Phase 7
 **Requirements**: PROF-01, PROF-02, PROF-03
 **Success Criteria** (what must be TRUE):
@@ -162,7 +167,7 @@ Plans:
 - [ ] 08-02-PLAN.md - Account upgrade continuity + cross-device sync gate (PROF-02, PROF-03)
 
 ### Phase 9: Offseason Simulator - Foundation
-**Goal**: The save/resume infrastructure is in place with schema versioning from day one; the Team Context phase works end-to-end with real NBA data; the simulator is reachable from the GM IQ lens
+**Goal**: The save/resume infrastructure is in place with schema versioning from day one; the Team Context phase works end-to-end with real NBA data; the simulator is reachable from the GM IQ lens. **DATA-06** continues to apply: roster and identity data come from the same disk seeds as the rest of the app.
 **Depends on**: Phase 8
 **Requirements**: OSIM-01, OSIM-08, OSIM-09, OSIM-10
 **Success Criteria** (what must be TRUE):
@@ -178,7 +183,7 @@ Plans:
 - [ ] 09-03-PLAN.md - GM lens entry + advanced module recommendation gate (OSIM-10)
 
 ### Phase 10: Offseason Simulator - Decision Loop
-**Goal**: All six remaining phases of the offseason decision loop are playable end-to-end - coaching hire, draft board, trade exploration, draft night, free agency, and final recap - each with teaching overlays, explanation-first grades, and coach-tendency integration throughout
+**Goal**: All six remaining phases of the offseason decision loop are playable end-to-end - coaching hire, draft board, trade exploration, draft night, free agency, and final recap - each with teaching overlays, explanation-first grades, and coach-tendency integration throughout. **DATA-06:** Scouting, trades, and draft night **reuse** the same player evaluation contracts as the draft sim; optional cap or external data follows [`external-data-sources.md`](../docs/data/external-data-sources.md).
 **Depends on**: Phase 9
 **Requirements**: OSIM-02, OSIM-03, OSIM-04, OSIM-05, OSIM-06, OSIM-07
 **Success Criteria** (what must be TRUE):

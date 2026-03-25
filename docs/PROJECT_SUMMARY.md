@@ -18,7 +18,7 @@ Court Vision is a free, web-first basketball IQ training platform. Users learn t
 | Persistence | Supabase (auth + database + storage) — migration in progress |
 | Real-time | Socket.io (draft sim and live coaching) |
 | Video | YouTube IFrame API embeds (v1) |
-| Data | BallDontLie API (build-time seed) + curated static coach profiles |
+| Data | Python `nba_api` / stats.nba.com (build-time identity seed + draft stats) + curated static coach profiles |
 
 ---
 
@@ -55,7 +55,7 @@ The simulation engine already exists and is production-ready:
 |-------|------|-----------------|
 | 1 | Foundation and Bug Fixes | Fix coaching sim bug, wire quarter coaching events, rebrand to Court Vision, homepage with three lenses |
 | 2 | Infrastructure — Supabase and Auth | Anonymous Supabase identity, DB schema + RLS, TanStack Query, Zod validation |
-| 3 | Data Layer | BallDontLie build-time seed, coach profiles, 30-feature PlayerFeatures mapping |
+| 3 | Data Layer | nba_api build-time identity seed, coach profiles, 30-feature PlayerFeatures mapping |
 | 4 | Lesson Components and CMS | Lesson cards, film breakdowns, pause-and-predict, scenario sims, admin CMS, 15+ seed lessons |
 | 5 | Progress, Onboarding, and Content Discovery | Completion persistence, onboarding flow, searchable library, discussion board |
 | 6 | Daily Engagement | Daily challenge, streaks, badges, shareable cards, friend leaderboard |
@@ -110,7 +110,7 @@ The flagship feature: a full 7-phase offseason loop for one real NBA team.
 |----------|-----------|
 | Extend existing monorepo | PRD: "extend the monorepo, not rebuild the stack" |
 | YouTube embeds for film (v1) | Start simple, optimize once usage patterns are known |
-| BallDontLie + static seed for real names | Free tier, documented, no enterprise cost in v1 |
+| nba_api + static seed for real names | Same pipeline as draft sim; build-time only; no paid sports data API in v1 |
 | Single difficulty in offseason sim | Realism and ambiguity create challenge more honestly than tiers |
 | Anonymous-first progress tracking | Keep the learning wedge broad, reduce friction |
 | Fix coaching sim bug in Phase 1 | Silent correctness bug undermines the core learning value |

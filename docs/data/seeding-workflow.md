@@ -1,27 +1,33 @@
-# NBA data seeding (BallDontLie)
+# NBA data seeding (nba_api / stats.nba.com)
 
 ## What this is
 
-The build-time seed produces `server/data/nba-seed.json` plus `server/data/nba-seed.meta.json`. Runtime Express handlers **must not** call BallDontLie; they read these artifacts via `server/services/dataCache.ts`.
+The build-time seed produces `server/data/nba-seed.json` plus `server/data/nba-seed.meta.json`. Runtime Express handlers **must not** call stats.nba.com; they read these artifacts via `server/services/dataCache.ts`.
+
+Identity data uses the same **Python `nba_api`** stack as the draft sim (`server/scripts/scrape_nba_stats.py`): `npm run seed:nba` shells to `server/scripts/seed_nba_identity.py`.
 
 ## Prerequisites
 
 - Node 20+
-- For a full API refresh: copy [.env.example](../../.env.example) to **`.env`** at the repo root and set `BALLDONTLIE_API_KEY` (the seed script loads that file automatically). The API returns `401` without a key.
+- Python 3 with `nba-api` installed:
+  ```bash
+  python3 -m pip install -r server/scripts/requirements-nba.txt
+  ```
+- Optional: set `PYTHON` in `.env` to a venv interpreter that has `nba-api` (see [.env.example](../../.env.example)).
 
 ## Commands
 
 | Command | Purpose |
 |--------|---------|
-| `npm run seed:nba --workspace=server` | Fetch teams + roster-attached players from BallDontLie, write artifacts |
-| `npm run seed:nba:offline --workspace=server` | Deterministic **teams-only** stub (30 clubs, zero players) — CI / no API key |
+| `npm run seed:nba --workspace=server` | Fetch teams + roster players via nba_api, write artifacts (optional `--season 2025-26`) |
+| `npm run seed:nba:offline --workspace=server` | Deterministic **teams-only** stub (30 clubs, NBA stats team IDs, zero players) — CI / no Python |
 
 ## Expected output
 
-- `nba-seed.json` — `{ schemaVersion, teams[], players[] }` sorted by id
-- `nba-seed.meta.json` — ISO timestamp, source (`balldontlie_api` or `offline_static`), counts, endpoints, normalization drop stats
+- `nba-seed.json` — `{ schemaVersion, teams[], players[] }` sorted by id (schema v2: NBA stats team/player IDs)
+- `nba-seed.meta.json` — ISO timestamp, source (`nba_stats_api` or `offline_static`), counts, endpoints, normalization drop stats
 
-After a real API run you should see roughly 30 teams and hundreds of players (roster-attached only). Validate in meta that counts look sane.
+After a live run you should see roughly 30 teams and hundreds of players (current rosters). Validate in meta that counts look sane.
 
 ## Refresh cadence
 
@@ -29,8 +35,12 @@ After a real API run you should see roughly 30 teams and hundreds of players (ro
 - **Offseason:** after draft and post-free-agency once rosters stabilize
 - **Emergency rollback:** restore the previous `nba-seed.json` / `nba-seed.meta.json` pair from git and restart the server
 
-## DATA-01 boundary (no runtime BallDontLie)
+## DATA-01 boundary (no runtime stats.nba.com)
 
-1. All BallDontLie HTTP traffic happens **only** inside `npm run seed:nba` (this script).
-2. Request-path code loads `nba-seed.json` from disk via the data cache — **no** `fetch` to `api.balldontlie.io`.
+1. All stats.nba.com traffic for identity happens **only** inside `npm run seed:nba` (Python + TS driver).
+2. Request-path code loads `nba-seed.json` from disk via the data cache — **no** live fetches to NBA endpoints.
 3. If artifacts are missing, fix deployment / run the seed — do not add live API calls to request handlers.
+
+## Planning references
+
+Linked from **Phase 3** in [`.planning/ROADMAP.md`](../../.planning/ROADMAP.md) and **Data Layer** in [`.planning/REQUIREMENTS.md`](../../.planning/REQUIREMENTS.md). For follow-on work: [nba-stats-stack-delta-todos.md](./nba-stats-stack-delta-todos.md), [external-data-sources.md](./external-data-sources.md).

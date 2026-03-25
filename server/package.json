@@ -6,9 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server/index.js",
-    "seed:nba": "tsx scripts/seedBallDontLie.ts",
-    "seed:nba:offline": "tsx scripts/seedBallDontLie.ts --offline",
-    "refresh:nba-cache": "tsx scripts/refreshBallDontLieCache.ts",
+    "seed:nba": "tsx scripts/seedNbaIdentity.ts",
+    "seed:nba:offline": "tsx scripts/seedNbaIdentity.ts --offline",
+    "refresh:nba-cache": "tsx scripts/refreshNbaIdentityCache.ts",
     "test": "vitest run",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit"

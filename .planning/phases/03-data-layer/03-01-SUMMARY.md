@@ -2,24 +2,26 @@
 phase: 03-data-layer
 plan: "01"
 subsystem: api
-tags: [balldontlie, seed, json]
+tags: [nba_api, seed, json, identity]
 
 requires:
   - phase: 01-foundation-and-bug-fixes
     provides: Stable app baseline before data layer
 provides:
-  - Build-time BallDontLie seed script with offline stub
+  - Build-time NBA identity seed (`nba_api` Python + TS driver) with offline stub
   - server/data/nba-seed.json + nba-seed.meta.json contract
   - Operator runbook for DATA-01 boundary
 affects: [04-lesson-components-and-cms, offseason-simulator]
 
 tech-stack:
   added: []
-  patterns: ["No BallDontLie on request path — disk artifacts only"]
+  patterns: ["No stats.nba.com on request path — disk artifacts only"]
 
 key-files:
   created:
-    - server/scripts/seedBallDontLie.ts
+    - server/scripts/seedNbaIdentity.ts
+    - server/scripts/seed_nba_identity.py
+    - server/scripts/requirements-nba.txt
     - server/data/nba-seed.json
     - server/data/nba-seed.meta.json
     - docs/data/seeding-workflow.md
@@ -27,11 +29,12 @@ key-files:
     - server/package.json
 
 key-decisions:
-  - "401 without API key: ship --offline teams-only stub for deterministic CI and empty player list until a real key run."
-  - "Roster filter: only players with non-null team_id enter nba-seed.json from API."
+  - "Offline mode: 30 teams with NBA stats TeamIDs, zero players — deterministic CI without Python/network."
+  - "Live mode: Python `nba-api` required; TS shells `seed_nba_identity.py`, writes JSON + meta."
+  - "Roster-attached players only; dedupe by PLAYER_ID when merging team rosters."
 
 patterns-established:
-  - "Seed module guard: main runs only when argv references seedBallDontLie.ts (npm/tsx safe)."
+  - "Seed module guard: main runs only when argv references seedNbaIdentity.ts (npm/tsx safe)."
 
 requirements-completed: [DATA-01]
 
@@ -41,25 +44,29 @@ completed: 2026-03-24
 
 # Phase 03 data-layer — Plan 01 summary
 
-**Build-time BallDontLie seed produces versioned JSON + metadata; runtime stays off the API.**
+**Build-time `nba_api` identity seed produces versioned JSON + metadata; runtime stays off live NBA stats HTTP.**
+
+**Follow-on:** [`docs/data/nba-stats-stack-delta-todos.md`](../../../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../../../docs/data/external-data-sources.md).
 
 ## Performance
 
 - **Tasks:** 3
-- **Files modified:** 5
+- **Files modified:** 5+
 
 ## Accomplishments
 
-- Seeded deterministic offline artifact (30 teams) when no API credentials are available.
+- Seeded deterministic offline artifact (30 teams, NBA stats ids) when not running full Python seed.
 - Documented operator workflow and DATA-01 no-runtime-call rule.
 
 ## Files created/modified
 
-- `server/scripts/seedBallDontLie.ts` — fetch or `--offline` writer.
+- `server/scripts/seedNbaIdentity.ts` — TS driver; `--offline` or exec Python.
+- `server/scripts/seed_nba_identity.py` — `nba_api` league dash + per-team roster fetch.
+- `server/scripts/requirements-nba.txt` — pins `nba-api`.
 - `server/data/nba-seed.json` — teams/players snapshot.
 - `server/data/nba-seed.meta.json` — traceability metadata.
 - `docs/data/seeding-workflow.md` — commands and rollback.
-- `server/package.json` — `seed:nba`, `seed:nba:offline`.
+- `server/package.json` — `seed:nba`, `seed:nba:offline`, `refresh:nba-cache`.
 
 ## Self-Check: PASSED
 

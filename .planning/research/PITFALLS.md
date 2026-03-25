@@ -37,28 +37,26 @@ Mistakes that cause rewrites, data loss, or fundamental correctness failures.
 
 ---
 
-### Pitfall 2: BallDontLie Free Tier Is Far More Limited Than It Appears
+### Pitfall 2: NBA Stats Pipeline (nba_api) Is Unofficial and Must Stay Off the Request Path
 
-**What goes wrong:** The free tier of BallDontLie NBA API provides only 5 requests per minute and grants access to only three endpoints: Teams, Players, and Games. Player statistics, season averages, advanced stats, box scores, and contracts all require paid tiers ($9.99–$39.99/month). Coach/coaching staff data does not appear as an endpoint at any tier. The PROJECT.md describes using BallDontLie for "real names for teams, players, and coaches" — the coach piece has no API support.
+**What goes wrong:** Team/player identity and stats come from the Python `nba_api` library, which wraps **stats.nba.com** (unofficial, no SLA). Endpoints can change; rate limiting or blocking can occur if you hammer the API. Coach/coaching staff structured data is not available from this stats layer in a product-ready form — coaching tendencies for the offseason sim must remain hand-curated (`coaches-seed.json`).
 
-**Why it happens:** The API's free tier is a lead magnet, not a data product. The actual useful data (stats, advanced metrics, rosters with contracts) sits behind paid tiers.
+**Why it happens:** The NBA does not publish a supported public API for third-party apps. `nba_api` tracks the site; breakage is an operational risk, not a vendor ticket.
 
 **Consequences:**
-- 5 req/min means paginating even a single full player roster (400+ players) takes ~5 minutes if done naively — blocking server startup if not cached
-- Coach profiles (tendencies, history, style) must be hand-curated static data — there is no public NBA coaching API at any tier that provides structured coaching tendency data
-- If you display a coach's "offensive philosophy" or "defensive system" as a real attribute in the offseason sim, that data must be authored by hand and maintained manually
-- Any stat-model refresh (DARKO, LEBRON, PEST) requires fetching raw stats, which requires paid tier or a separate pipeline
+- Identity and roster refresh (`npm run seed:nba`) takes tens of seconds and ~31 HTTP calls (league dash + one roster per team); it must never run on the HTTP request path
+- Coach profiles (tendencies, history, style) must be hand-curated static data — there is no substitute in the stats API for editorial coaching attributes
+- If you display a coach's "offensive philosophy" as a real attribute, that data must be authored and version-controlled, not scraped
 
 **Warning signs:**
-- Developer tests with a small paginated call and doesn't notice the 5 req/min ceiling until running a full data load
-- The word "coaching market phase" appears in the feature list without a plan for where coaching tendency data originates
+- Someone adds a "quick fix" live fetch to stats.nba.com from an Express handler
+- Seed script failures in CI because Python lacks `nba-api` — use `seed:nba:offline` for deterministic teams-only artifacts
 
 **Prevention:**
-- Audit the API tier comparison table at nba.balldontlie.io before committing to data architecture
-- Cache all BallDontLie responses aggressively: one fetch per season per entity type, write to disk as JSON, serve from cache for all subsequent requests — never call live in request path
-- Treat coach profile data as editorial content, not API data: create a structured `coaches.json` seed file authored by hand with tendency tags (pace, defensive intensity, 3pt emphasis, etc.) and version-control it
-- Use BallDontLie free tier only for player identity (name, position, team) — rely on the existing Python/nba_api pipeline for stats until that pipeline is retired or replaced
-- Budget the $9.99 ALL-STAR tier if live game stats are needed; document the decision in PROJECT.md
+- Keep DATA-01: all identity HTTP traffic only inside `npm run seed:nba` (Python `seed_nba_identity.py` + TS driver); runtime reads `server/data/nba-seed.json` from disk
+- Pin `nba-api` in `server/scripts/requirements-nba.txt` and document `pip install`
+- Treat coach profile data as editorial content: structured `coaches-seed.json` with tendency tags (pace, scheme, flags) and version-control it
+- Throttle roster fetches in the seed script; commit working `nba-seed.json` so production serves last-known-good if the upstream changes
 
 **Phase that must address it:** Phase before Offseason Simulator build (data layer design phase) — specifically during the "modular data layer" milestone
 
@@ -272,7 +270,7 @@ Mistakes that cause rewrites, data loss, or fundamental correctness failures.
 | Supabase infrastructure | RLS blocks anonymous users silently | Test three user states before any progress feature ships (Pitfall 5) |
 | Supabase infrastructure | Dual-authority state between in-memory and Supabase | Define authority boundary in writing before first Supabase write (Pitfall 3) |
 | Data layer / offseason sim | Coach data assumed to exist in API | Treat coach profiles as editorial content, not API data (Pitfall 2) |
-| Data layer / offseason sim | BallDontLie rate limits block startup data load | Cache all API responses to disk; never call live in request path (Pitfall 2) |
+| Data layer / offseason sim | stats.nba.com / nba_api breakage or rate limits | Commit `nba-seed.json`; never call live on request path (Pitfall 2) |
 | Offseason sim save/resume | Schema evolution breaks saved runs | Add `schemaVersion` before first save is written (Pitfall 7) |
 | Core learning system | YouTube clips removed or embed-disabled | Build health-check script and three-state lesson component before first lesson ships (Pitfall 4) |
 | Core learning system | Pause-and-predict broken on mobile | Use `seekTo` + `pauseVideo` in `onReady`, not autoplay-then-pause (Pitfall 4) |
@@ -284,7 +282,7 @@ Mistakes that cause rewrites, data loss, or fundamental correctness failures.
 
 ## Sources
 
-- BallDontLie NBA API tier documentation: [nba.balldontlie.io](https://nba.balldontlie.io/) — HIGH confidence (official, directly verified)
+- nba_api (stats.nba.com wrapper): [github.com/swar/nba_api](https://github.com/swar/nba_api) — MEDIUM confidence (community-maintained; unofficial API)
 - Supabase RLS documentation: [supabase.com/docs/guides/database/postgres/row-level-security](https://supabase.com/docs/guides/database/postgres/row-level-security) — HIGH confidence (official)
 - YouTube IFrame Player API reference: [developers.google.com/youtube/iframe_api_reference](https://developers.google.com/youtube/iframe_api_reference) — HIGH confidence (official)
 - Supabase anonymous sign-in reference: [supabase.com/docs/reference/javascript/auth-signinanonymously](https://supabase.com/docs/reference/javascript/auth-signinanonymously) — HIGH confidence (official)

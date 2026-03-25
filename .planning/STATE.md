@@ -60,6 +60,9 @@ Plan: Not started
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+**Data sourcing docs:** [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md) (on-stack deltas), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md) (impact models, cap, injuries, PBP, etc.) — linked from `ROADMAP.md` Phase 3, `REQUIREMENTS.md` Data Layer, `PROJECT.md`.
+- **DATA-06:** Draft sim, Phase 7, Phases 9–10 share one stat pipeline; draft sim gets **retroactive** wiring when metrics change ([`REQUIREMENTS.md`](REQUIREMENTS.md)).
+
 Recent decisions affecting current work:
 
 - [Roadmap]: FOUND-03 (coaching bug fix) is Phase 1, item 1 - building any teaching layer on a broken sim is a correctness trap

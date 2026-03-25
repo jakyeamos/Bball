@@ -137,7 +137,7 @@ async function startServer() {
     validateSupabaseAdminEnv();
     console.log('[supabaseAdmin] Supabase admin client environment validated');
 
-    // Warm NBA identity cache from disk (non-blocking; no BallDontLie on request path)
+    // Warm NBA identity cache from disk (non-blocking; no stats.nba.com on request path)
     void getNbaDataCache()
       .warmUp()
       .catch((err) => console.error('[dataCache] warm-up failed', err));

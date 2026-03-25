@@ -1,7 +1,7 @@
 /**
- * Operator entrypoint: regenerate BallDontLie JSON artifacts from the seed script.
+ * Operator entrypoint: regenerate NBA identity JSON artifacts from the seed script.
  * Idempotent — overwrites server/data/nba-seed.json and nba-seed.meta.json in place.
- * Does not call BallDontLie on the HTTP request path.
+ * Does not call stats.nba.com on the HTTP request path.
  *
  * Usage (from repo root): `npm run refresh:nba-cache --workspace=server`
  */
@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 import * as path from 'path';
 
 function isDirectInvocation(): boolean {
-  return process.argv.some((arg) => /refreshBallDontLieCache\.(ts|js|cjs|mjs)$/.test(arg));
+  return process.argv.some((arg) => /refreshNbaIdentityCache\.(ts|js|cjs|mjs)$/.test(arg));
 }
 
 async function run(): Promise<void> {

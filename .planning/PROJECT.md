@@ -79,8 +79,9 @@ The platform only succeeds if users' basketball IQ genuinely improves ??? educat
 - [ ] Post-offseason recap: team grade, fit report, developmental environment, projected direction
 - [ ] Save and resume support for offseason runs (runs span multiple sessions ??? required, not nice-to-have)
 - [ ] Modular data layer for real rosters, picks, coach profiles, and stat-model refreshes
-- [ ] Real names for teams, players, and coaches via BallDontLie API + curated static seed file
-- [ ] Evergreen stat base: structured to absorb DARKO, LEBRON, PEST, and future public models
+- [ ] Real names for teams, players, and coaches via **`nba_api` identity seed** + curated static coach seed (`coaches-seed.json`)
+- [ ] Evergreen stat base: structured to absorb DARKO, LEBRON, PEST, and future public models (see [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md) for free/public entry points vs [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md) for on-stack deltas)
+- [ ] **DATA-06**: Draft sim, teaching layer, and offseason **share one stat pipeline**; draft sim gets **retroactive** updates when the mapping/scrape layer changes — see [REQUIREMENTS.md](REQUIREMENTS.md) DATA-06
 - [ ] Offseason sim reachable directly from GM lens or after completing core learning content
 
 **Infrastructure**
@@ -117,7 +118,7 @@ The platform only succeeds if users' basketball IQ genuinely improves ??? educat
 
 **Key product decisions (from PRD):**
 - YouTube embeds for film/clip hosting in v1 ??? validate demand before paying for video infra
-- BallDontLie API + curated static seed file for real NBA player/team/coach data in v1
+- **`nba_api` / stats.nba.com** for build-time identity + player stats scrape; curated static seed for coaches (no coach endpoint on NBA stats)
 - Single difficulty level for offseason sim ??? ambiguity and context create challenge, not tiers
 - Coaching affects grades and recommendations, not deterministic outcomes ??? probabilistic model
 - Draft outcomes feel uncertain ??? stats and workouts improve process but never eliminate risk
@@ -129,7 +130,7 @@ The platform only succeeds if users' basketball IQ genuinely improves ??? educat
 - **Tech Stack**: React 18, Express 4, Socket.io 4, TypeScript strict mode, Tailwind CSS, Node.js ??? extend, do not rebuild
 - **Persistence**: Migrate to Supabase incrementally; in-memory store remains for draft sim initially
 - **Video**: YouTube embeds only in v1 ??? no video hosting infra until usage patterns justify it
-- **Data**: BallDontLie API (rate-limited free tier) + static seed for real names; no enterprise data contracts in v1
+- **Data**: `nba_api` + disk artifacts for identity and stats; static coach seed; no enterprise data contracts in v1 — see [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md)
 - **Accounts**: Anonymous-first; Supabase auth added as optional upgrade, never required gate
 - **Platform**: Web only; no native mobile apps
 
@@ -139,7 +140,7 @@ The platform only succeeds if users' basketball IQ genuinely improves ??? educat
 |----------|-----------|---------|
 | Rebrand + expand existing repo | PRD explicitly says "extend the monorepo, not rebuild the stack" | ??? Pending |
 | YouTube embeds for film (v1) | PRD: "start simple on video, optimize once usage patterns are known" | ??? Pending |
-| BallDontLie + static seed for real names | Free tier, documented, no enterprise cost; revisit at scale | ??? Pending |
+| `nba_api` + static coach seed | Same pipeline as draft sim; build-time only; sourcing roadmap in `docs/data/*` | ??? Pending |
 | Single difficulty in offseason sim | Realism and ambiguity create challenge more honestly than artificial tiers | ??? Pending |
 | Coaching affects grades, not certainty | Basketball decisions are probabilistic; sim should reflect that | ??? Pending |
 | Save/resume required for offseason runs | Runs span multiple sessions ??? must be infrastructure, not a feature | ??? Pending |

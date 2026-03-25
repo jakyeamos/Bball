@@ -1,6 +1,6 @@
 /**
- * Disk-backed NBA identity cache (BallDontLie seed + coach profiles).
- * No live HTTP to BallDontLie — loads JSON committed under server/data/.
+ * Disk-backed NBA identity cache (nba-seed.json + coach profiles).
+ * No live HTTP to stats.nba.com — loads JSON committed under server/data/.
  */
 
 import * as fs from 'fs/promises';
@@ -9,7 +9,7 @@ import type {
   NbaSeedDocument,
   NbaSeedPlayer,
   NbaSeedTeam,
-} from '../scripts/seedBallDontLie';
+} from '../scripts/seedNbaIdentity';
 
 export type PacePreference = 'fast' | 'medium' | 'slow';
 

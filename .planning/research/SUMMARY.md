@@ -9,7 +9,7 @@
 
 Court Vision is a basketball IQ education platform being built as an expansion layer inside an existing NBA Draft Simulator monorepo. It adds three parallel capability tracks — a structured learning system (lessons with pause-and-predict film interactions), a daily engagement loop (challenges, streaks, shareable cards), and a GM-perspective offseason simulator — on top of an existing Express 4 + Socket.io + React 18 SPA. The recommended approach is to extend, not rebuild: keep the existing WebSocket-driven draft sim fully isolated, add a separate REST + Supabase persistence layer for the new platform, and run two identity systems in parallel (existing cookie sessions for the draft sim, Supabase anonymous auth for learning progress). This orthogonal design means new features cannot break the existing product and the two track can evolve independently.
 
-The core product differentiation is the three-lens role framing (Player / Coach / GM IQ) — no competitor teaches basketball from all three perspectives — combined with pause-and-predict film interactions that apply the testing effect to fan learning. The offseason simulator (real NBA teams, real names, 7-phase decision loop) is the "capstone after you've learned" product, not the entry point. Research is emphatic: build and validate the lesson platform first, defer the offseason sim until content density is established. The lesson platform needs only 15–20 launch lessons to be viable; the sim requires BallDontLie data infrastructure, Supabase save/resume, and a functioning 7-phase engine — all of which are independent workstreams.
+The core product differentiation is the three-lens role framing (Player / Coach / GM IQ) — no competitor teaches basketball from all three perspectives — combined with pause-and-predict film interactions that apply the testing effect to fan learning. The offseason simulator (real NBA teams, real names, 7-phase decision loop) is the "capstone after you've learned" product, not the entry point. Research is emphatic: build and validate the lesson platform first, defer the offseason sim until content density is established. The lesson platform needs only 15–20 launch lessons to be viable; the sim requires **NBA data infrastructure** (`nba_api` + disk seeds; see [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md) / [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md)), Supabase save/resume, and a functioning 7-phase engine — all of which are independent workstreams.
 
 The critical risk is the existing simulation correctness bug: `handleSimulateRoundInternal` runs with stub team data, making all auto-sim results meaningless. Any teaching layer or offseason sim phase built before this is fixed will mislead users about whether decisions have consequences — destroying the platform's educational premise. This bug must be the first item addressed, before any learning content is built. Secondary risks are Supabase RLS configuration (silent failures for anonymous users are common and hard to diagnose) and YouTube embed availability (videos get removed by rights holders; lesson components need built-in fallback states). Both risks have clear prevention patterns documented in PITFALLS.md.
 
@@ -21,14 +21,14 @@ The critical risk is the existing simulation correctness bug: `handleSimulateRou
 
 The stack adds four new packages to the existing monorepo without touching the locked core (React 18, Express 4, Socket.io 4, TypeScript 5, Tailwind CSS 3, Vite 7, npm workspaces). Supabase (`@supabase/supabase-js` 2.98.0) handles auth, persistence, and daily challenge scheduling via built-in `pg_cron`. TanStack Query v5 handles REST-based server state for the learning platform — AppContext's WebSocket push pattern is the wrong model for paginated lesson queries. `@u-wave/react-youtube` wraps the YouTube IFrame API for pause-and-predict interactions. Zod 4 (14x faster than v3) validates inputs across client and server, with shared schemas living in the `shared` workspace.
 
-The CMS decision is critical: do not adopt Payload, Sanity, or Strapi. Build custom admin forms in the existing monorepo under a `/admin` route prefix. The lesson schema (pause timestamps, role lenses, predict-answer pairs, embeddability flags) is too domain-specific to model cleanly in a generic CMS, and Payload v3 is Next.js-native — incompatible with Express without significant bridging complexity. BallDontLie API is used at the free tier (5 req/min) for player/team identity only; all responses are disk-cached at server startup and never called on the request path. Coach data has no API source at any tier — it must be hand-curated in a `nba-seed.json` file and treated as editorial content.
+The CMS decision is critical: do not adopt Payload, Sanity, or Strapi. Build custom admin forms in the existing monorepo under a `/admin` route prefix. The lesson schema (pause timestamps, role lenses, predict-answer pairs, embeddability flags) is too domain-specific to model cleanly in a generic CMS, and Payload v3 is Next.js-native — incompatible with Express without significant bridging complexity. **NBA identity and stats** use **`nba_api`** at build time / batch refresh (`nba-seed.json`, scrape pipeline); never on the HTTP request path. Coach tendencies are **not** on NBA stats — hand-curated in `coaches-seed.json`. Follow-on sourcing: [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md).
 
 **Core technologies:**
 - `@supabase/supabase-js` 2.98.0: auth + Postgres persistence — anonymous-first with upgrade path; replaces nothing in draft sim
 - `@tanstack/react-query` 5.90.21: REST server state for lessons/progress — avoids extending AppContext with incompatible fetch patterns
 - `@u-wave/react-youtube` 1.x: YouTube IFrame API wrapper — actively maintained fork; `react-youtube` (tjallingt) is 3-year-old abandonware
 - `zod` 4.3.6: input validation — shared schemas across client and server; Zod 4 performance eliminates overhead concern
-- BallDontLie API (free tier): NBA player/team identity — disk-cached; never called live on request path
+- `nba_api` / stats.nba.com (build-time): NBA identity + season stats — disk artifacts; never called live on request path for seeds
 - Supabase `pg_cron`: daily challenge rotation — eliminates external cron service; runs at DB level
 
 **What NOT to add:** Redux (AppContext + TanStack Query covers all state), Prisma/Drizzle ORM (Supabase client provides typed queries; JSONB offseason state doesn't benefit from ORM), Next.js (incompatible server paradigm), GraphQL (simple table queries don't justify the schema layer), Supabase Realtime for leaderboard (daily update frequency doesn't require real-time).
@@ -71,7 +71,7 @@ Two identity systems run in parallel: existing cookie sessions for the draft sim
 
 **Major components:**
 1. **Supabase client module** (`server/stores/supabaseClient.ts`) — single import point for service-role admin client; all REST routes use this; never touches WS layer
-2. **BallDontLie data layer** (`server/data/`) — disk-cached API wrapper + static coach seed; warm-up runs async on server startup; never called on request path
+2. **NBA disk data** (`server/data/`) — identity + stats artifacts from **`nba_api` build-time / batch refresh** (`nba-seed.json`, scrape pipeline) + static coach seed; warm-up at server startup; no stats.nba.com on HTTP request path. Follow-on: [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md)
 3. **Offseason sim engine** (`server/services/offseasonSimEngine.ts`) — pure computation; stateless; accepts pre-fetched data, returns serializable outputs; reuses existing `aggregateTeam()` for draft phase
 4. **REST routes** (`server/routes/lessons.ts`, `lessonProgress.ts`, `offseasonSim.ts`, `userProfile.ts`, `dailyChallenge.ts`, `admin.ts`) — new route files mounted alongside existing `lobbies.ts`; all protected by `supabaseAuth.ts` JWT middleware
 5. **Learning system UI** (`client/src/features/lessons/`) — `FilmPlayer.tsx` + `PauseAndPredict.tsx` + `ScenarioSimulation.tsx` + `LessonCard.tsx`; pause-and-predict uses `seekTo`/`pauseVideo` in `onReady`, not autoplay-then-pause
@@ -85,7 +85,7 @@ Two identity systems run in parallel: existing cookie sessions for the draft sim
 
 1. **Silent coaching simulation bug** — `handleSimulateRoundInternal` uses stub team data (all ratings at 50), making auto-sim results random. Fix by passing `allPlayers` through the auto-sim path before any new feature is built on top. Write a regression test (1000 sims, high-rated team beats 50-rated team at statistically significant rate). *Must be Phase 1, before any learning content or offseason sim work begins.*
 
-2. **BallDontLie rate limits and missing coach data** — Free tier is 5 req/min; season averages and coach data do not exist at any tier. Cache all responses to disk at server startup; never call live on request path. Treat coach profiles as hand-curated editorial content (`nba-seed.json`), not API data. *Must be addressed before data layer design for offseason sim.*
+2. **NBA stats pipeline (`nba_api`) and missing coach data** — Unofficial stats.nba.com wrapper; coach tendencies are not on NBA stats. Cache identity/stats artifacts to disk; never call live on request path. Coach profiles: hand-curated `coaches-seed.json`. See `PITFALLS.md` Pitfall 2 and [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md). *Address before offseason sim consumes richer data.*
 
 3. **Supabase RLS silent failures for anonymous users** — `USING (auth.uid() = user_id)` evaluates to `null = user_id` (always false) for non-Supabase sessions, returning empty results with no error. Write RLS policies that handle three states explicitly: authenticated, Supabase-anonymous, and unauthenticated. Test with three simultaneous browser sessions before any progress feature ships. *Must be addressed in infrastructure phase before progress tables are created.*
 
@@ -115,13 +115,13 @@ Based on combined research, the dependency graph and pitfall mitigations dictate
 
 ### Phase 2: Infrastructure (Supabase + Auth + Data Layer)
 
-**Rationale:** All subsequent features depend on Supabase persistence and the BallDontLie data cache. Auth and schema decisions made incorrectly here cascade into every feature that follows. This phase has the highest architectural risk — RLS misconfiguration, dual-authority state, and anonymous user handling must be resolved before any feature writes user data.
+**Rationale:** All subsequent features depend on Supabase persistence and the **NBA disk data** layer (identity/stats seeds). Auth and schema decisions made incorrectly here cascade into every feature that follows. This phase has the highest architectural risk — RLS misconfiguration, dual-authority state, and anonymous user handling must be resolved before any feature writes user data.
 
-**Delivers:** Supabase project initialized with full schema (lessons, lesson_progress, offseason_runs, daily_challenges, daily_submissions); RLS policies covering all three user states (authenticated, anonymous, unauthenticated); `LearningContext` with anonymous sign-in; BallDontLie disk cache with background warm-up; static `nba-seed.json` with curated coach profiles; Zod validation middleware wired to Express routes; shared type extensions in `shared/types.ts`.
+**Delivers:** Supabase project initialized with full schema (lessons, lesson_progress, offseason_runs, daily_challenges, daily_submissions); RLS policies covering all three user states (authenticated, anonymous, unauthenticated); `LearningContext` with anonymous sign-in; NBA identity disk cache warm-up from `nba-seed.json`; static `coaches-seed.json`; Zod validation middleware wired to Express routes; shared type extensions in `shared/types.ts`. Sourcing roadmap: [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md).
 
-**Uses:** `@supabase/supabase-js` 2.98.0 (both workspaces), `zod` 4.3.6 (both workspaces), BallDontLie free tier, Supabase `pg_cron` for daily challenge rotation.
+**Uses:** `@supabase/supabase-js` 2.98.0 (both workspaces), `zod` 4.3.6 (both workspaces), `nba_api` build-time seeds, Supabase `pg_cron` for daily challenge rotation.
 
-**Avoids:** Pitfalls 2 (BallDontLie rate limits), 3 (dual-authority state), 5 (RLS silent failures for anonymous users).
+**Avoids:** Pitfalls 2 (NBA stats pipeline / no live fetch on request path), 3 (dual-authority state), 5 (RLS silent failures for anonymous users).
 
 **Research flag:** Needs careful implementation validation. RLS policy testing (three simultaneous browser sessions) and authority boundary documentation must happen before Phase 3 begins. Consider a research-phase milestone to validate RLS behavior empirically.
 
@@ -169,11 +169,11 @@ Based on combined research, the dependency graph and pitfall mitigations dictate
 
 ### Phase 6: NBA Offseason Simulator
 
-**Rationale:** The offseason simulator is the capstone product — powerful, but only meaningful after users have GM IQ lesson foundation. It is also the most complex workstream by a significant margin (7-phase state machine, BallDontLie data, Supabase save/resume, simplified cap constraints, phase-by-phase grading). Deferring it until Phase 5 ensures the lesson platform is validated and content-rich before engineering resources shift to this major new engine.
+**Rationale:** The offseason simulator is the capstone product — powerful, but only meaningful after users have GM IQ lesson foundation. It is also the most complex workstream by a significant margin (7-phase state machine, NBA disk/seed data + optional external sources per [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md), Supabase save/resume, simplified cap constraints, phase-by-phase grading). Deferring it until Phase 5 ensures the lesson platform is validated and content-rich before engineering resources shift to this major new engine.
 
 **Delivers:** 7-phase offseason simulation loop (team context → coaching market → scouting/pre-draft → trade market → draft night → free agency → post-offseason recap); real NBA team/player/coach names; save/resume across sessions; phase-based grading and fit reports; simplified (but realistic) cap constraint model; recap screen with developmental environment score.
 
-**Uses:** BallDontLie data layer (from Phase 2), offseason sim engine (`offseasonSimEngine.ts`), existing `aggregateTeam()`/`computeArchetypeProfile()` pure functions for draft night phase, Supabase `offseason_runs` table (JSONB `phase_state`).
+**Uses:** NBA identity/stats disk layer + coach seed (from data phase), offseason sim engine (`offseasonSimEngine.ts`), existing `aggregateTeam()`/`computeArchetypeProfile()` pure functions for draft night phase, Supabase `offseason_runs` table (JSONB `phase_state`).
 
 **Avoids:** Pitfall 7 (schema evolution — `schemaVersion` on all saved runs from day one, `migrateRun()` function, Zod at deserialization boundary); anti-feature: perfect CBA simulation (simplified-but-realistic constraints only); anti-feature: multi-year continuity mode.
 
@@ -208,16 +208,16 @@ Phases with standard patterns (research-phase optional):
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All packages verified on npm registry as of 2026-03-09. BallDontLie rate limits confirmed from official docs. Supabase anonymous auth stable. `react-youtube` abandonment verified. |
+| Stack | HIGH | All packages verified on npm registry as of 2026-03-09. NBA data via `nba_api` + disk seeds ([`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md)). Supabase anonymous auth stable. `react-youtube` abandonment verified. |
 | Features | HIGH (table stakes), MEDIUM (competitive) | Table stakes from peer-reviewed learning research and official Duolingo data. HooperIQ competitive analysis is MEDIUM — limited public information about their feature set. |
-| Architecture | HIGH | Existing codebase read directly. Supabase and BallDontLie from official docs. The orthogonal REST/WS design is well-established. |
+| Architecture | HIGH | Existing codebase read directly. Supabase from official docs; NBA stats via `nba_api` (unofficial). The orthogonal REST/WS design is well-established. |
 | Pitfalls | HIGH (codebase-specific), MEDIUM (general) | Coaching bug, quarter coaching wiring gap, and snapshot ID hardcode are from direct code analysis. RLS misconfiguration risk corroborated by official Supabase docs and community reports. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Coach profile data model:** What tendency tags should `nba-seed.json` carry (pace preference, defensive intensity, 3pt emphasis, player development reputation, etc.)? This is an editorial question with no research answer. Decide during Phase 2 data layer design with domain expertise.
+- **Coach profile data model:** What tendency tags should `coaches-seed.json` carry (pace preference, defensive intensity, 3pt emphasis, player development reputation, etc.)? This is an editorial question with no research answer. Decide during data layer / offseason design with domain expertise. See [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md).
 - **Simplified cap model parameters:** What level of CBA abstraction is right for casual fans? Too simple and the sim feels fake; too complex and it confuses. No research source settles this. Requires user research or expert input during Phase 6 design.
 - **Skill profile recommendation algorithm:** How to aggregate lesson accuracy across lenses and subcategories into actionable "try these next" recommendations is not a solved problem in sports education. Needs design-first exploration during Phase 5 planning.
 - **Content volume for meaningful skill profile:** Research suggests 20+ lessons before the profile has signal. Launch with 15–20 lessons; plan a content sprint for Month 2 to reach the threshold where skill profile recommendations are credible.
@@ -232,7 +232,7 @@ Phases with standard patterns (research-phase optional):
 - [Supabase Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous) — anonymous auth, upgrade path, UUID persistence
 - [Supabase RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security) — RLS policy patterns, null semantics
 - [Supabase pg_cron docs](https://supabase.com/docs/guides/database/extensions/pg_cron) — daily challenge scheduling
-- [BallDontLie official API docs](https://nba.balldontlie.io/) — rate limits (5/60/600 req/min), endpoint availability, confirmed no coach data
+- [`nba_api` (GitHub)](https://github.com/swar/nba_api) — stats.nba.com client; [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md) — free/public non-stats sources; [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md) — on-stack deltas
 - [TanStack Query v5 docs](https://tanstack.com/query/v5/docs/react/installation) — React 18 compatibility, setup
 - [YouTube IFrame Player API reference](https://developers.google.com/youtube/iframe_api_reference) — `seekTo`, `pauseVideo`, `onStateChange`, error codes
 - [Zod v4 release](https://zod.dev/v4) — stable July 2025; breaking changes from v3 documented

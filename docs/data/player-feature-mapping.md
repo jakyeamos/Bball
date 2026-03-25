@@ -5,6 +5,8 @@ This document tracks the **explicit bridge** from `server/scripts/scrape_nba_sta
 **Code:** `server/services/playerFeaturesMapping.ts`  
 **Completeness guard:** `server/services/playerFeaturesMapping.test.ts` asserts every entry in `PLAYER_FEATURES_CORE_KEYS` is finite after mapping.
 
+**Planning:** DATA-04 / DATA-05 in [`.planning/REQUIREMENTS.md`](../../.planning/REQUIREMENTS.md). Deeper stats / non-stats sourcing: [nba-stats-stack-delta-todos.md](./nba-stats-stack-delta-todos.md), [external-data-sources.md](./external-data-sources.md).
+
 ## Pipeline
 
 1. Python emits season **totals** per player plus league-dash **rate** columns when available (`USG_PCT`, `OREB_PCT`, `DREB_PCT`, `REB_PCT`, `AST_PCT`, `TOV_PCT`).
