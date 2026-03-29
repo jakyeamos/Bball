@@ -22,6 +22,7 @@ export interface PlayerRawStats {
   name: string;
   team: string;
   position: string;
+  AGE?: number;
   PTS: number;
   REB: number;
   AST: number;
@@ -60,6 +61,41 @@ export interface PlayerRawStats {
   OREB_PCT?: number;
   DREB_PCT?: number;
   REB_PCT?: number;
+  CATCH_SHOOT_3PA?: number;
+  CATCH_SHOOT_3PM?: number;
+  CATCH_SHOOT_3_PCT?: number;
+  PULL_UP_3PA?: number;
+  PULL_UP_3PM?: number;
+  PULL_UP_3_PCT?: number;
+  DRIVE_FGA?: number;
+  DRIVE_FGM?: number;
+  DRIVE_FTA?: number;
+  DRIVE_PASSES?: number;
+  PAINT_TOUCHES?: number;
+  FRONTCOURT_TOUCHES?: number;
+  TIME_OF_POSSESSION?: number;
+  AVG_SEC_PER_TOUCH?: number;
+  AVG_DRIBBLES_PER_TOUCH?: number;
+  ELBOW_TOUCHES?: number;
+  POST_TOUCHES?: number;
+  BOX_OUTS?: number;
+  LOOSE_BALLS_RECOVERED?: number;
+  CONTESTED_REB?: number;
+  TRANSITION_FREQ?: number;
+  TRANSITION_PPP?: number;
+  ISOLATION_FREQ?: number;
+  ISOLATION_PPP?: number;
+  PNR_BALL_HANDLER_FREQ?: number;
+  PNR_BALL_HANDLER_PPP?: number;
+  PNR_ROLL_MAN_FREQ?: number;
+  PNR_ROLL_MAN_PPP?: number;
+  SPOT_UP_FREQ?: number;
+  SPOT_UP_PPP?: number;
+  HANDOFF_FREQ?: number;
+  HANDOFF_PPP?: number;
+  CUT_FREQ?: number;
+  CUT_PPP?: number;
+  publicMetricPriors?: PublicMetricPriors;
 }
 
 export interface PlayerFeatures {
@@ -97,6 +133,85 @@ export interface PlayerFeatures {
   [key: string]: number | undefined;
 }
 
+export interface PublicMetricPriors {
+  darkoDpm?: number;
+  darkoOpm?: number;
+  darkoDpmDefense?: number;
+  rapm?: number;
+  orapm?: number;
+  drapm?: number;
+  epm?: number;
+  sourceCount: number;
+}
+
+export interface PlayerAdvancedProfile {
+  reliability: number;
+  minutesLoad: number;
+  durability: number;
+  shotCreation: number;
+  rimPressure: number;
+  finishing: number;
+  shootingGravity: number;
+  spacing: number;
+  freeThrowPressure: number;
+  playmaking: number;
+  secondaryCreation: number;
+  turnoverResistance: number;
+  offensiveRebounding: number;
+  defensiveRebounding: number;
+  perimeterDefense: number;
+  rimDeterrence: number;
+  transitionOffense: number;
+  transitionDefense: number;
+  foulDiscipline: number;
+  switchability: number;
+  onBallUsage: number;
+  offBallValue: number;
+  volatility: number;
+}
+
+export interface FitVectors {
+  creation: number;
+  spacing: number;
+  rimPressure: number;
+  perimeterDefense: number;
+  rimDefense: number;
+  rebounding: number;
+  transition: number;
+  ballSecurity: number;
+}
+
+export type RosterRole = 'backcourt' | 'wing' | 'frontcourt';
+
+export type FunctionalRole =
+  | 'primary_creator'
+  | 'secondary_creator'
+  | 'connector'
+  | 'movement_shooter'
+  | 'slasher_finisher'
+  | 'two_way_wing'
+  | 'stretch_big'
+  | 'rim_big';
+
+export type MinutesTier =
+  | 'franchise'
+  | 'core'
+  | 'starter'
+  | 'rotation'
+  | 'depth'
+  | 'development';
+
+export type VarianceProfile = 'stable' | 'balanced' | 'volatile';
+
+export interface PlayerValueModel {
+  draftValue: number;
+  gameImpact: number;
+  tradeValue: number;
+  fitVectors: FitVectors;
+  minutesTier: MinutesTier;
+  varianceProfile: VarianceProfile;
+}
+
 export type ArchetypeName =
   | 'PrimaryCreator'
   | 'SecondaryPlaymaker'
@@ -121,13 +236,18 @@ export interface Player {
   name: string;
   team: string;
   position: string;
+  rosterRole: RosterRole;
+  functionalRole: FunctionalRole;
   rawStats: PlayerRawStats;
+  advancedProfile: PlayerAdvancedProfile;
+  valueModel: PlayerValueModel;
   features: PlayerFeatures;
   archetypes: ArchetypeProfile;
   impactRating: number;
 }
 
 export interface LeagueSnapshot {
+  schemaVersion: number;
   snapshotId: string;
   createdAt: string;
   season: string;
@@ -138,6 +258,9 @@ export interface LeagueSnapshot {
   };
   roleAverages: {
     [role: string]: Record<string, number>;
+  };
+  advancedRoleAverages?: {
+    [role: string]: PlayerAdvancedProfile;
   };
 }
 
@@ -452,14 +575,28 @@ export interface DraftState {
 export interface TeamAggregation {
   teamId: string;
   features: PlayerFeatures;
+  teamModel: TeamModel;
+  roleProfile: TeamRoleProfile;
   archetypes: ArchetypeProfile;
   modifiers: TeamModifiers;
   overallRating: number;
   rotation: Array<{
     playerId: string;
     name: string;
+    rosterRole: RosterRole;
+    functionalRole: FunctionalRole;
     impactRating: number;
+    draftValue?: number;
+    tradeValue?: number;
+    volatility?: number;
   }>;
+}
+
+export interface TeamRoleProfile {
+  rosterRoleCounts: Record<RosterRole, number>;
+  functionalRoleCounts: Record<FunctionalRole, number>;
+  rosterRoleShare: Record<RosterRole, number>;
+  functionalRoleShare: Record<FunctionalRole, number>;
 }
 
 export interface TeamModifiers {
@@ -473,6 +610,42 @@ export interface TeamModifiers {
   defensePenalty: number;
   variancePenalty: number;
   homeCourtAdvantage: number;
+}
+
+export interface TeamModel {
+  possessionVolume: number;
+  transitionShare: number;
+  transitionDefense: number;
+  transitionContainment: number;
+  turnoverRate: number;
+  foulRate: number;
+  freeThrowRate: number;
+  rimRate: number;
+  rimAccuracy: number;
+  paintRate: number;
+  paintAccuracy: number;
+  threeRate: number;
+  threeAccuracy: number;
+  offensiveReboundRate: number;
+  ballSecurity: number;
+  primaryCreation: number;
+  secondaryCreation: number;
+  spacing: number;
+  rimPressure: number;
+  finishing: number;
+  perimeterDefense: number;
+  rimDefense: number;
+  ballPressure: number;
+  paintPacking: number;
+  rimContest: number;
+  closeoutIntegrity: number;
+  reboundPositioning: number;
+  turnoverPressure: number;
+  defensiveReboundRate: number;
+  foulDiscipline: number;
+  benchDepth: number;
+  volatility: number;
+  switchability: number;
 }
 
 export interface MatchupDriver {
@@ -814,6 +987,20 @@ export const TRADE_WINDOW_DURATION_MS = 10 * 60 * 1000;
 export const DRAFT_TIMER_DURATION_SECONDS = 90;
 
 export type RoleCategory = 'G' | 'W' | 'B';
+
+export const POSITION_TO_ROSTER_ROLE: Record<string, RosterRole> = {
+  PG: 'backcourt',
+  SG: 'backcourt',
+  SF: 'wing',
+  PF: 'frontcourt',
+  C: 'frontcourt',
+};
+
+export const ROSTER_ROLE_TO_ROLE_CATEGORY: Record<RosterRole, RoleCategory> = {
+  backcourt: 'G',
+  wing: 'W',
+  frontcourt: 'B',
+};
 
 export const POSITION_TO_ROLE: Record<string, RoleCategory> = {
   PG: 'G',

@@ -92,6 +92,12 @@ function makeSchema<T>(
 
 export type RoleLens = 'player' | 'coach' | 'gm';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+export type InteractionType = 'film' | 'quiz' | 'article';
+
+export interface TimestampAnnotation {
+  timestamp: number;
+  note: string;
+}
 
 export interface LessonRecord {
   id: string;
@@ -100,10 +106,15 @@ export interface LessonRecord {
   difficulty: Difficulty;
   description: string;
   content_url?: string;
+  media_url?: string;
+  takeaway?: string;
+  interaction_type?: InteractionType;
+  annotations?: TimestampAnnotation[];
 }
 
 const ROLE_LENS_VALUES: RoleLens[] = ['player', 'coach', 'gm'];
 const DIFFICULTY_VALUES: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
+const INTERACTION_TYPE_VALUES: InteractionType[] = ['film', 'quiz', 'article'];
 
 function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
@@ -137,6 +148,22 @@ function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
     errors.push('content_url must be a string when provided.');
   }
 
+  if (raw.media_url !== undefined && typeof raw.media_url !== 'string') {
+    errors.push('media_url must be a string when provided.');
+  }
+
+  if (raw.takeaway !== undefined && typeof raw.takeaway !== 'string') {
+    errors.push('takeaway must be a string when provided.');
+  }
+
+  if (raw.interaction_type !== undefined && !INTERACTION_TYPE_VALUES.includes(raw.interaction_type as InteractionType)) {
+    errors.push(`interaction_type must be one of: ${INTERACTION_TYPE_VALUES.join(', ')}.`);
+  }
+
+  if (raw.annotations !== undefined && !Array.isArray(raw.annotations)) {
+    errors.push('annotations must be an array when provided.');
+  }
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
@@ -149,9 +176,11 @@ function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
       role_lens: raw.role_lens as RoleLens,
       difficulty: raw.difficulty as Difficulty,
       description: (raw.description as string).trim(),
-      ...(raw.content_url !== undefined
-        ? { content_url: (raw.content_url as string).trim() }
-        : {}),
+      ...(raw.content_url !== undefined ? { content_url: (raw.content_url as string).trim() } : {}),
+      ...(raw.media_url !== undefined ? { media_url: (raw.media_url as string).trim() } : {}),
+      ...(raw.takeaway !== undefined ? { takeaway: (raw.takeaway as string).trim() } : {}),
+      ...(raw.interaction_type !== undefined ? { interaction_type: raw.interaction_type as InteractionType } : {}),
+      ...(raw.annotations !== undefined ? { annotations: raw.annotations as TimestampAnnotation[] } : {}),
     },
   };
 }
@@ -350,6 +379,7 @@ export interface NbaScraperSeasonStatsRow {
   name: string;
   team: string;
   position: string;
+  AGE?: number | null;
   GP: number;
   MIN: number;
   PTS: number;
@@ -380,6 +410,49 @@ export interface NbaScraperSeasonStatsRow {
   REB_PCT?: number | null;
   AST_PCT?: number | null;
   TOV_PCT?: number | null;
+  CATCH_SHOOT_3PA?: number | null;
+  CATCH_SHOOT_3PM?: number | null;
+  CATCH_SHOOT_3_PCT?: number | null;
+  PULL_UP_3PA?: number | null;
+  PULL_UP_3PM?: number | null;
+  PULL_UP_3_PCT?: number | null;
+  DRIVE_FGA?: number | null;
+  DRIVE_FGM?: number | null;
+  DRIVE_FTA?: number | null;
+  DRIVE_PASSES?: number | null;
+  PAINT_TOUCHES?: number | null;
+  FRONTCOURT_TOUCHES?: number | null;
+  TIME_OF_POSSESSION?: number | null;
+  AVG_SEC_PER_TOUCH?: number | null;
+  AVG_DRIBBLES_PER_TOUCH?: number | null;
+  ELBOW_TOUCHES?: number | null;
+  POST_TOUCHES?: number | null;
+  BOX_OUTS?: number | null;
+  LOOSE_BALLS_RECOVERED?: number | null;
+  CONTESTED_REB?: number | null;
+  TRANSITION_FREQ?: number | null;
+  TRANSITION_PPP?: number | null;
+  ISOLATION_FREQ?: number | null;
+  ISOLATION_PPP?: number | null;
+  PNR_BALL_HANDLER_FREQ?: number | null;
+  PNR_BALL_HANDLER_PPP?: number | null;
+  PNR_ROLL_MAN_FREQ?: number | null;
+  PNR_ROLL_MAN_PPP?: number | null;
+  SPOT_UP_FREQ?: number | null;
+  SPOT_UP_PPP?: number | null;
+  HANDOFF_FREQ?: number | null;
+  HANDOFF_PPP?: number | null;
+  CUT_FREQ?: number | null;
+  CUT_PPP?: number | null;
+  PUBLIC_PRIORS?: {
+    darkoDpm?: number | null;
+    darkoOpm?: number | null;
+    darkoDpmDefense?: number | null;
+    rapm?: number | null;
+    orapm?: number | null;
+    drapm?: number | null;
+    epm?: number | null;
+  } | null;
 }
 
 /** Keys on PlayerFeatures that must be populated by the mapping pipeline (excludes index signature noise). */
