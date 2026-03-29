@@ -38,6 +38,14 @@ const SEED_LESSONS: LessonRecord[] = [
     difficulty: 'beginner' as Difficulty,
     description:
       'Understand how to read a defender\'s coverage on a pick-and-roll and choose the correct decision.',
+    takeaway: 'Identify Drop vs Hedging early to make the right pass or shot.',
+    interaction_type: 'film',
+    media_url: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop',
+    content_url: 'https://www.youtube.com/embed/ScMzIvxBSi4',
+    annotations: [
+      { timestamp: 10, note: 'Notice the big man dropping back.' },
+      { timestamp: 25, note: 'Guard goes over the screen, creating a pocket pass opportunity.' }
+    ]
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
@@ -46,6 +54,15 @@ const SEED_LESSONS: LessonRecord[] = [
     difficulty: 'intermediate' as Difficulty,
     description:
       'Learn the rotations a defense needs to execute when the ball handler drives and kicks to an open shooter.',
+    takeaway: 'Help the helper and x-out to shooters efficiently.',
+    interaction_type: 'film',
+    media_url: 'https://images.unsplash.com/photo-1519861531473-9200262188bf?q=80&w=800&auto=format&fit=crop',
+    content_url: 'https://www.youtube.com/embed/jfKfPfyJRdk',
+    annotations: [
+      { timestamp: 5, note: 'Initial breakdown at the point of attack.' },
+      { timestamp: 15, note: 'Low man rotates over to stop the drive.' },
+      { timestamp: 30, note: 'Weak side defenders sync the x-out rotation.' }
+    ]
   },
   {
     id: '00000000-0000-0000-0000-000000000003',
@@ -54,6 +71,8 @@ const SEED_LESSONS: LessonRecord[] = [
     difficulty: 'intermediate' as Difficulty,
     description:
       'How to assess future pick value relative to immediate roster needs when evaluating trade offers.',
+    takeaway: 'Balance your contention window with draft asset accumulation.',
+    interaction_type: 'article'
   },
 ];
 
