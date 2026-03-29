@@ -1,7 +1,8 @@
 /**
  * NBA Stats Scraper
- * Fetches player stats using nba_api Python library via child process
- * Falls back to sample data if scraping fails
+ * Offline player data helpers.
+ * Runtime reads versioned disk artifacts; operator workflows can still invoke
+ * the Python scraper out of band to regenerate those artifacts.
  */
 
 import type { PlayerRawStats, NbaScraperSeasonStatsRow } from '@nba-draft-sim/shared';
@@ -12,6 +13,15 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 
 const execAsync = promisify(exec);
+const PLAYER_STATS_ARTIFACT_SCHEMA_VERSION = 2;
+
+interface PlayerStatsArtifact {
+  schemaVersion: number;
+  season: string;
+  generatedAt: string;
+  source: 'batch_v2';
+  players: NbaScraperSeasonStatsRow[];
+}
 
 function serverPackageRoot(): string {
   return __dirname.includes(`${path.sep}dist${path.sep}scripts`)
@@ -87,7 +97,7 @@ function legacyNbaPlayerDataToSeasonRow(d: NBAPlayerData): NbaScraperSeasonStats
 }
 
 /**
- * Scrape current season stats using nba_api Python script
+ * Operator helper: scrape current season stats using the Python batch script.
  */
 export async function scrapeNBAStats(season: string = '2025-26'): Promise<PlayerRawStats[]> {
   try {
@@ -102,7 +112,8 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
     }
 
     const { stdout } = await execAsync(`python3 ${pythonScriptPath} --season ${season}`);
-    const data = JSON.parse(stdout) as NbaScraperSeasonStatsRow[];
+    const parsed = JSON.parse(stdout) as PlayerStatsArtifact | NbaScraperSeasonStatsRow[];
+    const data = Array.isArray(parsed) ? parsed : parsed.players;
 
     console.log(`Scraped ${data.length} players for season ${season}`);
     return data.map((row) => nbaSeasonJsonRowToPlayerRawStats(row));
@@ -111,6 +122,32 @@ export async function scrapeNBAStats(season: string = '2025-26'): Promise<Player
     console.warn('Falling back to sample data');
     return loadFallbackData();
   }
+}
+
+function artifactPath(season: string): string {
+  return path.join(serverPackageRoot(), 'data', `player-stats-${season}.json`);
+}
+
+function isValidArtifact(raw: unknown, season: string): raw is PlayerStatsArtifact {
+  if (typeof raw !== 'object' || raw === null) return false;
+  const artifact = raw as Partial<PlayerStatsArtifact>;
+  return (
+    artifact.schemaVersion === PLAYER_STATS_ARTIFACT_SCHEMA_VERSION &&
+    artifact.season === season &&
+    artifact.source === 'batch_v2' &&
+    Array.isArray(artifact.players)
+  );
+}
+
+async function loadBatchArtifact(season: string): Promise<PlayerRawStats[]> {
+  const file = artifactPath(season);
+  const raw = JSON.parse(await fs.readFile(file, 'utf-8')) as unknown;
+
+  if (!isValidArtifact(raw, season)) {
+    throw new Error(`Invalid or stale player stats artifact: ${file}`);
+  }
+
+  return raw.players.map((row) => nbaSeasonJsonRowToPlayerRawStats(row));
 }
 
 /**
@@ -151,6 +188,13 @@ export async function fetchPlayerData(
   minGames: number = 10,
   minMinutes: number = 100
 ): Promise<PlayerRawStats[]> {
-  const allPlayers = await scrapeNBAStats(season);
+  let allPlayers: PlayerRawStats[];
+  try {
+    allPlayers = await loadBatchArtifact(season);
+  } catch (error) {
+    console.warn(`[player-data] failed to load batch artifact for ${season}:`, error);
+    console.warn('[player-data] using local sample data fallback');
+    allPlayers = await loadFallbackData();
+  }
   return filterPlayers(allPlayers, minGames, minMinutes);
 }

@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server/index.js",
+    "build:stats-artifact": "python3 scripts/scrape_nba_stats.py --season 2025-26 --output data/player-stats-2025-26.json",
+    "calibrate:sim": "tsx scripts/calibrateDraftSim.ts",
     "seed:nba": "tsx scripts/seedNbaIdentity.ts",
     "seed:nba:offline": "tsx scripts/seedNbaIdentity.ts --offline",
     "refresh:nba-cache": "tsx scripts/refreshNbaIdentityCache.ts",

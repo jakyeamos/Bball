@@ -1,106 +1,74 @@
 /**
  * server/services/modifiers.ts
- * 
- * FIXED for Phase 2: Simplified modifier logic using new constants
+ *
+ * Team modifiers now reflect synergy and structural weaknesses around the new
+ * team event model instead of a purely archetype-based bonus/penalty system.
  */
 
-import { 
-  TeamAggregation, 
-  TeamModifiers, 
-  TEAM_MODIFIER_PARAMS,
+import {
   Player,
+  TeamAggregation,
+  TeamModifiers,
+  TEAM_MODIFIER_PARAMS,
 } from '@nba-draft-sim/shared';
 
-/**
- * Compute team modifiers based on roster composition
- */
+function clamp(min: number, max: number, value: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 export function computeTeamModifiers(team: TeamAggregation, roster: Player[]): TeamModifiers {
-  const p = TEAM_MODIFIER_PARAMS;
-  const arch = team.archetypes;
-  const teamFeatures = team.features;
+  const params = TEAM_MODIFIER_PARAMS;
+  const { teamModel } = team;
 
-  let shootBonus = 0;
-  let creatorPen = 0;
-  let rimPen = 0;
-  let variancePenalty = 0;
-  let offenseBonus = 0;
-  let offensePenalty = 0;
-  let defenseBonus = 0;
-  let defensePenalty = 0;
+  const creatorPen = teamModel.primaryCreation < 0.42
+    ? -0.05 * (0.42 - teamModel.primaryCreation)
+    : (teamModel.primaryCreation > 0.82 && teamModel.secondaryCreation < 0.45 ? -0.02 : 0);
 
-  // ============================================================================
-  // 1. CREATOR REDUNDANCY PENALTY
-  // ============================================================================
-  const creators = (arch.PrimaryCreator ?? 0) + (arch.SecondaryPlaymaker ?? 0);
-  
-  if (creators > p.CREATOR_THRESHOLD) {
-    creatorPen = p.CREATOR_PENALTY * (creators - p.CREATOR_THRESHOLD);
-  }
+  const spacingSynergy = Math.max(0, average([
+    teamModel.spacing,
+    teamModel.primaryCreation,
+    teamModel.finishing,
+  ]) - 0.56) * 0.10;
 
-  // ============================================================================
-  // 2. SPACING BONUS
-  // ============================================================================
-  const shooters = (arch.VolumeSniper ?? 0) + 
-                   (arch.EfficientSpacer ?? 0) + 
-                   (arch.ShotMaker ?? 0);
-  
-  const spacing = p.SPACING_WEIGHT_3PA * (teamFeatures.THREE_PA_RATE ?? 0) + 
-                  p.SPACING_WEIGHT_SHOOTER * shooters;
-  
-  if (spacing > p.SPACING_THRESHOLD) {
-    shootBonus = p.SPACING_BONUS_MULT * (spacing - p.SPACING_THRESHOLD);
-  }
+  const shootBonus = Math.min(spacingSynergy, params.MAX_COMPONENT);
 
-  // ============================================================================
-  // 3. RIM PROTECTION PENALTY
-  // ============================================================================
-  const rimProt = arch.RimDeterrent ?? 0;
-  
-  if (rimProt < p.RIM_THRESHOLD) {
-    rimPen = p.RIM_PENALTY * (p.RIM_THRESHOLD - rimProt);
-  }
+  const rimPen = teamModel.rimDefense < 0.46
+    ? -0.06 * (0.46 - teamModel.rimDefense)
+    : 0;
 
-  // ============================================================================
-  // 4. VERSATILITY PENALTY
-  // ============================================================================
-  if ((teamFeatures.VI ?? 0) < p.VI_THRESHOLD) {
-    variancePenalty = p.VI_PENALTY_MULT * (p.VI_THRESHOLD - (teamFeatures.VI ?? 0));
-  }
+  const offenseBonus = Math.max(0, average([
+    teamModel.primaryCreation,
+    teamModel.spacing,
+    teamModel.ballSecurity,
+  ]) - 0.54) * 0.08;
 
-  // ============================================================================
-  // 5. COMPOSITION BONUS (simplified)
-  // ============================================================================
-  // Balanced team gets a small bonus
-  const playmakers = (arch.PrimaryCreator ?? 0) + (arch.SecondaryPlaymaker ?? 0) + (arch.Connector ?? 0);
-  const scorers = (arch.VolumeSniper ?? 0) + (arch.EfficientSpacer ?? 0) + (arch.ShotMaker ?? 0) + (arch.AdvantageDriver ?? 0);
-  const defenders = (arch.PointOfAttackMenace ?? 0) + (arch.Disruptor ?? 0) + (arch.RimDeterrent ?? 0);
-  
-  const balance = Math.min(playmakers, scorers, defenders);
-  
-  if (balance > p.COMP_BONUS_THRESHOLD) {
-    offenseBonus = p.COMP_BONUS_BASE * (balance - p.COMP_BONUS_THRESHOLD);
-  }
+  const offensePenalty = teamModel.ballSecurity < 0.47
+    ? 0.04 * (0.47 - teamModel.ballSecurity)
+    : 0;
 
-  // ============================================================================
-  // 6. AGGREGATE COMPONENTS
-  // ============================================================================
-  // Cap individual components
-  shootBonus = Math.min(shootBonus, p.MAX_COMPONENT);
-  creatorPen = Math.max(creatorPen, -p.MAX_COMPONENT);
-  rimPen = Math.max(rimPen, -p.MAX_COMPONENT);
-  variancePenalty = Math.max(variancePenalty, -p.MAX_COMPONENT);
-  offenseBonus = Math.min(offenseBonus, p.MAX_COMPONENT);
+  const defenseBonus = Math.max(0, average([
+    teamModel.perimeterDefense,
+    teamModel.rimDefense,
+    teamModel.defensiveReboundRate,
+  ]) - 0.54) * 0.08;
 
-  // Calculate total
-  let total = shootBonus + creatorPen + rimPen + offenseBonus + 
-              offensePenalty + defenseBonus + defensePenalty - variancePenalty;
+  const defensePenalty = teamModel.foulDiscipline < 0.45
+    ? 0.04 * (0.45 - teamModel.foulDiscipline)
+    : 0;
 
-  // Cap total
-  total = Math.max(-p.MAX_TOTAL, Math.min(p.MAX_TOTAL, total));
+  const variancePenalty = Math.max(0, teamModel.volatility - teamModel.benchDepth) * 0.05;
 
-  // ============================================================================
-  // 7. HOME COURT ADVANTAGE
-  // ============================================================================
+  let total = shootBonus
+    + offenseBonus
+    + defenseBonus
+    + creatorPen
+    + rimPen
+    - offensePenalty
+    - defensePenalty
+    - variancePenalty;
+
+  total = clamp(-params.MAX_TOTAL, params.MAX_TOTAL, total);
+
   const teamCounts = new Map<string, number>();
   for (const player of roster) {
     teamCounts.set(player.team, (teamCounts.get(player.team) || 0) + 1);
@@ -108,20 +76,18 @@ export function computeTeamModifiers(team: TeamAggregation, roster: Player[]): T
 
   let maxCount = 0;
   for (const count of teamCounts.values()) {
-    if (count > maxCount) {
-      maxCount = count;
-    }
+    maxCount = Math.max(maxCount, count);
   }
 
   let homeCourtAdvantage = 0;
   if (maxCount >= 5) {
-    homeCourtAdvantage = p.HCA_MAX_BONUS;
+    homeCourtAdvantage = params.HCA_MAX_BONUS;
   } else if (maxCount === 4) {
-    homeCourtAdvantage = p.HCA_MAX_BONUS * (2.5 / 3);
+    homeCourtAdvantage = params.HCA_MAX_BONUS * 0.83;
   } else if (maxCount === 3) {
-    homeCourtAdvantage = p.HCA_MAX_BONUS * (2 / 3);
+    homeCourtAdvantage = params.HCA_MAX_BONUS * 0.66;
   } else if (maxCount === 2) {
-    homeCourtAdvantage = p.HCA_MAX_BONUS * 0.5;
+    homeCourtAdvantage = params.HCA_MAX_BONUS * 0.5;
   }
 
   return {
@@ -138,13 +104,7 @@ export function computeTeamModifiers(team: TeamAggregation, roster: Player[]): T
   };
 }
 
-/**
- * Debug team modifiers
- */
-export function debugTeamModifiers(
-  teamId: string,
-  modifiers: TeamModifiers
-): void {
+export function debugTeamModifiers(teamId: string, modifiers: TeamModifiers): void {
   console.log(`\n🎯 Team Modifiers for ${teamId}:`);
   console.log(`  Total: ${modifiers.total.toFixed(3)}`);
   console.log(`  Spacing Bonus: ${modifiers.shootBonus.toFixed(3)}`);
@@ -152,5 +112,12 @@ export function debugTeamModifiers(
   console.log(`  Rim Penalty: ${modifiers.rimPen.toFixed(3)}`);
   console.log(`  Variance Penalty: ${modifiers.variancePenalty.toFixed(3)}`);
   console.log(`  Offense Bonus: ${modifiers.offenseBonus.toFixed(3)}`);
+  console.log(`  Defense Bonus: ${modifiers.defenseBonus.toFixed(3)}`);
   console.log('');
+}
+
+function average(values: number[]): number {
+  const finite = values.filter(Number.isFinite);
+  if (finite.length === 0) return 0;
+  return finite.reduce((sum, value) => sum + value, 0) / finite.length;
 }

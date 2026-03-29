@@ -5,15 +5,28 @@
 
 import {
   DraftState,
-  DraftStatus,
   DraftPick,
   DraftOrder,
   DraftTeam,
   LobbyConfig,
   Player,
+  RosterRole,
 } from '@nba-draft-sim/shared';
 import { DRAFT_CONSTRAINTS } from '@nba-draft-sim/shared';
-import { v4 as uuidv4 } from 'uuid';
+import { ROSTER_ROLE_TARGET_SHARE } from './roleInference';
+
+interface TeamNeedVector {
+  creation: number;
+  spacing: number;
+  rimPressure: number;
+  perimeterDefense: number;
+  rimDefense: number;
+  rebounding: number;
+  transition: number;
+  ballSecurity: number;
+  roleNeed: Record<RosterRole, number>;
+  roleSurplus: Record<RosterRole, number>;
+}
 
 /**
  * Generate snake draft order
@@ -312,8 +325,18 @@ export function getAutopickPlayer(
 
   if (availablePlayers.length === 0) return null;
 
-  // Sort by impact rating
-  const sorted = [...availablePlayers].sort((a, b) => b.impactRating - a.impactRating);
+  const rosterPlayers = currentTeam.roster
+    .map((playerId) => allPlayers.find((player) => player.playerId === playerId))
+    .filter((player): player is Player => player !== undefined);
+
+  const teamNeed = rosterPlayers.length > 0
+    ? calculateTeamNeedVector(rosterPlayers)
+    : null;
+
+  // Sort by draft value with roster-fit adjustments.
+  const sorted = [...availablePlayers].sort((a, b) => {
+    return scoreAutopickCandidate(b, teamNeed, rosterPlayers.length) - scoreAutopickCandidate(a, teamNeed, rosterPlayers.length);
+  });
 
   // Take top 20 (or fewer if not enough players)
   const topPlayers = sorted.slice(0, Math.min(DRAFT_CONSTRAINTS.TOP_20_AUTO_PICK, sorted.length));
@@ -321,6 +344,105 @@ export function getAutopickPlayer(
   // Random selection from top players
   const randomIndex = Math.floor(Math.random() * topPlayers.length);
   return topPlayers[randomIndex].playerId;
+}
+
+function scoreAutopickCandidate(
+  player: Player,
+  teamNeed: TeamNeedVector | null,
+  rosterSize: number,
+): number {
+  const draftValue = player.valueModel?.draftValue ?? player.impactRating;
+  if (!teamNeed || rosterSize === 0) {
+    return draftValue;
+  }
+
+  const fit = player.valueModel?.fitVectors;
+  if (!fit) {
+    return draftValue;
+  }
+
+  const needFit =
+    fit.creation * teamNeed.creation +
+    fit.spacing * teamNeed.spacing +
+    fit.rimPressure * teamNeed.rimPressure +
+    fit.perimeterDefense * teamNeed.perimeterDefense +
+    fit.rimDefense * teamNeed.rimDefense +
+    fit.rebounding * teamNeed.rebounding +
+    fit.transition * teamNeed.transition +
+    fit.ballSecurity * teamNeed.ballSecurity;
+
+  const redundancyPenalty =
+    Math.max(0, fit.creation - teamNeed.creation - 0.20) * 4 +
+    Math.max(0, fit.spacing - teamNeed.spacing - 0.20) * 3 +
+    Math.max(0, fit.rimDefense - teamNeed.rimDefense - 0.20) * 3;
+
+  const roleNeedBonus = teamNeed.roleNeed[player.rosterRole] * 18;
+  const roleRedundancyPenalty = teamNeed.roleSurplus[player.rosterRole] * 12;
+
+  return draftValue + needFit * 22 + roleNeedBonus - redundancyPenalty - roleRedundancyPenalty;
+}
+
+function calculateTeamNeedVector(players: Player[]): TeamNeedVector {
+  const averageFit = players.reduce(
+    (acc, player) => {
+      const fit = player.valueModel?.fitVectors;
+      if (!fit) return acc;
+      acc.creation += fit.creation;
+      acc.spacing += fit.spacing;
+      acc.rimPressure += fit.rimPressure;
+      acc.perimeterDefense += fit.perimeterDefense;
+      acc.rimDefense += fit.rimDefense;
+      acc.rebounding += fit.rebounding;
+      acc.transition += fit.transition;
+      acc.ballSecurity += fit.ballSecurity;
+      return acc;
+    },
+    {
+      creation: 0,
+      spacing: 0,
+      rimPressure: 0,
+      perimeterDefense: 0,
+      rimDefense: 0,
+      rebounding: 0,
+      transition: 0,
+      ballSecurity: 0,
+    },
+  );
+  const roleCounts: Record<RosterRole, number> = {
+    backcourt: 0,
+    wing: 0,
+    frontcourt: 0,
+  };
+
+  for (const player of players) {
+    roleCounts[player.rosterRole] += 1;
+  }
+
+  const divisor = Math.max(players.length, 1);
+  const target = 0.58;
+  const roleNeed: Record<RosterRole, number> = {
+    backcourt: Math.max(0, ROSTER_ROLE_TARGET_SHARE.backcourt - roleCounts.backcourt / divisor),
+    wing: Math.max(0, ROSTER_ROLE_TARGET_SHARE.wing - roleCounts.wing / divisor),
+    frontcourt: Math.max(0, ROSTER_ROLE_TARGET_SHARE.frontcourt - roleCounts.frontcourt / divisor),
+  };
+  const roleSurplus: Record<RosterRole, number> = {
+    backcourt: Math.max(0, roleCounts.backcourt / divisor - (ROSTER_ROLE_TARGET_SHARE.backcourt + 0.10)),
+    wing: Math.max(0, roleCounts.wing / divisor - (ROSTER_ROLE_TARGET_SHARE.wing + 0.10)),
+    frontcourt: Math.max(0, roleCounts.frontcourt / divisor - (ROSTER_ROLE_TARGET_SHARE.frontcourt + 0.10)),
+  };
+
+  return {
+    creation: Math.max(0, target - averageFit.creation / divisor),
+    spacing: Math.max(0, target - averageFit.spacing / divisor),
+    rimPressure: Math.max(0, target - averageFit.rimPressure / divisor),
+    perimeterDefense: Math.max(0, target - averageFit.perimeterDefense / divisor),
+    rimDefense: Math.max(0, target - averageFit.rimDefense / divisor),
+    rebounding: Math.max(0, target - averageFit.rebounding / divisor),
+    transition: Math.max(0, target - averageFit.transition / divisor),
+    ballSecurity: Math.max(0, target - averageFit.ballSecurity / divisor),
+    roleNeed,
+    roleSurplus,
+  };
 }
 
 /**

@@ -11,7 +11,10 @@ import {
   LeagueState,
   DraftState,
   DRAFT_CONSTRAINTS,
+  Player,
+  RosterRole,
 } from '@nba-draft-sim/shared';
+import { ROSTER_ROLE_TARGET_SHARE } from '../services/roleInference';
 
 /**
  * Create a new trade proposal
@@ -245,7 +248,8 @@ export function validateTradeProposal(
   fromTeamId: string,
   toTeamId: string,
   fromPlayerIds: string[],
-  toPlayerIds: string[]
+  toPlayerIds: string[],
+  allPlayers: Player[],
 ): { valid: boolean; error?: string } {
   // Check that teams are different
   if (fromTeamId === toTeamId) {
@@ -263,6 +267,18 @@ export function validateTradeProposal(
 
   if (!fromTeam || !toTeam) {
     return { valid: false, error: 'Teams not found' };
+  }
+
+  for (const playerId of fromPlayerIds) {
+    if (!fromTeam.roster.includes(playerId)) {
+      return { valid: false, error: `Player ${playerId} is not on the proposing roster` };
+    }
+  }
+
+  for (const playerId of toPlayerIds) {
+    if (!toTeam.roster.includes(playerId)) {
+      return { valid: false, error: `Player ${playerId} is not on the receiving roster` };
+    }
   }
 
   const fromRosterAfter = fromTeam.roster.length - fromPlayerIds.length + toPlayerIds.length;
@@ -286,5 +302,105 @@ export function validateTradeProposal(
     return { valid: false, error: 'Already have a pending proposal with this team' };
   }
 
+  const fromBefore = evaluateRoster(fromTeam.roster, allPlayers);
+  const toBefore = evaluateRoster(toTeam.roster, allPlayers);
+  const fromAfter = evaluateRoster(
+    [
+      ...fromTeam.roster.filter((playerId) => !fromPlayerIds.includes(playerId)),
+      ...toPlayerIds,
+    ],
+    allPlayers,
+  );
+  const toAfter = evaluateRoster(
+    [
+      ...toTeam.roster.filter((playerId) => !toPlayerIds.includes(playerId)),
+      ...fromPlayerIds,
+    ],
+    allPlayers,
+  );
+
+  const fromDelta = fromAfter.totalScore - fromBefore.totalScore;
+  const toDelta = toAfter.totalScore - toBefore.totalScore;
+  const maxAllowedDrop = -4;
+
+  if (fromDelta < maxAllowedDrop) {
+    return { valid: false, error: 'Trade costs the proposer too much value or fit' };
+  }
+
+  if (toDelta < maxAllowedDrop) {
+    return { valid: false, error: 'Trade is too one-sided against the recipient' };
+  }
+
   return { valid: true };
+}
+
+function evaluateRoster(rosterIds: string[], allPlayers: Player[]): { totalScore: number } {
+  const roster = rosterIds
+    .map((playerId) => allPlayers.find((player) => player.playerId === playerId))
+    .filter((player): player is Player => player !== undefined);
+
+  if (roster.length === 0) {
+    return { totalScore: 0 };
+  }
+
+  const tradeValue = roster.reduce((sum, player) => sum + (player.valueModel?.tradeValue ?? player.impactRating), 0);
+  const fitAverage = roster.reduce(
+    (acc, player) => {
+      const fit = player.valueModel?.fitVectors;
+      if (!fit) return acc;
+      acc.creation += fit.creation;
+      acc.spacing += fit.spacing;
+      acc.rimPressure += fit.rimPressure;
+      acc.perimeterDefense += fit.perimeterDefense;
+      acc.rimDefense += fit.rimDefense;
+      acc.rebounding += fit.rebounding;
+      acc.transition += fit.transition;
+      acc.ballSecurity += fit.ballSecurity;
+      return acc;
+    },
+    {
+      creation: 0,
+      spacing: 0,
+      rimPressure: 0,
+      perimeterDefense: 0,
+      rimDefense: 0,
+      rebounding: 0,
+      transition: 0,
+      ballSecurity: 0,
+    },
+  );
+
+  const divisor = Math.max(roster.length, 1);
+  const target = 0.55;
+  const rosterRoleCounts: Record<RosterRole, number> = {
+    backcourt: 0,
+    wing: 0,
+    frontcourt: 0,
+  };
+
+  for (const player of roster) {
+    rosterRoleCounts[player.rosterRole] += 1;
+  }
+
+  const fitPenalty = Math.abs(target - fitAverage.creation / divisor)
+    + Math.abs(target - fitAverage.spacing / divisor)
+    + Math.abs(target - fitAverage.rimPressure / divisor)
+    + Math.abs(target - fitAverage.perimeterDefense / divisor)
+    + Math.abs(target - fitAverage.rimDefense / divisor)
+    + Math.abs(target - fitAverage.rebounding / divisor);
+
+  const roleBalancePenalty = (
+    Math.abs(ROSTER_ROLE_TARGET_SHARE.backcourt - rosterRoleCounts.backcourt / divisor)
+    + Math.abs(ROSTER_ROLE_TARGET_SHARE.wing - rosterRoleCounts.wing / divisor)
+    + Math.abs(ROSTER_ROLE_TARGET_SHARE.frontcourt - rosterRoleCounts.frontcourt / divisor)
+  ) * 6;
+
+  const missingRolePenalty =
+    (rosterRoleCounts.backcourt === 0 ? 2.5 : 0)
+    + (rosterRoleCounts.wing === 0 ? 1.5 : 0)
+    + (rosterRoleCounts.frontcourt === 0 ? 2.5 : 0);
+
+  return {
+    totalScore: tradeValue - fitPenalty * 8 - roleBalancePenalty - missingRolePenalty,
+  };
 }
