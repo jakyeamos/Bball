@@ -8,6 +8,12 @@ Court Vision is a free, web-first basketball IQ training platform that teaches u
 
 The platform only succeeds if users' basketball IQ genuinely improves ??? education comes before surface polish.
 
+## Implementation Snapshot (2026-04-01)
+
+- The repo now contains implementation through Phase 08 of the roadmap.
+- Remaining open items are mostly verification-oriented: browser/manual QA for the lesson/admin rollout and live Supabase validation for account-upgrade continuity and second-device sync.
+- Use `.planning/ROADMAP.md`, `.planning/STATE.md`, and the summary files under `.planning/phases/04-*` through `.planning/phases/08-*` as the current execution record.
+
 ## Requirements
 
 ### Validated
@@ -148,5 +154,4 @@ The platform only succeeds if users' basketball IQ genuinely improves ??? educat
 | Fix coaching sim bug in early phase | Silent correctness bug undermines the core learning value of the existing sim | ??? Pending |
 
 ---
-*Last updated: 2026-03-09 after initialization*
-
+*Last updated: 2026-04-01 after implementation/status sync*

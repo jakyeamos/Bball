@@ -1,9 +1,9 @@
 ---
 phase: 08-user-profile-and-account-upgrade
 scope: phase-summary
-status: planned
+status: implemented-pending-manual-qa
 created: 2026-03-10
-last_updated: 2026-03-10
+last_updated: 2026-04-01
 ---
 
 # Phase 08: User Profile and Account Upgrade - Summary
@@ -12,8 +12,8 @@ last_updated: 2026-03-10
 Provide role-lens profile intelligence and optional account upgrade with safe cross-device synchronization.
 
 ## Plan Inventory
-- [ ] 08-01-PLAN.md (Wave 1) - Profile metrics, badges, and recommendation engine (PROF-01)
-- [ ] 08-02-PLAN.md (Wave 2) - Anonymous-to-account upgrade continuity and cross-device sync verification gate (PROF-02, PROF-03)
+- [x] 08-01-PLAN.md (Wave 1) - Profile metrics, badges, and recommendation engine (PROF-01)
+- [x] 08-02-PLAN.md (Wave 2) - Anonymous-to-account upgrade continuity and cross-device sync verification gate (PROF-02, PROF-03)
 
 ## Requirement Coverage
 - PROF-01
@@ -31,10 +31,10 @@ Provide role-lens profile intelligence and optional account upgrade with safe cr
 - Recommendation quality degrades if weakest-area inference is not deterministic.
 
 ## Verification Gate
-- [ ] Profile shows completion and accuracy by Player/Coach/GM tracks.
-- [ ] Badge collection and next-lesson suggestions render from live data.
-- [ ] Anonymous upgrade preserves progress/streak/badge history.
-- [ ] Second-device login reproduces equivalent profile/progress state.
+- [x] Profile shows completion and accuracy by Player/Coach/GM tracks.
+- [x] Badge collection and next-lesson suggestions render from live data.
+- [ ] Anonymous upgrade preserves progress/streak/badge history under live Supabase verification.
+- [ ] Second-device login reproduces equivalent profile/progress state under live Supabase verification.
 
 ## Exit Criteria
 - All PROF requirements are complete and verified.

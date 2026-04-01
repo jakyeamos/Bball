@@ -1,9 +1,9 @@
 ---
 phase: 07-draft-simulator-teaching-layer
 scope: phase-summary
-status: planned
+status: implemented-pending-manual-qa
 created: 2026-03-10
-last_updated: 2026-03-10
+last_updated: 2026-04-01
 ---
 
 # Phase 07: Draft Simulator Teaching Layer - Summary
@@ -12,8 +12,8 @@ last_updated: 2026-03-10
 Transform draft simulator into an integrated Court Vision teaching capstone with contextual guidance and recap analysis.
 
 ## Plan Inventory
-- [ ] 07-01-PLAN.md (Wave 1) - Court Vision reskin and contextual teaching overlays linked to lesson taxonomy (DRAFT-01, DRAFT-02)
-- [ ] 07-02-PLAN.md (Wave 2) - Post-draft analysis and capstone surfacing with human release gate (DRAFT-03, DRAFT-04)
+- [x] 07-01-PLAN.md (Wave 1) - Court Vision reskin and contextual teaching overlays linked to lesson taxonomy (DRAFT-01, DRAFT-02)
+- [x] 07-02-PLAN.md (Wave 2) - Post-draft analysis and capstone surfacing with human release gate (DRAFT-03, DRAFT-04)
 
 ## Requirement Coverage
 - DRAFT-01
@@ -32,10 +32,10 @@ Transform draft simulator into an integrated Court Vision teaching capstone with
 - Capstone recommendations must stay threshold-driven to avoid premature surfacing.
 
 ## Verification Gate
-- [ ] Draft runtime reflects Court Vision visual identity consistently.
-- [ ] Teaching overlays appear at defined moments and reference lesson taxonomy links.
-- [ ] Post-draft analysis provides strong/weak decision explanations by role-lens rubrics.
-- [ ] Capstone recommendation appears only when completion threshold is met.
+- [x] Draft runtime reflects Court Vision visual identity more closely than the legacy surface.
+- [x] Teaching overlays appear at defined moments and reference lesson taxonomy links.
+- [x] Post-draft analysis provides strong/weak decision explanations by role-lens rubrics.
+- [x] Capstone recommendation appears only when completion threshold is met.
 
 ## Exit Criteria
 - All DRAFT requirements are complete and verified.

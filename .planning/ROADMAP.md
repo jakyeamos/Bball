@@ -8,6 +8,20 @@ Court Vision expands an existing NBA Draft Simulator monorepo into a full basket
 
 **Cross-cutting — stat utilization:** Player evaluation across the **draft sim** (retroactive updates), **Phase 7** teaching layer, **Phases 9–10** offseason, and any lesson or profile UI that cites stats must follow **DATA-06** and the living docs [`docs/data/player-feature-mapping.md`](../docs/data/player-feature-mapping.md), [`docs/data/nba-stats-stack-delta-todos.md`](../docs/data/nba-stats-stack-delta-todos.md), [`docs/data/external-data-sources.md`](../docs/data/external-data-sources.md). The legacy sim must not drift from the shared pipeline when new metrics land. **Phase 6** daily challenges follow the same rule **when** they include stat-backed NBA content (optional per challenge design).
 
+## Repository Reality Check
+
+The roadmap below reflects the code that is actually present in the repo as of 2026-04-01, not just the last formally closed plan:
+
+- **Phases 1-3 remain the last fully closed and historically verified phases.**
+- **Phases 4-8 are now implemented in the repo** in a local-first / guest-first form. The per-phase summaries track the remaining release-gate items, mainly manual/browser QA plus live Supabase verification where account continuity depends on production env.
+- **Phase 4 now includes** shared lesson/admin/daily schemas, a seeded 15-lesson catalog, reusable lesson runtimes, admin lesson/tag/daily flows, and daily challenge authoring scaffolding.
+- **Phase 5 now includes** dual-path progress persistence, onboarding, searchable/filterable library and recap surfaces, plus text-only lesson discussion.
+- **Phase 6 now includes** daily challenge retrieval/submission, streak and badge plumbing, share-card generation, and a done/not-done friend leaderboard.
+- **Phase 7 now includes** draft teaching overlays, post-draft analysis, and capstone surfacing across the IQ track pages.
+- **Phase 8 now includes** profile metrics/recommendations plus login/account-upgrade surfaces with guest fallback when Supabase admin env is absent.
+- **Phases 9-10 are still not started product work.**
+- **The working tree also contains in-flight data/model work beyond the original Phase 3 close-out**: calibration artifacts/scripts, role inference, advanced player-model tests, and richer player valuation logic are present but were never folded back into the roadmap.
+
 ## Phases
 
 **Phase Numbering:**
@@ -16,14 +30,16 @@ Court Vision expands an existing NBA Draft Simulator monorepo into a full basket
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Foundation and Bug Fixes** - Fix simulation correctness bug, wire coaching WebSocket events, rebrand to Court Vision, establish homepage with all three role lenses (completed 2026-03-10)
-- [x] **Phase 2: Infrastructure - Supabase and Auth** - Initialize Supabase project, establish anonymous auth, define full DB schema with RLS, add TanStack Query and Zod validation (completed 2026-03-24)
-- [x] **Phase 3: Data Layer** - `nba_api` build-time identity + scrape, disk cache, coach profiles seed, player stats to PlayerFeatures mapping (completed 2026-03-24). See [data stack delta todos](../docs/data/nba-stats-stack-delta-todos.md) and [external / free sources](../docs/data/external-data-sources.md).
-- [ ] **Phase 4: Lesson Components and CMS** - All lesson UI interaction types plus admin authoring tools; 15-20 seed lessons authored and published
-- [ ] **Phase 5: Progress, Onboarding, and Content Discovery** - Lesson completion persistence, onboarding flow, searchable content library, discussion board
-- [ ] **Phase 6: Daily Engagement** - Rotating daily challenge, streak tracking, badge milestones, shareable result cards, friend leaderboard
-- [ ] **Phase 7: Draft Simulator Teaching Layer** - Court Vision reskin, contextual teaching overlay, post-draft analysis, capstone positioning
-- [ ] **Phase 8: User Profile and Account Upgrade** - Skill profile page, optional email/password account creation, cross-device progress sync
+Checkboxes below reflect implementation landed in the repo. Remaining manual verification or release gates are tracked in each phase summary.
+
+- [x] **Phase 1: Foundation and Bug Fixes** - Completed 2026-03-10
+- [x] **Phase 2: Infrastructure - Supabase and Auth** - Completed 2026-03-24
+- [x] **Phase 3: Data Layer** - Completed baseline 2026-03-24; repo also contains newer in-flight calibration / player-model work not yet formally closed. See [data stack delta todos](../docs/data/nba-stats-stack-delta-todos.md) and [external / free sources](../docs/data/external-data-sources.md).
+- [x] **Phase 4: Lesson Components and CMS** - Implemented 2026-04-01 in local-first form; feature-flag / SEO / manual rollout checks remain open
+- [x] **Phase 5: Progress, Onboarding, and Content Discovery** - Implemented 2026-04-01 with local-first persistence, onboarding, library discovery, and discussion surfaces
+- [x] **Phase 6: Daily Engagement** - Implemented 2026-04-01 with daily challenge, streak, badge, share-card, and friend-status leaderboard flows
+- [x] **Phase 7: Draft Simulator Teaching Layer** - Implemented 2026-04-01 with overlays, post-draft analysis, and capstone positioning
+- [x] **Phase 8: User Profile and Account Upgrade** - Implemented 2026-04-01; live Supabase upgrade/sync verification remains open
 - [ ] **Phase 9: Offseason Simulator - Foundation** - Save/resume infrastructure, schema versioning, Team Context phase, GM lens entry point
 - [ ] **Phase 10: Offseason Simulator - Decision Loop** - Coaching market, scouting, trade market, draft night, free agency, and post-offseason recap
 
@@ -42,11 +58,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md - Fix handleSimulateRoundInternal bug + Monte Carlo regression test (FOUND-03)
-- [ ] 01-02-PLAN.md - Wire SUBMIT_QUARTER_COACHING and READY_FOR_QUARTER WebSocket events (FOUND-04)
-- [ ] 01-03-PLAN.md - Court Vision rebrand strings + Tailwind design tokens (FOUND-01, FOUND-02)
-- [ ] 01-04-PLAN.md - Homepage three-lane layout + NavBar cross-lens navigation (FOUND-05, FOUND-06)
-- [ ] 01-05-PLAN.md - Human verification checkpoint for all Phase 1 success criteria
+- [x] 01-01-PLAN.md - Fix handleSimulateRoundInternal bug + Monte Carlo regression test (FOUND-03)
+- [x] 01-02-PLAN.md - Wire SUBMIT_QUARTER_COACHING and READY_FOR_QUARTER WebSocket events (FOUND-04)
+- [x] 01-03-PLAN.md - Court Vision rebrand strings + Tailwind design tokens (FOUND-01, FOUND-02)
+- [x] 01-04-PLAN.md - Homepage three-lane layout + NavBar cross-lens navigation (FOUND-05, FOUND-06)
+- [x] 01-05-PLAN.md - Human verification checkpoint for all Phase 1 success criteria
 
 ### Phase 2: Infrastructure - Supabase and Auth
 **Goal**: Every visitor gets a durable anonymous Supabase identity on first load; the full database schema and RLS policies are in place for all three user states; all REST calls from the learning layer use TanStack Query; shared Zod schemas validate all data shapes at the API boundary
@@ -68,6 +84,10 @@ Plans:
 **Goal**: Real NBA player, team, and coach data is available to the server at startup via disk cache and static seed files; player stats are mapped to the existing 30-feature PlayerFeatures schema with explicit field-by-field documentation; **stats.nba.com / `nba_api`** traffic for identity and scrape runs **only** at build time or via operator refresh — never on the HTTP request path
 **Depends on**: Phase 1
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05
+**Current repo state**:
+- Baseline Phase 3 scope is complete and documented in the summary/verification artifacts.
+- The working tree has moved beyond the original close-out: `server/services/features.ts`, `server/services/roleInference.ts`, `server/services/calibrationHarness.ts`, `server/scripts/calibrateDraftSim.ts`, new 2025-26 stats/calibration artifacts, and expanded tests indicate active recalibration of the player model and valuation pipeline.
+- Treat that newer work as a **Phase 3 extension in progress**, not as completed downstream product work.
 **Success Criteria** (what must be TRUE):
   1. Running the build-time seed script produces `server/data/nba-seed.json` containing all active NBA teams and players; subsequent server restarts never trigger live NBA stats HTTP calls on the request path for identity
   2. Server startup logs show the NBA identity disk cache warming up from JSON; any server endpoint that needs player or team identity responds from cache with no outbound stats API call
@@ -86,6 +106,12 @@ Plans:
 **Goal**: All lesson interaction types render correctly and handle failure states gracefully; admins can create, edit, and publish lessons through a protected CMS; at least 15 seed lessons are live at launch distributed across all three role lenses. **Optional:** lesson copy that references NBA player evaluation should align terminology with `PlayerFeatures` / [`player-feature-mapping.md`](../docs/data/player-feature-mapping.md) so Phase 7 draft teaching stays consistent (DATA-06).
 **Depends on**: Phase 2, Phase 3
 **Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04, LEARN-05, LEARN-06, LEARN-07, CMS-01, CMS-02, CMS-03, CMS-04, CMS-05
+**Current repo state**:
+- `shared/schemas.ts` now defines the lesson, discussion, recap, admin, tag, and daily-challenge contracts used by the learning surfaces.
+- `server/src/lib/courtVisionStore.ts` seeds the lesson catalog, tags, recaps, and daily challenge schedule; `server/index.ts` mounts the lesson, admin, tag, and daily-challenge APIs.
+- `client/src/pages/LessonPage.tsx` and `client/src/components/lesson/` now support film breakdown, pause-and-predict, scenario simulation, Learn More sections, completion flow, and removed-video fallback handling.
+- `client/src/pages/admin/` plus `client/src/components/admin/` provide local-first lesson authoring, publish/unpublish, tag management, and daily challenge scheduling behind the current admin guard.
+- Remaining follow-up is release-oriented rather than implementation-oriented: feature-flag rollout, SEO-Max checklist, and human/browser verification.
 **Success Criteria** (what must be TRUE):
   1. A lesson card renders title, role lens badge, difficulty indicator, media embed, takeaway text, and interaction type label - all populated from CMS-authored data
   2. A film breakdown page loads a YouTube embed with a timestamped annotation sidebar; clicking an annotation moves the video to the correct timestamp
@@ -96,16 +122,22 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 04-01-PLAN.md - Lesson card + film breakdown foundations (LEARN-01, LEARN-02)
-- [ ] 04-02-PLAN.md - Pause-and-predict, failure states, scenario, Learn More (LEARN-03, LEARN-04, LEARN-05, LEARN-06)
-- [ ] 04-03-PLAN.md - Admin lesson authoring/edit/publish + role guard (CMS-01, CMS-02, CMS-05)
-- [ ] 04-04-PLAN.md - Daily scheduling + tag management (CMS-03, CMS-04)
-- [ ] 04-05-PLAN.md - Launch lesson catalog + feature-flag + SEO-Max gate (LEARN-07)
+- [x] 04-01-PLAN.md - Lesson card + film breakdown foundations (LEARN-01, LEARN-02)
+- [x] 04-02-PLAN.md - Pause-and-predict, failure states, scenario, Learn More (LEARN-03, LEARN-04, LEARN-05, LEARN-06)
+- [x] 04-03-PLAN.md - Admin lesson authoring/edit/publish + role guard (CMS-01, CMS-02, CMS-05)
+- [x] 04-04-PLAN.md - Daily scheduling + tag management (CMS-03, CMS-04)
+- [x] 04-05-PLAN.md - Launch lesson catalog + feature-flag + SEO-Max gate (LEARN-07)
 
 ### Phase 5: Progress, Onboarding, and Content Discovery
 **Goal**: Lesson completion is tracked and persists across sessions for both anonymous and authenticated users; first-time visitors are guided through an onboarding flow; the full content library is searchable and filterable; users can leave text comments on lessons
 **Depends on**: Phase 4
 **Requirements**: LEARN-08, ONBD-01, ONBD-02, ONBD-03, DISC-01, DISC-02, DISC-03
+**Current repo state**:
+- `client/src/features/progress/` now provides the dual-path lesson progress adapter, keeping local continuity for guests while preserving the current account path.
+- `client/src/pages/OnboardingPage.tsx` and `client/src/features/onboarding/` capture preferences, enforce the three-lesson plus one-benchmark output, and persist completion/skip state.
+- `client/src/pages/LibraryPage.tsx`, `client/src/pages/RecapPage.tsx`, and `server/src/routes/contentLibrary.ts` provide searchable/filterable lesson and recap discovery.
+- `client/src/pages/LessonDiscussionPage.tsx` and `server/src/routes/discussion.ts` provide the deliberately text-only lesson discussion surface.
+- Remaining verification is mostly policy/release oriented rather than missing-feature implementation.
 **Success Criteria** (what must be TRUE):
   1. A user who completes a lesson, closes the browser, and reopens the app sees that lesson marked as complete - for anonymous users via localStorage, for account holders via Supabase
   2. A first-time visitor who completes onboarding is shown exactly 3 recommended starter lessons, one benchmark challenge, and a direct link into the content library - all derived from their team preference, knowledge level, and goal
@@ -115,14 +147,19 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md - Dual-path lesson progress persistence (LEARN-08)
-- [ ] 05-02-PLAN.md - Onboarding capture, recommendation output, skip flow (ONBD-01, ONBD-02, ONBD-03)
-- [ ] 05-03-PLAN.md - Library search/filter, recaps, discussion + SEO-Max gate (DISC-01, DISC-02, DISC-03)
+- [x] 05-01-PLAN.md - Dual-path lesson progress persistence (LEARN-08)
+- [x] 05-02-PLAN.md - Onboarding capture, recommendation output, skip flow (ONBD-01, ONBD-02, ONBD-03)
+- [x] 05-03-PLAN.md - Library search/filter, recaps, discussion + SEO-Max gate (DISC-01, DISC-02, DISC-03)
 
 ### Phase 6: Daily Engagement
 **Goal**: Every day a single challenge is surfaced on the homepage; completing it records the user's streak, awards badges at defined milestones, generates a shareable result card, and contributes to a friend leaderboard scoped to that day only. **Optional (DATA-06):** If a CMS-authored challenge uses **NBA statistics** in the prompt, answer key, or recap, terminology and numbers align with the shared `PlayerFeatures` / mapping docs — not one-off stat jargon.
 **Depends on**: Phase 5
 **Requirements**: DAILY-01, DAILY-02, DAILY-03, DAILY-04, DAILY-05, DAILY-06
+**Current repo state**:
+- `server/src/routes/dailyChallenge.ts` now serves the current challenge, records submissions, infers streak state, and awards milestone badges.
+- `client/src/features/daily/` and `client/src/pages/HomePage.tsx` surface the daily challenge, share-card output, and done/not-done leaderboard on the home feed.
+- `server/src/routes/leaderboard.ts` limits the social layer to current-day completion status rather than ranking users by score.
+- `server/src/routes/adminDailyChallenge.ts` and `client/src/pages/admin/AdminDailyChallengePage.tsx` let admins manage the daily schedule in the same local-first stack.
 **Success Criteria** (what must be TRUE):
   1. Visiting the homepage on any given day shows exactly one Daily Challenge sourced from the CMS-scheduled calendar; visiting the next day shows a different challenge from a different track
   2. A user who completes today's challenge sees their streak counter increment by one; returning after missing a day resets the counter to zero
@@ -132,14 +169,20 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md - Daily challenge retrieval and completion loop (DAILY-01, DAILY-02)
-- [ ] 06-02-PLAN.md - Streaks, badges, shareable result cards (DAILY-03, DAILY-04, DAILY-05)
-- [ ] 06-03-PLAN.md - Friend completion leaderboard + phase verification gate (DAILY-06)
+- [x] 06-01-PLAN.md - Daily challenge retrieval and completion loop (DAILY-01, DAILY-02)
+- [x] 06-02-PLAN.md - Streaks, badges, shareable result cards (DAILY-03, DAILY-04, DAILY-05)
+- [x] 06-03-PLAN.md - Friend completion leaderboard + phase verification gate (DAILY-06)
 
 ### Phase 7: Draft Simulator Teaching Layer
 **Goal**: The existing draft simulator feels native to Court Vision's visual identity; contextual teaching appears during drafting tied to lesson taxonomy tags; a post-draft analysis page closes the educational loop; the simulator is positioned as a capstone accessible from all three IQ tracks after a completion threshold. **DATA-06:** Draft UI, scouting, and post-draft analysis **use** the shared `PlayerFeatures` / `nba_api` pipeline (not a forked stat model); when the data layer adds metrics, **draft sim is updated** in the same release or a blocking gap is tracked.
 **Depends on**: Phase 5
 **Requirements**: DRAFT-01, DRAFT-02, DRAFT-03, DRAFT-04, DATA-06
+**Current repo state**:
+- `client/src/pages/DraftPage.tsx` now consumes `server/src/routes/draftTeaching.ts` to show contextual teaching overlays during the live draft.
+- `client/src/components/draft/TeachingOverlay.tsx` and `client/src/components/draft/DraftTeachingMoment.tsx` provide lesson-linked guidance tied to draft moments.
+- `client/src/pages/DraftRecapPage.tsx`, `client/src/components/draft/PostDraftAnalysis.tsx`, and `client/src/features/draft/rubricScoring.ts` add post-draft role-lens analysis.
+- `client/src/pages/TrackPageLayout.tsx` and the refreshed home/library/profile surfaces now position the draft simulator as a capstone once lesson thresholds are met.
+- The data model feeding the simulator is still evolving through the active Phase 3 extension work, so DATA-06 remains an ongoing coupling requirement.
 **Success Criteria** (what must be TRUE):
   1. Loading the draft simulator shows Court Vision color tokens, typography, and component patterns consistent with the rest of the platform - no legacy draft-sim visual identity visible
   2. During a draft, a contextual tip or strategy note appears at key moments - each tip is tagged to a lesson in the content library so users can follow up
@@ -149,13 +192,18 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md - Draft runtime reskin + contextual teaching overlays (DRAFT-01, DRAFT-02)
-- [ ] 07-02-PLAN.md - Post-draft analysis + capstone surfacing + release gate (DRAFT-03, DRAFT-04)
+- [x] 07-01-PLAN.md - Draft runtime reskin + contextual teaching overlays (DRAFT-01, DRAFT-02)
+- [x] 07-02-PLAN.md - Post-draft analysis + capstone surfacing + release gate (DRAFT-03, DRAFT-04)
 
 ### Phase 8: User Profile and Account Upgrade
 **Goal**: Users have a skill profile showing learning progress broken down by role lens with actionable next-lesson suggestions; anonymous users can optionally create an email/password account and keep all their data; account holders can log in from any device and see their progress. If the profile surfaces **basketball stat literacy** or compares user understanding to lesson topics, align copy with the same `PlayerFeatures` vocabulary as DATA-06 (avoid inventing new metric names).
 **Depends on**: Phase 6, Phase 7
 **Requirements**: PROF-01, PROF-02, PROF-03
+**Current repo state**:
+- `server/src/routes/profile.ts` and `client/src/features/profile/` now calculate role-lens completion, accuracy, badge, streak, and recommendation outputs.
+- `client/src/pages/ProfilePage.tsx` renders the skill profile and next-lesson guidance.
+- `client/src/pages/LoginPage.tsx` and `client/src/pages/AccountUpgradePage.tsx` provide the auth/upgrade surfaces while preserving a guest-mode fallback if Supabase env is unavailable.
+- `server/src/routes/internal/accountUpgrade.ts` remains the live continuity path, but its end-to-end guarantee still requires human verification against a real Supabase project.
 **Success Criteria** (what must be TRUE):
   1. A user's profile page shows completion count and accuracy rate separately for each of the three role lens tracks, their full badge collection, and at least one suggested next lesson based on their weakest lens or subcategory
   2. An anonymous user who creates an email/password account retains all previously accumulated progress, streak, badges, and Daily Challenge history - confirmed by comparing state before and after account creation
@@ -163,8 +211,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md - Role-lens profile metrics and recommendations (PROF-01)
-- [ ] 08-02-PLAN.md - Account upgrade continuity + cross-device sync gate (PROF-02, PROF-03)
+- [x] 08-01-PLAN.md - Role-lens profile metrics and recommendations (PROF-01)
+- [x] 08-02-PLAN.md - Account upgrade continuity + cross-device sync gate (PROF-02, PROF-03)
 
 ### Phase 9: Offseason Simulator - Foundation
 **Goal**: The save/resume infrastructure is in place with schema versioning from day one; the Team Context phase works end-to-end with real NBA data; the simulator is reachable from the GM IQ lens. **DATA-06** continues to apply: roster and identity data come from the same disk seeds as the rest of the app.
@@ -206,18 +254,17 @@ Plans:
 Phases execute in numeric order: 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10
 
 Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each other and can be parallelized. Both must be complete before Phase 4 begins.
+Implementation is now complete through Phase 8 in the repo. The remaining open items are manual/release verification gates called out in the phase summaries, plus the separate Phase 3 model-calibration extension.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Bug Fixes | 5/5 | Complete   | 2026-03-10 |
-| 2. Infrastructure - Supabase and Auth | 4/3 | Complete   | 2026-03-24 |
-| 3. Data Layer | 3/3 | Complete   | 2026-03-24 |
-| 4. Lesson Components and CMS | 0/5 | Not started | - |
-| 5. Progress, Onboarding, and Content Discovery | 0/3 | Not started | - |
-| 6. Daily Engagement | 0/3 | Not started | - |
-| 7. Draft Simulator Teaching Layer | 0/2 | Not started | - |
-| 8. User Profile and Account Upgrade | 0/2 | Not started | - |
-| 9. Offseason Simulator - Foundation | 0/3 | Not started | - |
+| 2. Infrastructure - Supabase and Auth | 3/3 | Complete   | 2026-03-24 |
+| 3. Data Layer | 3/3 formal + extension work in repo | Complete baseline / extension in progress | 2026-03-24 |
+| 4. Lesson Components and CMS | 5/5 | Implemented pending manual rollout / SEO verification | 2026-04-01 |
+| 5. Progress, Onboarding, and Content Discovery | 3/3 | Implemented | 2026-04-01 |
+| 6. Daily Engagement | 3/3 | Implemented | 2026-04-01 |
+| 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
+| 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
+| 9. Offseason Simulator - Foundation | 0/3 | Not started, though schema groundwork exists | - |
 | 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
-
-

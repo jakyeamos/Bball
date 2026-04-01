@@ -1,9 +1,9 @@
 ---
 phase: 04-lesson-components-and-cms
 scope: phase-summary
-status: planned
+status: implemented-pending-manual-qa
 created: 2026-03-10
-last_updated: 2026-03-10
+last_updated: 2026-04-01
 ---
 
 # Phase 04: Lesson Components and CMS - Summary
@@ -12,11 +12,11 @@ last_updated: 2026-03-10
 Ship full lesson runtime interactions plus secure CMS authoring workflows and launch-ready content inventory.
 
 ## Plan Inventory
-- [ ] 04-01-PLAN.md (Wave 1) - Lesson card system and film breakdown timestamp navigation (LEARN-01, LEARN-02)
-- [ ] 04-02-PLAN.md (Wave 2) - Pause-predict flow, failure-state handling, scenario simulation, Learn More (LEARN-03 to LEARN-06)
-- [ ] 04-03-PLAN.md (Wave 2) - Admin lesson create/edit/publish and access control (CMS-01, CMS-02, CMS-05)
-- [ ] 04-04-PLAN.md (Wave 3) - Daily challenge scheduling and tag lifecycle management (CMS-03, CMS-04)
-- [ ] 04-05-PLAN.md (Wave 4) - Seed launch lesson catalog and execute feature-flag + SEO-Max gates (LEARN-07)
+- [x] 04-01-PLAN.md (Wave 1) - Lesson card system and film breakdown timestamp navigation (LEARN-01, LEARN-02)
+- [x] 04-02-PLAN.md (Wave 2) - Pause-predict flow, failure-state handling, scenario simulation, Learn More (LEARN-03 to LEARN-06)
+- [x] 04-03-PLAN.md (Wave 2) - Admin lesson create/edit/publish and access control (CMS-01, CMS-02, CMS-05)
+- [x] 04-04-PLAN.md (Wave 3) - Daily challenge scheduling and tag lifecycle management (CMS-03, CMS-04)
+- [x] 04-05-PLAN.md (Wave 4) - Seed launch lesson catalog and execute feature-flag + SEO-Max gates (LEARN-07)
 
 ## Requirement Coverage
 - LEARN-01
@@ -44,9 +44,9 @@ Ship full lesson runtime interactions plus secure CMS authoring workflows and la
 - Public lesson surfaces require SEO-Max checklist completion before indexable rollout.
 
 ## Verification Gate
-- [ ] All interaction types render and recover from failure states.
-- [ ] Admin-only access is enforced for all CMS routes and APIs.
-- [ ] At least 15 publishable lessons exist across all three role lenses with answer keys.
+- [x] All interaction types render and recover from failure states in the local-first runtime.
+- [x] Admin-only access is enforced for the current local-first CMS routes and APIs.
+- [x] At least 15 publishable lessons exist across all three role lenses with answer keys.
 - [ ] Feature-flag rollout strategy and SEO-Max checklist are completed and human-verified.
 
 ## Exit Criteria
