@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { apiService } from '../services/api';
@@ -17,7 +18,9 @@ import { Button } from '../components/Button';
 import { TeamAnalysis } from '../components/TeamAnalysis';
 import { PlayerCard } from '../components/PlayerCard';
 import { TradePanel } from '../components/TradePanel';
-import { TeamAggregation, Player, DraftPick } from '@nba-draft-sim/shared';
+import { DraftPick, Player, TeamAggregation, featureFlags } from '@nba-draft-sim/shared';
+import { PostDraftAnalysis } from '../components/draft/PostDraftAnalysis';
+import { buildDraftInsights } from '../features/draft/rubricScoring';
 
 export function DraftRecapPage() {
   const navigate = useNavigate();
@@ -25,6 +28,11 @@ export function DraftRecapPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [startingSeason, setStartingSeason] = useState(false);
   const [teamAggregations, setTeamAggregations] = useState<Record<string, TeamAggregation>>({});
+  const lessonsQuery = useQuery({
+    queryKey: ['draft-recap-lessons'],
+    queryFn: () => apiService.getLessons(),
+    enabled: featureFlags.draftCapstoneEnabled,
+  });
 
   // Redirect if no draft
   useEffect(() => {
@@ -129,6 +137,13 @@ export function DraftRecapPage() {
   }, [draft, userId]);
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner && u.userId === userId) || false;
+  const myTeam = draft.teams.find((team) => team.userId === userId) ?? draft.teams[0];
+  const myInsights = buildDraftInsights(
+    (myTeam?.roster ?? [])
+      .map((playerId) => allPlayers.find((player) => player.playerId === playerId))
+      .filter((player): player is Player => Boolean(player)),
+    lessonsQuery.data?.lessons ?? []
+  );
 
   const handleStartSeason = () => {
     if (startingSeason) return;
@@ -168,6 +183,16 @@ export function DraftRecapPage() {
 
       {/* Main Content - Responsive Grid */}
       <div className="h-auto lg:h-[calc(100vh-85px)] max-w-[1920px] mx-auto p-4">
+        {featureFlags.draftCapstoneEnabled ? (
+          <div className="mb-4 rounded-lg border border-cv-court/20 bg-cv-steel/70 p-4">
+            <div className="mb-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">Post-Draft Analysis</p>
+              <h2 className="text-2xl font-semibold text-white">What you nailed and what deserves another rep</h2>
+            </div>
+            <PostDraftAnalysis insights={myInsights} />
+          </div>
+        ) : null}
+
         {selectedTeam ? (
           <div className="flex flex-col lg:flex-row gap-4 h-full">
 

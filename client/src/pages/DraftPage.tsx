@@ -5,16 +5,19 @@
  * UPDATED: Fixed myTeam identification using userId instead of always taking teams[0]
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
-import { Player } from '@nba-draft-sim/shared';
+import { featureFlags, Player } from '@nba-draft-sim/shared';
 import { TeamIdentityUI } from '../features/team-composition/components/TeamIdentityUI';
+import { apiService } from '../services/api';
+import { TeachingOverlay } from '../components/draft/TeachingOverlay';
 
 type SortField = 'impact' | 'name' | 'pts' | 'reb' | 'ast' | 'ts' | 'threeP' | 'threePA' | 'ft' | 'stl' | 'blk';
 type SortDirection = 'asc' | 'desc';
@@ -27,6 +30,13 @@ export function DraftPage() {
   const [sortField, setSortField] = useState<SortField>('pts');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showRoster, setShowRoster] = useState(false);
+  const [dismissedMomentId, setDismissedMomentId] = useState<string | null>(null);
+
+  const teachingQuery = useQuery({
+    queryKey: ['draft-teaching'],
+    queryFn: apiService.getDraftTeaching,
+    enabled: featureFlags.draftTeachingLayerEnabled,
+  });
 
   React.useEffect(() => {
     if (!draft) {
@@ -197,6 +207,33 @@ export function DraftPage() {
   }, [draft, userId, currentPick]);
   // ════════════════════════════════════════════════════════════════════════
 
+  const teachingMoment = useMemo(() => {
+    if (!featureFlags.draftTeachingLayerEnabled || dismissedMomentId) {
+      return null;
+    }
+
+    const moments = teachingQuery.data?.moments ?? [];
+    if (moments.length === 0) return null;
+
+    if ((timeRemaining ?? 99) <= 15) {
+      return moments.find((moment) => moment.trigger === 'clock_pressure') ?? null;
+    }
+
+    if (availablePlayers.length > 0 && myRoster.some((player) => player.position === availablePlayers[0].position)) {
+      return moments.find((moment) => moment.trigger === 'fit_conflict') ?? null;
+    }
+
+    if (availablePlayers.length >= 8 && availablePlayers[0].impactRating - availablePlayers[7].impactRating > 6) {
+      return moments.find((moment) => moment.trigger === 'value_reach') ?? null;
+    }
+
+    if ((draft?.currentPickIndex ?? 0) % 5 === 0) {
+      return moments.find((moment) => moment.trigger === 'positional_scarcity') ?? null;
+    }
+
+    return null;
+  }, [availablePlayers, dismissedMomentId, draft?.currentPickIndex, myRoster, teachingQuery.data?.moments, timeRemaining]);
+
   const handleMakePick = (playerId: string) => {
     wsService.makePick(playerId);
   };
@@ -224,7 +261,7 @@ export function DraftPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 overflow-hidden">
+    <div className="flex min-h-screen bg-cv-navy text-cv-chalk overflow-hidden">
       {/* Main Content - Draft Board */}
       <div
         className="flex-1 transition-all duration-300 ease-in-out min-w-0"
@@ -237,15 +274,16 @@ export function DraftPage() {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">NBA Draft</h1>
-              <p className="text-gray-600">
+              <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">Draft Capstone</p>
+              <h1 className="text-3xl font-bold text-cv-chalk">Court Vision Draft Room</h1>
+              <p className="text-cv-chalk/60">
                 Round {currentPick?.round || 1} • Pick {currentPick?.pickNumber || 1}
               </p>
             </div>
 
             <div className="flex items-center gap-4">
               {/* Timer */}
-              <div className={`text-2xl font-mono font-bold ${(timeRemaining ?? 0) <= 10 ? 'text-red-600' : 'text-gray-900'
+              <div className={`text-2xl font-mono font-bold ${(timeRemaining ?? 0) <= 10 ? 'text-red-300' : 'text-cv-chalk'
                 }`}>
                 {timeRemaining !== null ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}` : '--:--'}
               </div>
@@ -253,10 +291,10 @@ export function DraftPage() {
               {/* --- INSERT NOTIFICATION UNDER HEADER --- */}
               {draft.status === 'active' && picksUntilTurn !== null && (
                 <div className={`py-2 px-4 rounded-lg flex items-center gap-3 shadow-sm transition-colors ${picksUntilTurn === 0
-                    ? 'bg-green-100 border-2 border-green-400 animate-pulse' // It's your turn!
+                    ? 'bg-green-100 border-2 border-green-400 animate-pulse text-gray-900'
                     : picksUntilTurn <= 2
-                      ? 'bg-yellow-50 border border-yellow-200' // Getting close
-                      : 'bg-blue-50 border border-blue-200' // Far away
+                      ? 'bg-yellow-50 border border-yellow-200 text-gray-900'
+                      : 'bg-blue-50 border border-blue-200 text-gray-900'
                   }`}>
                   <span className="text-xl">
                     {picksUntilTurn === 0 ? '🚨' : picksUntilTurn <= 2 ? '⚠️' : '⏳'}
@@ -475,6 +513,10 @@ export function DraftPage() {
           </div>
         </div>
       </div>
+      <TeachingOverlay
+        moment={teachingMoment}
+        onDismiss={() => setDismissedMomentId(teachingMoment?.id ?? 'dismissed')}
+      />
     </div>
   );
 }
