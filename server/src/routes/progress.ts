@@ -1,88 +1,73 @@
-/**
- * server/src/routes/progress.ts
- * Phase 02-03: Lesson progress write endpoint.
- *
- * Routes:
- *   POST /api/progress   — record or update a user's progress on a lesson
- *
- * Request body is validated against progressWriteSchema via validateBody
- * middleware before the handler runs. Invalid payloads get a 400 with
- * structured `issues` before any storage work begins.
- *
- * Data storage:
- *   Phase 02-03 uses an in-memory store for infrastructure testing.
- *   Phase 4 will replace this with Supabase writes using the lesson_progress
- *   table created in Phase 02-02 migrations.
- *
- * Authentication:
- *   The user_id is extracted from the request context in Phase 4 when Supabase
- *   auth middleware is wired. For now the endpoint accepts an optional
- *   user_id field in the body so the shape can be validated end-to-end.
- */
-
-import { Router, Request, Response } from 'express';
-import { ProgressWritePayload, progressWriteSchema } from '@nba-draft-sim/shared';
+import { Request, Response, Router } from 'express';
+import { LessonProgressRecord, ProgressWritePayload, progressWriteSchema } from '../../../shared/schemas';
+import { updateStore } from '../lib/courtVisionStore';
+import { getRequestUserId } from '../lib/requestIdentity';
 import { validateBody } from '../middleware/validateBody';
 
 const router = Router();
 
-// ---------------------------------------------------------------------------
-// In-memory store — keyed by "userId:lessonId"
-// Replace with Supabase upsert in Phase 4.
-// ---------------------------------------------------------------------------
-
-interface ProgressEntry extends ProgressWritePayload {
-  user_id: string;
-  updated_at: string;
-}
-
-const progressStore = new Map<string, ProgressEntry>();
-
-// ---------------------------------------------------------------------------
-// POST /api/progress
-// ---------------------------------------------------------------------------
+router.get('/', async (req: Request, res: Response): Promise<void> => {
+  const userId = getRequestUserId(req);
+  const progress = await updateStore((store) => store.progress_by_user[userId] ?? []);
+  res.json({ progress });
+});
 
 router.post(
   '/',
   validateBody(progressWriteSchema),
-  (req: Request, res: Response): void => {
+  async (req: Request, res: Response): Promise<void> => {
     const payload = res.locals.validatedBody as ProgressWritePayload;
+    const userId = getRequestUserId(req);
 
-    // Phase 02-03: accept user_id from body; Phase 4 will use JWT sub claim.
-    const user_id =
-      typeof req.body.user_id === 'string' && req.body.user_id.trim() !== ''
-        ? (req.body.user_id as string).trim()
-        : 'anonymous';
+    const progress = await updateStore((store) => {
+      const existing = store.progress_by_user[userId] ?? [];
+      const index = existing.findIndex((entry) => entry.lesson_id === payload.lesson_id);
+      const now = new Date().toISOString();
 
-    const key = `${user_id}:${payload.lesson_id}`;
-    const entry: ProgressEntry = {
-      ...payload,
-      user_id,
-      updated_at: new Date().toISOString(),
-    };
+      const nextEntry: LessonProgressRecord = {
+        user_id: userId,
+        lesson_id: payload.lesson_id,
+        completed: payload.completed,
+        score: payload.score,
+        attempts: index >= 0 ? existing[index].attempts + 1 : 1,
+        updated_at: now,
+        last_attempted_at: now,
+      };
 
-    progressStore.set(key, entry);
+      if (index >= 0) {
+        existing[index] = {
+          ...existing[index],
+          ...nextEntry,
+          completed: existing[index].completed || payload.completed,
+          score: payload.score ?? existing[index].score,
+        };
+      } else {
+        existing.push(nextEntry);
+      }
 
-    res.status(200).json({ success: true, progress: entry });
+      store.progress_by_user[userId] = existing;
+      return index >= 0 ? existing[index] : nextEntry;
+    });
+
+    res.status(200).json({ success: true, progress });
   }
 );
 
-// ---------------------------------------------------------------------------
-// GET /api/progress/:lesson_id  (utility for testing — returns stored entry)
-// ---------------------------------------------------------------------------
+router.get('/:lesson_id', async (req: Request, res: Response): Promise<void> => {
+  const userId = getRequestUserId(req);
+  const lessonId = req.params.lesson_id;
 
-router.get('/:lesson_id', (req: Request, res: Response): void => {
-  const user_id =
-    typeof req.query.user_id === 'string' ? req.query.user_id : 'anonymous';
-  const key = `${user_id}:${req.params.lesson_id}`;
-  const entry = progressStore.get(key);
+  const progress = await updateStore((store) => {
+    const entries = store.progress_by_user[userId] ?? [];
+    return entries.find((entry) => entry.lesson_id === lessonId) ?? null;
+  });
 
-  if (!entry) {
+  if (!progress) {
     res.status(404).json({ error: 'No progress found for this lesson.' });
     return;
   }
 
-  res.json({ progress: entry });
+  res.json({ progress });
 });
 
 export default router;

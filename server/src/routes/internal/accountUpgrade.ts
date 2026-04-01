@@ -126,6 +126,13 @@ async function countOwnedRows(userId: string): Promise<{
  *   }
  */
 router.post('/account-upgrade', async (req: Request, res: Response) => {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return res.status(503).json({
+      success: false,
+      errors: ['Account upgrade requires Supabase environment variables in this runtime.'],
+    });
+  }
+
   // 1. Validate request body
   const validation = validateAccountUpgradePayload(req.body);
   if (!validation.valid) {

@@ -1,0 +1,377 @@
+[
+  {
+    "id": "10000000-0000-0000-0000-000000000001",
+    "title": "Read The Weak-Side Tag",
+    "role_lens": "player",
+    "difficulty": "beginner",
+    "description": "Spot the low-man tag on a spread pick-and-roll and make the simple kickout before the defense recovers.",
+    "takeaway": "Read the tag early and punish the helper, not the primary defender.",
+    "interaction_type": "film",
+    "content_url": "https://www.youtube.com/embed/ScMzIvxBSi4",
+    "media_url": "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200&auto=format&fit=crop",
+    "annotations": [
+      { "timestamp": 7, "title": "Tag forms", "note": "The weak-side defender steps in before the roller catches." },
+      { "timestamp": 18, "title": "Window opens", "note": "The skip pass is cleaner than forcing a pocket pass through traffic." },
+      { "timestamp": 31, "title": "Punish the help", "note": "Early recognition turns a crowded paint into a catch-and-shoot three." }
+    ],
+    "subcategory": "pick-and-roll",
+    "tags": ["spacing", "pick-and-roll", "weak-side-help"],
+    "answer_key": "The right read is the kickout because the low man has tagged the roller.",
+    "published": true,
+    "featured": true,
+    "estimated_minutes": 6
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000002",
+    "title": "Beat The Nail Help",
+    "role_lens": "player",
+    "difficulty": "intermediate",
+    "description": "Learn how to attack middle drives when the nail defender stunts and recovers.",
+    "takeaway": "Change pace before you change direction.",
+    "interaction_type": "pause_predict",
+    "content_url": "https://www.youtube.com/embed/jfKfPfyJRdk",
+    "subcategory": "driving-lanes",
+    "tags": ["shot-creation", "help-defense", "decision-making"],
+    "answer_key": "Reject the stunt, keep the dribble alive, and attack the recovering foot.",
+    "pause_predict": {
+      "pause_at": 14,
+      "prompt": "The nail defender shows early. What is the best next action?",
+      "choices": [
+        { "id": "a", "label": "Pick up the dribble and throw a late skip pass" },
+        { "id": "b", "label": "Change pace, keep the live dribble, and re-attack the stunt foot" },
+        { "id": "c", "label": "Force a contested floater over two bodies" }
+      ],
+      "correct_choice_id": "b",
+      "explanation": "A live dribble keeps both passing and finishing options open while the helper is still off-balance."
+    },
+    "learn_more": [
+      {
+        "title": "Why the nail matters",
+        "body": "Elite defenses shrink the floor from the nail because it disrupts straight-line drives without fully rotating."
+      }
+    ],
+    "published": true,
+    "featured": true,
+    "estimated_minutes": 7
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000003",
+    "title": "Attack Closeouts Without Overdribbling",
+    "role_lens": "player",
+    "difficulty": "beginner",
+    "description": "Turn scrambled closeouts into paint touches while staying on schedule with the offense.",
+    "takeaway": "One advantage dribble is often enough.",
+    "interaction_type": "scenario",
+    "subcategory": "closeouts",
+    "tags": ["advantage-play", "spacing", "decision-making"],
+    "answer_key": "Rip through the top foot, collapse help, then move the ball.",
+    "scenario": {
+      "prompt": "You catch on the wing with a hard closeout and a rim protector waiting. Which process is best?",
+      "options": [
+        {
+          "id": "a",
+          "title": "Take three hard dribbles into traffic",
+          "description": "You attack downhill immediately and try to finish through two extra defenders."
+        },
+        {
+          "id": "b",
+          "title": "Take one advantage dribble, force a second helper, and make the next pass",
+          "description": "You use the closeout against the defense without holding the ball too long."
+        },
+        {
+          "id": "c",
+          "title": "Reset the possession even though the defense is tilted",
+          "description": "You avoid the risk but also give away the advantage."
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation": "The closeout already created an edge. Preserve it with one decisive dribble and the next pass."
+    },
+    "published": true,
+    "estimated_minutes": 5
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000004",
+    "title": "Low-Man Rotation Rules",
+    "role_lens": "coach",
+    "difficulty": "beginner",
+    "description": "Teach the low man exactly when to tag, when to take the rim, and how the X-out finishes behind the play.",
+    "takeaway": "Name the first rotator before you talk about the second.",
+    "interaction_type": "film",
+    "content_url": "https://www.youtube.com/embed/ScMzIvxBSi4",
+    "subcategory": "help-defense",
+    "tags": ["shell-defense", "rotations", "rim-protection"],
+    "answer_key": "The low man protects the rim first and trusts the X-out behind him.",
+    "annotations": [
+      { "timestamp": 5, "title": "Early tag", "note": "The low man arrives before the pass, not after the catch." },
+      { "timestamp": 16, "title": "Second rotator", "note": "The weak-side wing must already be moving to cover the low man's man." },
+      { "timestamp": 28, "title": "Finish the possession", "note": "The final closeout is short and under control because the rotation started on time." }
+    ],
+    "published": true,
+    "featured": true,
+    "estimated_minutes": 6
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000005",
+    "title": "Timeout Usage Under Momentum Pressure",
+    "role_lens": "coach",
+    "difficulty": "intermediate",
+    "description": "Separate emotional timeout calls from high-leverage timeout calls that actually change the possession quality.",
+    "takeaway": "Use timeouts to fix the next two possessions, not just the last two mistakes.",
+    "interaction_type": "scenario",
+    "subcategory": "game-management",
+    "tags": ["timeouts", "game-management", "momentum"],
+    "answer_key": "Use the timeout when the tactical issue is repeatable and the lineup needs a concrete reset.",
+    "scenario": {
+      "prompt": "Your team gave up back-to-back corner threes after the same rotation error. What is the best response?",
+      "options": [
+        {
+          "id": "a",
+          "title": "Save the timeout and hope the players self-correct",
+          "description": "You preserve resources but risk repeating the same mistake."
+        },
+        {
+          "id": "b",
+          "title": "Call timeout, diagram the low-man responsibility, and change the weak-side matchup",
+          "description": "You attack the repeated problem before the next possession."
+        },
+        {
+          "id": "c",
+          "title": "Bench a scorer immediately without explaining the coverage breakdown",
+          "description": "You send a message, but the coverage problem remains unclear."
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation": "The issue is structural, not emotional. Fix the repeated coverage and the lineup responsibility before play resumes."
+    },
+    "published": true,
+    "estimated_minutes": 7
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000006",
+    "title": "After-Time-Out Play Sequencing",
+    "role_lens": "coach",
+    "difficulty": "advanced",
+    "description": "Build ATO packages that create one primary read and one clean counter instead of five average options.",
+    "takeaway": "Clarity beats complexity when the clock matters.",
+    "interaction_type": "article",
+    "subcategory": "play-design",
+    "tags": ["ato", "play-design", "late-game"],
+    "answer_key": "Sequence your first read and counter around your best two creators.",
+    "learn_more": [
+      {
+        "title": "Counter thinking",
+        "body": "Your second option should punish the exact scout adjustment the defense is most likely to make."
+      }
+    ],
+    "published": true,
+    "estimated_minutes": 8
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000007",
+    "title": "Value Creation Versus Raw Production",
+    "role_lens": "gm",
+    "difficulty": "beginner",
+    "description": "Learn why counting stats alone miss portability, defensive fit, and lineup elasticity in roster decisions.",
+    "takeaway": "Skills that scale next to stars are worth more than empty volume.",
+    "interaction_type": "article",
+    "subcategory": "player-valuation",
+    "tags": ["value", "fit", "team-building"],
+    "answer_key": "Separate volume from scalable impact when valuing a player.",
+    "published": true,
+    "featured": true,
+    "estimated_minutes": 6
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000008",
+    "title": "When To Trade A Future First",
+    "role_lens": "gm",
+    "difficulty": "intermediate",
+    "description": "Use timeline, surplus creation, and downside insulation to decide when moving a future first is actually rational.",
+    "takeaway": "Trade picks when the move raises your real ceiling, not just your headline talent.",
+    "interaction_type": "scenario",
+    "subcategory": "asset-management",
+    "tags": ["draft-picks", "timeline", "asset-management"],
+    "answer_key": "A future first is expendable only when the current move materially improves the team's real contention path.",
+    "scenario": {
+      "prompt": "Your team won 49 games, has two star initiators, and a glaring playoff wing hole. Should you move a protected future first?",
+      "options": [
+        {
+          "id": "a",
+          "title": "Yes, if the incoming wing solves a playoff-specific weakness and fits the stars",
+          "description": "You are paying to fix a real postseason problem."
+        },
+        {
+          "id": "b",
+          "title": "No, because future firsts should never be traded",
+          "description": "This protects flexibility but ignores windows."
+        },
+        {
+          "id": "c",
+          "title": "Yes, for any veteran scorer with name recognition",
+          "description": "This chases optics rather than fit."
+        }
+      ],
+      "correct_option_id": "a",
+      "explanation": "The question is not whether a first is valuable. It is whether the outgoing asset buys a real playoff upgrade with durable fit."
+    },
+    "published": true,
+    "estimated_minutes": 7
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000009",
+    "title": "Coach Fit In The Front Office Process",
+    "role_lens": "gm",
+    "difficulty": "advanced",
+    "description": "Build coaching searches around the roster's constraints, development needs, and timeline instead of generic reputation.",
+    "takeaway": "The right coach depends on the team you actually have.",
+    "interaction_type": "pause_predict",
+    "content_url": "https://www.youtube.com/embed/jfKfPfyJRdk",
+    "subcategory": "coaching-market",
+    "tags": ["coach-fit", "team-identity", "timeline"],
+    "answer_key": "Hire toward the roster's next problem, not the coach's past brand.",
+    "pause_predict": {
+      "pause_at": 11,
+      "prompt": "A young roster ranks low in organization and defensive communication. Which coaching profile should the GM prioritize?",
+      "choices": [
+        { "id": "a", "label": "A veteran motivator with little schematic reputation" },
+        { "id": "b", "label": "A structure-first teacher with a track record building defensive habits" },
+        { "id": "c", "label": "The biggest available name, regardless of fit" }
+      ],
+      "correct_choice_id": "b",
+      "explanation": "The roster's developmental need is structure. The hire should solve that need before it solves a branding problem."
+    },
+    "published": true,
+    "estimated_minutes": 7
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000010",
+    "title": "Slot Cutting Versus Standing",
+    "role_lens": "player",
+    "difficulty": "beginner",
+    "description": "Understand when a slot cut opens the paint for the driver and when holding spacing is the better decision.",
+    "takeaway": "Movement has to create clarity, not clutter.",
+    "interaction_type": "article",
+    "subcategory": "off-ball-play",
+    "tags": ["spacing", "off-ball", "cuts"],
+    "answer_key": "Cut when the driver needs a passing lane or empty corner, not just because you are idle.",
+    "published": true,
+    "estimated_minutes": 5
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000011",
+    "title": "Transition Matchups Before Matchups",
+    "role_lens": "coach",
+    "difficulty": "intermediate",
+    "description": "Teach defensive transition with rules that stop the ball and protect the rim before clean cross-matches are restored.",
+    "takeaway": "Win the first two seconds, then sort out assignments.",
+    "interaction_type": "article",
+    "subcategory": "transition-defense",
+    "tags": ["transition", "matchups", "defense"],
+    "answer_key": "Sprint to ball and rim first, then trade back into preferred matchups.",
+    "published": true,
+    "estimated_minutes": 6
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000012",
+    "title": "Backup Center Or Fifth Shooter",
+    "role_lens": "gm",
+    "difficulty": "intermediate",
+    "description": "Evaluate roster spots by playoff survivability rather than regular-season comfort.",
+    "takeaway": "The twelfth man still matters if he changes your shape in May.",
+    "interaction_type": "scenario",
+    "subcategory": "roster-construction",
+    "tags": ["roster-construction", "playoffs", "fit"],
+    "answer_key": "The right marginal roster spot is the one that keeps your best lineup options alive.",
+    "scenario": {
+      "prompt": "A contender already has one trusted rim big. The last roster spot is between another traditional center and a corner-spacing wing. Which lens should decide it?",
+      "options": [
+        {
+          "id": "a",
+          "title": "Pick the player who adds the most playoff lineup flexibility",
+          "description": "You care about which option expands your closing groups."
+        },
+        {
+          "id": "b",
+          "title": "Pick the player with the bigger per-game rebounding average",
+          "description": "You reduce the decision to one regular-season stat."
+        },
+        {
+          "id": "c",
+          "title": "Pick the player who is most comfortable staying on the bench",
+          "description": "You optimize vibes over lineup value."
+        }
+      ],
+      "correct_option_id": "a",
+      "explanation": "Marginal roster spots are about preserving lineup answers, especially in the playoffs."
+    },
+    "published": true,
+    "estimated_minutes": 7
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000013",
+    "title": "Screen Angle Creates The Read",
+    "role_lens": "player",
+    "difficulty": "advanced",
+    "description": "See how screen angle changes the defender's path and the handler's best read before the ball screen even lands.",
+    "takeaway": "The advantage starts with the screen, not the dribble.",
+    "interaction_type": "film",
+    "content_url": "https://www.youtube.com/embed/ScMzIvxBSi4",
+    "subcategory": "pick-and-roll",
+    "tags": ["screening", "pick-and-roll", "angles"],
+    "answer_key": "A flipped angle changes where the help must come from and opens the next read.",
+    "annotations": [
+      { "timestamp": 9, "title": "Set the path", "note": "The screener's angle determines whether the defender can recover over the top." },
+      { "timestamp": 20, "title": "Manipulate help", "note": "Once the angle changes, the low man becomes the next reader." }
+    ],
+    "published": true,
+    "estimated_minutes": 8
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000014",
+    "title": "Short Roll Decision Ladder",
+    "role_lens": "coach",
+    "difficulty": "advanced",
+    "description": "Install a simple decision ladder for short-roll playmakers so every touch has a first, second, and third read.",
+    "takeaway": "Structure the short roll before you celebrate it.",
+    "interaction_type": "pause_predict",
+    "content_url": "https://www.youtube.com/embed/jfKfPfyJRdk",
+    "subcategory": "offense-installation",
+    "tags": ["short-roll", "teaching", "decision-tree"],
+    "answer_key": "Read rim, weak-side low man, then opposite slot.",
+    "pause_predict": {
+      "pause_at": 13,
+      "prompt": "The big catches on the short roll and the low man stays home. What is the next read?",
+      "choices": [
+        { "id": "a", "label": "Attack the rim immediately" },
+        { "id": "b", "label": "Spray to the opposite slot because the low man is locked to the dunker" },
+        { "id": "c", "label": "Turn and reset the action" }
+      ],
+      "correct_choice_id": "b",
+      "explanation": "If the low man stays attached, the opposite slot usually becomes the pressure-release pass."
+    },
+    "published": true,
+    "estimated_minutes": 8
+  },
+  {
+    "id": "10000000-0000-0000-0000-000000000015",
+    "title": "Prospect Risk And Outcome Ranges",
+    "role_lens": "gm",
+    "difficulty": "advanced",
+    "description": "Grade prospects through expected outcomes, role probability, and developmental volatility instead of upside slogans.",
+    "takeaway": "A wide range is not a flaw if your organization can absorb it.",
+    "interaction_type": "article",
+    "subcategory": "draft-evaluation",
+    "tags": ["draft", "risk", "development"],
+    "answer_key": "Your board should reflect both ceiling and the cost of missing on that archetype.",
+    "learn_more": [
+      {
+        "title": "Why range beats single-number grades",
+        "body": "Prospects do not arrive as a single median outcome. They arrive as development paths with different probabilities and costs."
+      }
+    ],
+    "published": true,
+    "featured": true,
+    "estimated_minutes": 9
+  }
+]

@@ -23,15 +23,15 @@ export function Input({
   return (
     <div className={`${widthStyles}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-cv-chalk mb-1">
           {label}
         </label>
       )}
       <input
         className={`
-          px-3 py-2 border border-gray-300 rounded-lg
-          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-          disabled:bg-gray-100 disabled:cursor-not-allowed
+          px-3 py-2 border border-cv-court/20 rounded-lg bg-cv-navy/40 text-cv-chalk
+          focus:outline-none focus:ring-2 focus:ring-cv-accent focus:border-transparent
+          disabled:bg-cv-steel/60 disabled:cursor-not-allowed
           ${error ? 'border-red-500' : ''}
           ${widthStyles}
           ${className}
@@ -39,7 +39,7 @@ export function Input({
         {...props}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-sm text-red-300">{error}</p>
       )}
     </div>
   );

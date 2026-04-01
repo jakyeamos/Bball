@@ -15,6 +15,19 @@ import { createLeagueSnapshot } from './services/snapshot';
 import lobbiesRouter from './routes/lobbies';
 import lessonsRouter from './src/routes/lessons';
 import progressRouter from './src/routes/progress';
+import contentLibraryRouter from './src/routes/contentLibrary';
+import recommendationsRouter from './src/routes/recommendations';
+import discussionRouter from './src/routes/discussion';
+import recapsRouter from './src/routes/recaps';
+import dailyChallengeRouter from './src/routes/dailyChallenge';
+import leaderboardRouter from './src/routes/leaderboard';
+import friendsRouter from './src/routes/friends';
+import profileRouter from './src/routes/profile';
+import draftTeachingRouter from './src/routes/draftTeaching';
+import adminLessonsRouter from './src/routes/adminLessons';
+import adminDailyChallengeRouter from './src/routes/adminDailyChallenge';
+import adminTagsRouter from './src/routes/adminTags';
+import accountUpgradeRouter from './src/routes/internal/accountUpgrade';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
@@ -66,6 +79,19 @@ app.use(cookieParser());
 app.use('/api', lobbiesRouter);
 app.use('/api/lessons', lessonsRouter);
 app.use('/api/progress', progressRouter);
+app.use('/api/library', contentLibraryRouter);
+app.use('/api/recommendations', recommendationsRouter);
+app.use('/api/discussion', discussionRouter);
+app.use('/api/recaps', recapsRouter);
+app.use('/api/daily-challenge', dailyChallengeRouter);
+app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/friends', friendsRouter);
+app.use('/api/profile', profileRouter);
+app.use('/api/draft-teaching', draftTeachingRouter);
+app.use('/api/admin/lessons', adminLessonsRouter);
+app.use('/api/admin/daily-challenge', adminDailyChallengeRouter);
+app.use('/api/admin/tags', adminTagsRouter);
+app.use('/internal', accountUpgradeRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -133,9 +159,14 @@ async function startServer() {
   try {
     console.log('🚀 Starting NBA Draft Simulator server...');
 
-    // Step 1: Validate Supabase env vars (fails fast with descriptive error when missing)
-    validateSupabaseAdminEnv();
-    console.log('[supabaseAdmin] Supabase admin client environment validated');
+    // Step 1: Supabase is optional for local-first phases 4-8. Keep prior behavior
+    // when configured, but allow the app to run in guest/local mode otherwise.
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      validateSupabaseAdminEnv();
+      console.log('[supabaseAdmin] Supabase admin client environment validated');
+    } else {
+      console.warn('[supabaseAdmin] Missing Supabase admin env; starting in local-first persistence mode');
+    }
 
     // Warm NBA identity cache from disk (non-blocking; no stats.nba.com on request path)
     void getNbaDataCache()

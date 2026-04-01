@@ -15,32 +15,20 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl) {
-  throw new Error(
-    '[supabaseClient] Missing required env var: VITE_SUPABASE_URL\n' +
-      'Add it to your .env file. See .env.example for reference.'
-  );
-}
-
-if (!supabaseAnonKey) {
-  throw new Error(
-    '[supabaseClient] Missing required env var: VITE_SUPABASE_ANON_KEY\n' +
-      'Add it to your .env file. See .env.example for reference.'
-  );
-}
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 /**
  * Singleton Supabase browser client.
  * Import and use this throughout the client — do not call createClient elsewhere.
  */
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // Persist session in localStorage so anonymous users keep their identity
-    // across page reloads and browser restarts.
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+const supabase: SupabaseClient | null = isSupabaseConfigured
+  ? createClient(supabaseUrl as string, supabaseAnonKey as string, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
 
 export default supabase;

@@ -92,11 +92,49 @@ function makeSchema<T>(
 
 export type RoleLens = 'player' | 'coach' | 'gm';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
-export type InteractionType = 'film' | 'quiz' | 'article';
+export type InteractionType =
+  | 'film'
+  | 'pause_predict'
+  | 'scenario'
+  | 'article'
+  | 'quiz';
+export type ContentType = 'lesson' | 'recap';
 
 export interface TimestampAnnotation {
   timestamp: number;
   note: string;
+  title?: string;
+}
+
+export interface LessonChoice {
+  id: string;
+  label: string;
+}
+
+export interface PausePredictPayload {
+  pause_at: number;
+  prompt: string;
+  choices: LessonChoice[];
+  correct_choice_id: string;
+  explanation: string;
+}
+
+export interface ScenarioOption {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface ScenarioSimulationPayload {
+  prompt: string;
+  options: ScenarioOption[];
+  correct_option_id: string;
+  explanation: string;
+}
+
+export interface LearnMoreSection {
+  title: string;
+  body: string;
 }
 
 export interface LessonRecord {
@@ -110,11 +148,168 @@ export interface LessonRecord {
   takeaway?: string;
   interaction_type?: InteractionType;
   annotations?: TimestampAnnotation[];
+  published?: boolean;
+  subcategory?: string;
+  tags?: string[];
+  answer_key?: string;
+  learn_more?: LearnMoreSection[];
+  pause_predict?: PausePredictPayload;
+  scenario?: ScenarioSimulationPayload;
+  featured?: boolean;
+  estimated_minutes?: number;
+}
+
+export interface RecapRecord {
+  id: string;
+  title: string;
+  role_lens: RoleLens;
+  summary: string;
+  body: string;
+  tags: string[];
+  route: string;
+  published: boolean;
+}
+
+export interface ContentLibraryItem {
+  id: string;
+  content_type: ContentType;
+  title: string;
+  summary: string;
+  role_lens: RoleLens;
+  route: string;
+  tags: string[];
+  difficulty?: Difficulty;
+  interaction_type?: InteractionType;
+  subcategory?: string;
+  estimated_minutes?: number;
+}
+
+export interface LessonProgressRecord {
+  user_id: string;
+  lesson_id: string;
+  completed: boolean;
+  score?: number;
+  attempts: number;
+  updated_at: string;
+  last_attempted_at?: string;
+}
+
+export interface OnboardingResponse {
+  favorite_team: string;
+  knowledge_level: 'new' | 'growing' | 'advanced';
+  improvement_goal: RoleLens;
+}
+
+export interface RecommendationCard {
+  id: string;
+  title: string;
+  description: string;
+  route: string;
+  role_lens: RoleLens;
+  kind: 'lesson' | 'challenge';
+}
+
+export interface DailyChallengeRecord {
+  id: string;
+  challenge_date: string;
+  title: string;
+  prompt: string;
+  choices: LessonChoice[];
+  correct_choice_id: string;
+  explanation: string;
+  role_lens: RoleLens;
+  lesson_id?: string;
+  tags: string[];
+}
+
+export interface StreakState {
+  current_streak: number;
+  best_streak: number;
+  last_completed_date?: string;
+}
+
+export interface BadgeRecord {
+  id: string;
+  label: string;
+  description: string;
+  category: 'streak' | 'track' | 'capstone';
+  unlocked_at: string;
+}
+
+export interface DailyChallengeResult {
+  challenge_id: string;
+  challenge_date: string;
+  role_lens: RoleLens;
+  selected_choice_id: string;
+  correct: boolean;
+  explanation: string;
+  streak: StreakState;
+  badges: BadgeRecord[];
+  submitted_at: string;
+}
+
+export interface FriendCompletionStatus {
+  friend_id: string;
+  display_name: string;
+  completed: boolean;
+}
+
+export interface ProfileLensMetrics {
+  role_lens: RoleLens;
+  completion_count: number;
+  accuracy_rate: number;
+  weak_tags: string[];
+}
+
+export interface ProfileResponse {
+  user_id: string;
+  auth_mode: 'guest' | 'supabase';
+  total_completed_lessons: number;
+  track_metrics: ProfileLensMetrics[];
+  streak: StreakState;
+  badges: BadgeRecord[];
+  suggested_lessons: RecommendationCard[];
+  recent_challenge?: DailyChallengeResult | null;
+}
+
+export interface DiscussionComment {
+  id: string;
+  lesson_id: string;
+  author_id: string;
+  author_label: string;
+  body: string;
+  created_at: string;
+}
+
+export interface DraftTeachingMoment {
+  id: string;
+  title: string;
+  prompt: string;
+  trigger: 'clock_pressure' | 'fit_conflict' | 'value_reach' | 'positional_scarcity';
+  severity: 'info' | 'warning' | 'success';
+  lesson_id?: string;
+  lesson_title?: string;
+}
+
+export interface DraftDecisionInsight {
+  id: string;
+  verdict: 'strong' | 'weak';
+  role_lens: RoleLens;
+  title: string;
+  summary: string;
+  lesson_id?: string;
+  lesson_title?: string;
 }
 
 const ROLE_LENS_VALUES: RoleLens[] = ['player', 'coach', 'gm'];
 const DIFFICULTY_VALUES: Difficulty[] = ['beginner', 'intermediate', 'advanced'];
-const INTERACTION_TYPE_VALUES: InteractionType[] = ['film', 'quiz', 'article'];
+const INTERACTION_TYPE_VALUES: InteractionType[] = [
+  'film',
+  'pause_predict',
+  'scenario',
+  'article',
+  'quiz',
+];
 
 function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
@@ -164,6 +359,96 @@ function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
     errors.push('annotations must be an array when provided.');
   }
 
+  if (raw.published !== undefined && typeof raw.published !== 'boolean') {
+    errors.push('published must be a boolean when provided.');
+  }
+
+  if (raw.subcategory !== undefined && typeof raw.subcategory !== 'string') {
+    errors.push('subcategory must be a string when provided.');
+  }
+
+  if (raw.tags !== undefined) {
+    if (!Array.isArray(raw.tags) || raw.tags.some((tag) => typeof tag !== 'string')) {
+      errors.push('tags must be an array of strings when provided.');
+    }
+  }
+
+  if (raw.answer_key !== undefined && typeof raw.answer_key !== 'string') {
+    errors.push('answer_key must be a string when provided.');
+  }
+
+  if (raw.learn_more !== undefined) {
+    const validLearnMore =
+      Array.isArray(raw.learn_more) &&
+      raw.learn_more.every(
+        (entry) =>
+          typeof entry === 'object' &&
+          entry !== null &&
+          typeof (entry as LearnMoreSection).title === 'string' &&
+          typeof (entry as LearnMoreSection).body === 'string'
+      );
+    if (!validLearnMore) {
+      errors.push('learn_more must be an array of { title, body } objects.');
+    }
+  }
+
+  if (raw.pause_predict !== undefined) {
+    const pausePredict = raw.pause_predict as PausePredictPayload;
+    const validPausePredict =
+      typeof pausePredict === 'object' &&
+      pausePredict !== null &&
+      typeof pausePredict.pause_at === 'number' &&
+      typeof pausePredict.prompt === 'string' &&
+      Array.isArray(pausePredict.choices) &&
+      pausePredict.choices.every(
+        (choice) =>
+          typeof choice === 'object' &&
+          choice !== null &&
+          typeof choice.id === 'string' &&
+          typeof choice.label === 'string'
+      ) &&
+      typeof pausePredict.correct_choice_id === 'string' &&
+      typeof pausePredict.explanation === 'string';
+
+    if (!validPausePredict) {
+      errors.push('pause_predict must include pause_at, prompt, choices, correct_choice_id, and explanation.');
+    }
+  }
+
+  if (raw.scenario !== undefined) {
+    const scenario = raw.scenario as ScenarioSimulationPayload;
+    const validScenario =
+      typeof scenario === 'object' &&
+      scenario !== null &&
+      typeof scenario.prompt === 'string' &&
+      Array.isArray(scenario.options) &&
+      scenario.options.every(
+        (option) =>
+          typeof option === 'object' &&
+          option !== null &&
+          typeof option.id === 'string' &&
+          typeof option.title === 'string' &&
+          typeof option.description === 'string'
+      ) &&
+      typeof scenario.correct_option_id === 'string' &&
+      typeof scenario.explanation === 'string';
+
+    if (!validScenario) {
+      errors.push('scenario must include prompt, options, correct_option_id, and explanation.');
+    }
+  }
+
+  if (raw.featured !== undefined && typeof raw.featured !== 'boolean') {
+    errors.push('featured must be a boolean when provided.');
+  }
+
+  if (
+    raw.estimated_minutes !== undefined &&
+    (typeof raw.estimated_minutes !== 'number' || !Number.isFinite(raw.estimated_minutes))
+  ) {
+    errors.push('estimated_minutes must be a finite number when provided.');
+  }
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
@@ -181,6 +466,15 @@ function validateLessonRecord(body: unknown): ValidationResult<LessonRecord> {
       ...(raw.takeaway !== undefined ? { takeaway: (raw.takeaway as string).trim() } : {}),
       ...(raw.interaction_type !== undefined ? { interaction_type: raw.interaction_type as InteractionType } : {}),
       ...(raw.annotations !== undefined ? { annotations: raw.annotations as TimestampAnnotation[] } : {}),
+      ...(raw.published !== undefined ? { published: raw.published as boolean } : {}),
+      ...(raw.subcategory !== undefined ? { subcategory: (raw.subcategory as string).trim() } : {}),
+      ...(raw.tags !== undefined ? { tags: raw.tags as string[] } : {}),
+      ...(raw.answer_key !== undefined ? { answer_key: (raw.answer_key as string).trim() } : {}),
+      ...(raw.learn_more !== undefined ? { learn_more: raw.learn_more as LearnMoreSection[] } : {}),
+      ...(raw.pause_predict !== undefined ? { pause_predict: raw.pause_predict as PausePredictPayload } : {}),
+      ...(raw.scenario !== undefined ? { scenario: raw.scenario as ScenarioSimulationPayload } : {}),
+      ...(raw.featured !== undefined ? { featured: raw.featured as boolean } : {}),
+      ...(raw.estimated_minutes !== undefined ? { estimated_minutes: raw.estimated_minutes as number } : {}),
     },
   };
 }

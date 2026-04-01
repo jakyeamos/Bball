@@ -21,6 +21,19 @@ import { GameTimer } from './components/GameTimer';
 import { ScoutingReportPage } from './pages/ScoutingReportPage';
 import { NavBar } from './components/NavBar';
 import { LessonPage } from './pages/LessonPage';
+import { LibraryPage } from './pages/LibraryPage';
+import { RecapPage } from './pages/RecapPage';
+import { LessonDiscussionPage } from './pages/LessonDiscussionPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { PlayerIqPage } from './pages/PlayerIqPage';
+import { CoachIqPage } from './pages/CoachIqPage';
+import { GmIqPage } from './pages/GmIqPage';
+import { LoginPage } from './pages/LoginPage';
+import { AccountUpgradePage } from './pages/AccountUpgradePage';
+import { AdminLessonsPage } from './pages/admin/AdminLessonsPage';
+import { AdminDailyChallengePage } from './pages/admin/AdminDailyChallengePage';
+import { AdminTagsPage } from './pages/admin/AdminTagsPage';
 
 const GameRouting = () => {
   const { league } = useApp();
@@ -79,7 +92,17 @@ function App() {
           <GameRouting />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/library" element={<LibraryPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/player-iq" element={<PlayerIqPage />} />
+            <Route path="/coach-iq" element={<CoachIqPage />} />
+            <Route path="/gm-iq" element={<GmIqPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/upgrade-account" element={<AccountUpgradePage />} />
             <Route path="/lessons/:lessonId" element={<LessonPage />} />
+            <Route path="/lessons/:lessonId/discussion" element={<LessonDiscussionPage />} />
+            <Route path="/recaps/:recapId" element={<RecapPage />} />
             <Route path="/lobby" element={<LobbyPage />} />
             <Route path="/browse" element={<LobbyBrowserPage />} />
             <Route path="/scouting-report" element={<ScoutingReportPage />} />
@@ -90,6 +113,9 @@ function App() {
             <Route path="/draft-recap" element={<DraftRecapPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/round-results" element={<RoundResultsPage />} />
+            <Route path="/admin/lessons" element={<AdminLessonsPage />} />
+            <Route path="/admin/daily-challenge" element={<AdminDailyChallengePage />} />
+            <Route path="/admin/tags" element={<AdminTagsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

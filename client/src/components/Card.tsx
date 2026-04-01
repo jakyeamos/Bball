@@ -24,9 +24,9 @@ export function Card({
   return (
     <div
       {...rest}
-      className={`bg-white rounded-lg shadow-md ${paddingStyles[padding]} ${className}`}
+      className={`rounded-lg border border-cv-court/20 bg-cv-steel text-cv-chalk shadow-md ${paddingStyles[padding]} ${className}`}
     >
-      {title && <h3 className="text-xl font-bold mb-4 text-gray-900">{title}</h3>}
+      {title && <h3 className="text-xl font-bold mb-4 text-cv-chalk">{title}</h3>}
       {children}
     </div>
   );

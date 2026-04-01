@@ -1,162 +1,127 @@
-/**
- * client/src/pages/HomePage.tsx
- * Court Vision homepage with three role-lens lanes.
- * Phase 1: FOUND-05
- * Phase 02-03: Lesson list query integrated for GM IQ lane (pilot).
- */
-
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { featureFlags } from '@nba-draft-sim/shared';
 import { useLessons } from '../features/learning/queries';
+import { useDailyChallenge } from '../features/daily/useDailyChallenge';
+import { DailyChallengeCard } from '../features/daily/DailyChallengeCard';
+import { DailyLeaderboard } from '../features/daily/DailyLeaderboard';
+import { readOnboardingState } from '../features/onboarding/onboardingStorage';
 
 export function HomePage() {
-    // Query all lessons — used to surface recent or featured lessons per lens.
-    // Empty/error states gracefully fall back to the static "Coming Soon" copy.
-    const { data: lessons } = useLessons();
+  const { data: lessons } = useLessons();
+  const daily = useDailyChallenge();
+  const onboardingState = readOnboardingState();
 
-    // Pick up to 3 lessons per lens for the lane preview
-    const playerLessons = lessons?.filter((l) => l.role_lens === 'player').slice(0, 3) ?? [];
-    const coachLessons  = lessons?.filter((l) => l.role_lens === 'coach').slice(0, 3) ?? [];
-    const gmLessons     = lessons?.filter((l) => l.role_lens === 'gm').slice(0, 3) ?? [];
+  const playerLessons = lessons?.filter((lesson) => lesson.role_lens === 'player').slice(0, 3) ?? [];
+  const coachLessons = lessons?.filter((lesson) => lesson.role_lens === 'coach').slice(0, 3) ?? [];
+  const gmLessons = lessons?.filter((lesson) => lesson.role_lens === 'gm').slice(0, 3) ?? [];
 
-    return (
-        <div className="min-h-screen bg-cv-navy">
-            {/* Hero */}
-            <div className="text-center px-4 py-16 lg:py-24">
-                <h1 className="font-display text-4xl lg:text-6xl font-bold text-cv-chalk mb-4 tracking-tight">
-                    Court Vision
-                </h1>
-                <p className="text-cv-chalk/70 text-lg lg:text-xl max-w-xl mx-auto">
-                    Improve your basketball IQ.
-                </p>
-            </div>
-
-            {/* Three role-lens lanes */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4 pb-20">
-
-                {/* Player IQ */}
-                <div
-                    id="player-iq"
-                    className="bg-cv-steel border border-cv-court/30 rounded-cv p-6 lg:p-8 hover:border-cv-court transition-colors flex flex-col"
-                >
-                    <div className="mb-4">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-cv-accent">
-                            Player IQ
-                        </span>
-                    </div>
-                    <h2 className="text-cv-chalk text-xl font-semibold mb-3">
-                        Read the Game Like a Pro
-                    </h2>
-                    <p className="text-cv-chalk/60 text-sm leading-relaxed mb-4">
-                        Learn spacing, off-ball movement, and shot selection. Understand
-                        what the best players see on the floor before the play develops.
-                    </p>
-                    {playerLessons.length > 0 && (
-                        <ul className="space-y-2 mb-6">
-                            {playerLessons.map((lesson) => (
-                                <li key={lesson.id}>
-                                    <Link
-                                        to={`/lessons/${lesson.id}`}
-                                        className="block text-cv-chalk/80 hover:text-cv-chalk text-sm truncate hover:underline"
-                                    >
-                                        {lesson.title}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    <div className="mt-auto">
-                        <a
-                            href="#player-iq"
-                            className="inline-block bg-cv-accent hover:bg-orange-500 text-white text-sm font-semibold rounded-cv px-4 py-2 transition-colors"
-                        >
-                            Coming Soon
-                        </a>
-                    </div>
-                </div>
-
-                {/* Coach IQ */}
-                <div
-                    id="coach-iq"
-                    className="bg-cv-steel border border-cv-court/30 rounded-cv p-6 lg:p-8 hover:border-cv-court transition-colors flex flex-col"
-                >
-                    <div className="mb-4">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-cv-accent">
-                            Coach IQ
-                        </span>
-                    </div>
-                    <h2 className="text-cv-chalk text-xl font-semibold mb-3">
-                        Think Like a Head Coach
-                    </h2>
-                    <p className="text-cv-chalk/60 text-sm leading-relaxed mb-4">
-                        Understand rotations, clock management, and in-game adjustments.
-                        Learn why the best coaches make the decisions they do.
-                    </p>
-                    {coachLessons.length > 0 && (
-                        <ul className="space-y-2 mb-6">
-                            {coachLessons.map((lesson) => (
-                                <li key={lesson.id}>
-                                    <Link
-                                        to={`/lessons/${lesson.id}`}
-                                        className="block text-cv-chalk/80 hover:text-cv-chalk text-sm truncate hover:underline"
-                                    >
-                                        {lesson.title}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    <div className="mt-auto">
-                        <a
-                            href="#coach-iq"
-                            className="inline-block bg-cv-accent hover:bg-orange-500 text-white text-sm font-semibold rounded-cv px-4 py-2 transition-colors"
-                        >
-                            Coming Soon
-                        </a>
-                    </div>
-                </div>
-
-                {/* GM IQ */}
-                <div
-                    id="gm-iq"
-                    className="bg-cv-steel border border-cv-court/30 rounded-cv p-6 lg:p-8 hover:border-cv-court transition-colors flex flex-col"
-                >
-                    <div className="mb-4">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-cv-accent">
-                            GM IQ
-                        </span>
-                    </div>
-                    <h2 className="text-cv-chalk text-xl font-semibold mb-3">
-                        Build a Championship Roster
-                    </h2>
-                    <p className="text-cv-chalk/60 text-sm leading-relaxed mb-4">
-                        Evaluate trades, draft prospects, and think long-term. The decisions
-                        front offices face are harder than they look.
-                    </p>
-                    {gmLessons.length > 0 && (
-                        <ul className="space-y-2 mb-6">
-                            {gmLessons.map((lesson) => (
-                                <li key={lesson.id}>
-                                    <Link
-                                        to={`/lessons/${lesson.id}`}
-                                        className="block text-cv-chalk/80 hover:text-cv-chalk text-sm truncate hover:underline"
-                                    >
-                                        {lesson.title}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    <div className="mt-auto flex gap-3 flex-wrap">
-                        <Link
-                            to="/lobby"
-                            className="inline-block bg-cv-accent hover:bg-orange-500 text-white text-sm font-semibold rounded-cv px-4 py-2 transition-colors"
-                        >
-                            Enter Draft Sim →
-                        </Link>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-12">
+      <section className="mb-12 rounded-[1.5rem] border border-cv-court/20 bg-cv-steel/80 p-8 lg:p-10">
+        <div className="max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.25em] text-cv-accent mb-3">Court Vision</p>
+          <h1 className="text-5xl font-semibold text-cv-chalk mb-4">
+            Build basketball IQ through lessons, daily reps, and draft decisions.
+          </h1>
+          <p className="text-lg leading-8 text-cv-chalk/72 mb-6">
+            Court Vision now has a full lesson library, guided onboarding, daily challenge loops, a skill profile, and a draft-teaching capstone layered onto the simulator.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/library" className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white">
+              Browse library
+            </Link>
+            {featureFlags.onboardingEnabled && !onboardingState.completed && !onboardingState.skipped ? (
+              <Link to="/onboarding" className="rounded-cv border border-cv-court/20 px-4 py-2 text-sm font-semibold text-cv-chalk">
+                Start onboarding
+              </Link>
+            ) : null}
+            <Link to="/profile" className="rounded-cv border border-cv-court/20 px-4 py-2 text-sm font-semibold text-cv-chalk">
+              View profile
+            </Link>
+          </div>
         </div>
-    );
+      </section>
+
+      {featureFlags.dailyChallengeEnabled && daily.challenge ? (
+        <section className="mb-12 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+          <DailyChallengeCard
+            challenge={daily.challenge}
+            result={daily.submitResult}
+            isSubmitting={daily.isSubmitting}
+            onSubmit={daily.submitAnswer}
+          />
+          {featureFlags.dailyLeaderboardEnabled ? <DailyLeaderboard /> : null}
+        </section>
+      ) : null}
+
+      <section className="grid gap-6 lg:grid-cols-3">
+        <TrackColumn
+          id="player-iq"
+          title="Player IQ"
+          description="Read closeouts, tag help, and live-dribble decisions before the defense finishes rotating."
+          lessons={playerLessons}
+          route="/player-iq"
+        />
+        <TrackColumn
+          id="coach-iq"
+          title="Coach IQ"
+          description="Study shell rules, timeout leverage, and lineups that survive real game pressure."
+          lessons={coachLessons}
+          route="/coach-iq"
+        />
+        <TrackColumn
+          id="gm-iq"
+          title="GM IQ"
+          description="Think in ranges, fit, and organizational tradeoffs instead of one-number player grades."
+          lessons={gmLessons}
+          route="/gm-iq"
+          secondaryAction={
+            <Link to="/draft" className="rounded-cv border border-cv-accent/40 px-4 py-2 text-sm font-semibold text-cv-chalk">
+              Open draft simulator
+            </Link>
+          }
+        />
+      </section>
+    </div>
+  );
+}
+
+interface TrackColumnProps {
+  id: string;
+  title: string;
+  description: string;
+  lessons: Array<{ id: string; title: string }>;
+  route: string;
+  secondaryAction?: React.ReactNode;
+}
+
+function TrackColumn({
+  id,
+  title,
+  description,
+  lessons,
+  route,
+  secondaryAction,
+}: TrackColumnProps) {
+  return (
+    <div id={id} className="flex h-full flex-col rounded-[1.25rem] border border-cv-court/20 bg-cv-steel p-6">
+      <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-3">{title}</p>
+      <h2 className="text-2xl font-semibold text-cv-chalk mb-3">{title === 'GM IQ' ? 'Build the roster with context' : `Train your ${title.toLowerCase()}`}</h2>
+      <p className="text-sm leading-6 text-cv-chalk/70 mb-5">{description}</p>
+      <div className="space-y-2 mb-6">
+        {lessons.map((lesson) => (
+          <Link key={lesson.id} to={`/lessons/${lesson.id}`} className="block text-sm text-cv-chalk/75 hover:text-cv-chalk">
+            {lesson.title}
+          </Link>
+        ))}
+      </div>
+      <div className="mt-auto flex flex-wrap gap-3">
+        <Link to={route} className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white">
+          Explore {title}
+        </Link>
+        {secondaryAction}
+      </div>
+    </div>
+  );
 }
