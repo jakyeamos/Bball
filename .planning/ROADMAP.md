@@ -268,3 +268,43 @@ Implementation is now complete through Phase 8 in the repo. The remaining open i
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 0/3 | Not started, though schema groundwork exists | - |
 | 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
+
+### Phase 11: NBA Big Board Creator — private-first prospect evaluation platform with modular scoring, historical comps, film workflow, and auditable big board generation
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
+
+### Phase 12: NBA Big Board Creator — Ranking, scoring engine, board generation, tiering, historical comps, and board-level explanations (PRD Phase 2)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 12 to break down)
+
+### Phase 13: NBA Big Board Creator — Audit layer, snapshots, override logs, takes ledger, preset versioning, and retrospective outcome review scaffolding (PRD Phase 3)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 13 to break down)
+
+### Phase 14: NBA Big Board Creator — Team fit boards extension layered on top of neutral board (PRD Phase 4)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 13
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)

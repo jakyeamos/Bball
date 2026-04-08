@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # Python (optional local venv for nba_api seed scripts)
 .venv-nba/
+__pycache__/
+*.pyc
