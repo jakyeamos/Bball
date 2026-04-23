@@ -1,4 +1,5 @@
 import {
+  AdvancedModuleRecommendation,
   BadgeRecord,
   ContentLibraryItem,
   DailyChallengeRecord,
@@ -7,6 +8,8 @@ import {
   DraftTeachingMoment,
   LessonProgressRecord,
   LessonRecord,
+  OffseasonRunState,
+  OffseasonTeamSummary,
   OnboardingResponse,
   ProfileResponse,
   ProgressWritePayload,
@@ -151,6 +154,18 @@ export interface DraftTeachingResponse {
   moments: DraftTeachingMoment[];
 }
 
+export interface OffseasonTeamsResponse {
+  teams: OffseasonTeamSummary[];
+}
+
+export interface OffseasonRunResponse {
+  run: OffseasonRunState | null;
+}
+
+export interface AdvancedModulesResponse {
+  modules: AdvancedModuleRecommendation[];
+}
+
 type LessonFilters = {
   role_lens?: string;
   difficulty?: string;
@@ -264,6 +279,57 @@ export const apiService = {
 
   getDraftTeaching: (): Promise<DraftTeachingResponse> => {
     return fetchApi<DraftTeachingResponse>('/api/draft-teaching');
+  },
+
+  getOffseasonTeams: (): Promise<OffseasonTeamsResponse> => {
+    return fetchApi<OffseasonTeamsResponse>('/api/offseason/runs/teams');
+  },
+
+  getActiveOffseasonRun: (runId?: string): Promise<OffseasonRunResponse> => {
+    return fetchApi<OffseasonRunResponse>(
+      `/api/offseason/runs/active${buildQuery({ run_id: runId })}`
+    );
+  },
+
+  createOffseasonRun: (seasonYear: number): Promise<OffseasonRunResponse> => {
+    return fetchApi<OffseasonRunResponse>('/api/offseason/runs', {
+      method: 'POST',
+      body: JSON.stringify({ season_year: seasonYear }),
+    });
+  },
+
+  saveTeamContext: (
+    runId: string,
+    teamId: number
+  ): Promise<OffseasonRunResponse> => {
+    return fetchApi<OffseasonRunResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/team-context`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ team_id: teamId }),
+      }
+    );
+  },
+
+  transitionOffseasonRun: (
+    runId: string,
+    expectedPhase: OffseasonRunState['phase'],
+    nextPhase: OffseasonRunState['phase']
+  ): Promise<OffseasonRunResponse> => {
+    return fetchApi<OffseasonRunResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/transition`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          expected_phase: expectedPhase,
+          next_phase: nextPhase,
+        }),
+      }
+    );
+  },
+
+  getAdvancedModules: (): Promise<AdvancedModulesResponse> => {
+    return fetchApi<AdvancedModulesResponse>('/api/recommendations/advanced');
   },
 
   getAdminLessons: (): Promise<AdminLessonsResponse> => {

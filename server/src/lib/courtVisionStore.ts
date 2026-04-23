@@ -9,6 +9,7 @@ import {
   DiscussionComment,
   LessonProgressRecord,
   LessonRecord,
+  OffseasonRunState,
   OnboardingResponse,
   RecapRecord,
   RecommendationCard,
@@ -33,6 +34,7 @@ export interface CourtVisionStoreState {
   onboarding_by_user: Record<string, OnboardingResponse & { skipped?: boolean }>;
   friends_by_user: Record<string, Array<{ friend_id: string; display_name: string }>>;
   user_profiles: Record<string, StoredUserProfile>;
+  offseason_runs_by_user: Record<string, OffseasonRunState[]>;
 }
 
 const STORE_PATH = process.env.COURT_VISION_STORE_PATH || path.join(os.tmpdir(), 'court-vision-store.json');
@@ -161,6 +163,33 @@ function defaultStore(): CourtVisionStoreState {
     onboarding_by_user: {},
     friends_by_user: {},
     user_profiles: {},
+    offseason_runs_by_user: {},
+  };
+}
+
+function ensureStoreShape(raw: Partial<CourtVisionStoreState>): CourtVisionStoreState {
+  const defaults = defaultStore();
+
+  return {
+    ...defaults,
+    ...raw,
+    lessons: Array.isArray(raw.lessons) ? raw.lessons : defaults.lessons,
+    recaps: Array.isArray(raw.recaps) ? raw.recaps : defaults.recaps,
+    tags: Array.isArray(raw.tags) ? raw.tags : defaults.tags,
+    daily_challenges: Array.isArray(raw.daily_challenges)
+      ? raw.daily_challenges
+      : defaults.daily_challenges,
+    progress_by_user: raw.progress_by_user ?? defaults.progress_by_user,
+    daily_results_by_user:
+      raw.daily_results_by_user ?? defaults.daily_results_by_user,
+    badges_by_user: raw.badges_by_user ?? defaults.badges_by_user,
+    discussions_by_lesson:
+      raw.discussions_by_lesson ?? defaults.discussions_by_lesson,
+    onboarding_by_user: raw.onboarding_by_user ?? defaults.onboarding_by_user,
+    friends_by_user: raw.friends_by_user ?? defaults.friends_by_user,
+    user_profiles: raw.user_profiles ?? defaults.user_profiles,
+    offseason_runs_by_user:
+      raw.offseason_runs_by_user ?? defaults.offseason_runs_by_user,
   };
 }
 
@@ -171,7 +200,9 @@ export async function getStore(): Promise<CourtVisionStoreState> {
 
   try {
     const contents = await fs.readFile(STORE_PATH, 'utf8');
-    cachedStore = JSON.parse(contents) as CourtVisionStoreState;
+    cachedStore = ensureStoreShape(
+      JSON.parse(contents) as Partial<CourtVisionStoreState>
+    );
     return cachedStore;
   } catch {
     cachedStore = defaultStore();

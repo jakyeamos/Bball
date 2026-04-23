@@ -2,43 +2,44 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: implementation-complete-through-phase-8-pending-manual-qa
-stopped_at: Phase 11 context gathered (discuss mode); Phases 12-14 added to roadmap
-last_updated: "2026-04-02T12:21:45.780Z"
+status: implementation-complete-through-phase-9-pending-manual-qa
+stopped_at: Phase 9 executed; final human verification gate pending for GM discoverability/rollout
+last_updated: "2026-04-22T21:47:30.000Z"
 progress:
   total_phases: 14
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 33
-  completed_plans: 35
+  completed_plans: 38
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` for the execution-truth snapshot synced on 2026-04-01.
+See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` for the execution-truth snapshot synced on 2026-04-22.
 
 **Core value:** The platform only succeeds if users' basketball IQ genuinely improves - education comes before surface polish.
-**Current focus:** Close the remaining Phase 04 / Phase 08 verification gates and decide whether to move directly into Phase 09 planning.
+**Current focus:** Clear remaining manual verification gates (Phase 04/08 plus Phase 09 GM discoverability) and decide when to start Phase 10 planning.
 
 ## Current Position
 
 Phase: 09
-Plan: Planning / not started
+Plan: 09-03 complete in code, pending human verification checkpoint
 
 Execution reality:
 
-- Implementation is landed through Phase 08.
+- Implementation is landed through Phase 09.
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
 - Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
+- Phase 09 still needs browser-level human verification for GM discoverability and rollout-gate behavior.
 - Phase 03 has a separate player-model / calibration extension still in progress inside the repo.
 
 ## Snapshot
 
-- 26 / 33 plans are implemented in the repo.
-- 8 / 10 phases are implemented.
+- 29 / 33 plans are implemented in the repo.
+- 9 / 10 phases are implemented.
 - 3 / 10 phases are historically closed with earlier human verification checkpoints.
-- Remaining product build scope is Phase 09 and Phase 10.
+- Remaining product build scope is Phase 10.
 
 ## Phase Status
 
@@ -52,7 +53,7 @@ Execution reality:
 | 6. Daily Engagement | 3/3 | Implemented | 2026-04-01 |
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
-| 9. Offseason Simulator - Foundation | 0/3 | Not started | - |
+| 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
 | 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
 
 ## Accumulated Context
@@ -67,30 +68,32 @@ Execution reality:
 - Account upgrade continuity stays on the existing `/internal/account-upgrade` path; verification requires a real Supabase project and authenticated session.
 - Draft teaching surfaces extend the existing simulator rather than fork it; DATA-06 still couples simulator outputs to the shared player-feature pipeline.
 - Daily social scope remains status-only (done / not done), not a ranked score ladder.
-- The phase summary files under `.planning/phases/04-*` through `.planning/phases/08-*` are now the source of truth for per-plan closeout notes and remaining release gates.
+- The phase summary files under `.planning/phases/04-*` through `.planning/phases/09-*` are now the source of truth for per-plan closeout notes and remaining release gates.
 
 ### Pending Todos
 
 - Execute browser/manual QA for lesson runtimes, admin flows, library/discussion surfaces, and daily challenge loops.
 - Verify the feature-flag / SEO rollout checklist for public lesson and library surfaces.
 - Run live Supabase upgrade continuity and second-device sync checks for Phase 08.
-- Decide whether to formally close Phases 04-08 after verification or keep the implementation/manual-QA split explicit.
+- Run Phase 09 human verification gate for GM entry discoverability, threshold recommendation, and disabled-flag behavior.
+- Decide whether to formally close Phases 04-09 after verification or keep the implementation/manual-QA split explicit.
 
 ### Blockers/Concerns
 
 - Human/browser QA has not been recorded for the newly implemented Phase 04-08 surfaces.
+- Phase 09 still depends on a human discoverability/rollout verification checkpoint before formal close.
 - Live account continuity cannot be fully guaranteed without Supabase env and a real auth session.
 - Phase 03 calibration/model changes continue in parallel and can affect draft-teaching outputs if not tracked carefully.
 
 ## Session Continuity
 
-Last session: 2026-04-02T12:21:45.771Z
-Stopped at: Phase 11 context gathered (discuss mode); Phases 12-14 added to roadmap
-Resume file: .planning/phases/11-nba-big-board-creator-private-first-prospect-evaluation-platform-with-modular-scoring-historical-comps-film-workflow-and-auditable-big-board-generation/11-CONTEXT.md
+Last session: 2026-04-22T21:47:30.000Z
+Stopped at: Phase 09 executed and validated in code/tests; human verification gate remains open
+Resume file: .planning/phases/09-offseason-simulator-foundation/09-03-SUMMARY.md
 
-## Planning Update (2026-04-01)
+## Planning Update (2026-04-22)
 
-- Added per-plan summary files for 04-01 through 08-02.
-- Updated phase summary docs for 04-08 to reflect implementation and remaining verification gates.
+- Added per-plan summary files for 09-01 through 09-03.
+- Updated phase summary docs for 09 to reflect implementation and remaining verification gate.
 - Synced `ROADMAP.md` and `STATE.md` to the current repo implementation.
-- Next execution target: Phase 09 planning, unless verification-first closeout is required.
+- Next execution target: Phase 09 human verification gate, then Phase 10 planning.

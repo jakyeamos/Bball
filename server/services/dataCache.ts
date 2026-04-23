@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import type {
   NbaSeedDocument,
@@ -29,7 +30,15 @@ export interface CoachesSeedFile {
 }
 
 function serverDataDir(): string {
-  return path.join(__dirname, '..', '..', '..', 'data');
+  const candidates = [
+    path.join(__dirname, '..', 'data'),
+    path.join(__dirname, '..', '..', '..', 'data'),
+    path.join(process.cwd(), 'data'),
+    path.join(process.cwd(), 'server', 'data'),
+  ];
+
+  const resolved = candidates.find((candidate) => fsSync.existsSync(candidate));
+  return resolved ?? candidates[0];
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -86,6 +95,15 @@ export class NbaDataCache {
 
   getTeamById(id: number): NbaSeedTeam | undefined {
     return this.seed?.teams.find((t) => t.id === id);
+  }
+
+  getTeamByAbbreviation(abbreviation: string): NbaSeedTeam | undefined {
+    const normalized = abbreviation.trim().toUpperCase();
+    return this.seed?.teams.find((t) => t.abbreviation.toUpperCase() === normalized);
+  }
+
+  getPlayersByTeamId(teamId: number): NbaSeedPlayer[] {
+    return this.seed?.players.filter((player) => player.team_id === teamId) ?? [];
   }
 
   getPlayerById(id: number): NbaSeedPlayer | undefined {

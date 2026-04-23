@@ -10,7 +10,7 @@ Court Vision expands an existing NBA Draft Simulator monorepo into a full basket
 
 ## Repository Reality Check
 
-The roadmap below reflects the code that is actually present in the repo as of 2026-04-01, not just the last formally closed plan:
+The roadmap below reflects the code that is actually present in the repo as of 2026-04-22, not just the last formally closed plan:
 
 - **Phases 1-3 remain the last fully closed and historically verified phases.**
 - **Phases 4-8 are now implemented in the repo** in a local-first / guest-first form. The per-phase summaries track the remaining release-gate items, mainly manual/browser QA plus live Supabase verification where account continuity depends on production env.
@@ -19,7 +19,8 @@ The roadmap below reflects the code that is actually present in the repo as of 2
 - **Phase 6 now includes** daily challenge retrieval/submission, streak and badge plumbing, share-card generation, and a done/not-done friend leaderboard.
 - **Phase 7 now includes** draft teaching overlays, post-draft analysis, and capstone surfacing across the IQ track pages.
 - **Phase 8 now includes** profile metrics/recommendations plus login/account-upgrade surfaces with guest fallback when Supabase admin env is absent.
-- **Phases 9-10 are still not started product work.**
+- **Phase 9 foundation implementation is now in repo** (schema-versioned run state, Team Context, GM entry/recommendation), with one remaining human verification gate for discoverability/rollout safety.
+- **Phase 10 is still not started product work.**
 - **The working tree also contains in-flight data/model work beyond the original Phase 3 close-out**: calibration artifacts/scripts, role inference, advanced player-model tests, and richer player valuation logic are present but were never folded back into the roadmap.
 
 ## Phases
@@ -40,7 +41,7 @@ Checkboxes below reflect implementation landed in the repo. Remaining manual ver
 - [x] **Phase 6: Daily Engagement** - Implemented 2026-04-01 with daily challenge, streak, badge, share-card, and friend-status leaderboard flows
 - [x] **Phase 7: Draft Simulator Teaching Layer** - Implemented 2026-04-01 with overlays, post-draft analysis, and capstone positioning
 - [x] **Phase 8: User Profile and Account Upgrade** - Implemented 2026-04-01; live Supabase upgrade/sync verification remains open
-- [ ] **Phase 9: Offseason Simulator - Foundation** - Save/resume infrastructure, schema versioning, Team Context phase, GM lens entry point
+- [x] **Phase 9: Offseason Simulator - Foundation** - Implemented 2026-04-22; final human verification gate pending
 - [ ] **Phase 10: Offseason Simulator - Decision Loop** - Coaching market, scouting, trade market, draft night, free agency, and post-offseason recap
 
 ## Phase Details
@@ -226,9 +227,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md - Versioned state + migration-safe save/resume (OSIM-08, OSIM-09)
-- [ ] 09-02-PLAN.md - Team Context phase implementation (OSIM-01)
-- [ ] 09-03-PLAN.md - GM lens entry + advanced module recommendation gate (OSIM-10)
+- [x] 09-01-PLAN.md - Versioned state + migration-safe save/resume (OSIM-08, OSIM-09)
+- [x] 09-02-PLAN.md - Team Context phase implementation (OSIM-01)
+- [x] 09-03-PLAN.md - GM lens entry + advanced module recommendation gate (OSIM-10, pending human verification)
 
 ### Phase 10: Offseason Simulator - Decision Loop
 **Goal**: All six remaining phases of the offseason decision loop are playable end-to-end - coaching hire, draft board, trade exploration, draft night, free agency, and final recap - each with teaching overlays, explanation-first grades, and coach-tendency integration throughout. **DATA-06:** Scouting, trades, and draft night **reuse** the same player evaluation contracts as the draft sim; optional cap or external data follows [`external-data-sources.md`](../docs/data/external-data-sources.md).
@@ -254,7 +255,7 @@ Plans:
 Phases execute in numeric order: 1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10
 
 Note: Phase 2 (Infrastructure) and Phase 3 (Data Layer) are independent of each other and can be parallelized. Both must be complete before Phase 4 begins.
-Implementation is now complete through Phase 8 in the repo. The remaining open items are manual/release verification gates called out in the phase summaries, plus the separate Phase 3 model-calibration extension.
+Implementation is now complete through Phase 9 in the repo. The remaining open items are manual/release verification gates called out in the phase summaries, plus the separate Phase 3 model-calibration extension.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -266,7 +267,7 @@ Implementation is now complete through Phase 8 in the repo. The remaining open i
 | 6. Daily Engagement | 3/3 | Implemented | 2026-04-01 |
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
-| 9. Offseason Simulator - Foundation | 0/3 | Not started, though schema groundwork exists | - |
+| 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
 | 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
 
 ### Phase 11: NBA Big Board Creator — private-first prospect evaluation platform with modular scoring, historical comps, film workflow, and auditable big board generation

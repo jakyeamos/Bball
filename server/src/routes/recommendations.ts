@@ -1,9 +1,15 @@
 import { Request, Response, Router } from 'express';
-import { OnboardingResponse, RecommendationCard } from '../../../shared/schemas';
+import {
+  AdvancedModuleRecommendation,
+  OnboardingResponse,
+  RecommendationCard,
+} from '../../../shared/schemas';
+import { featureFlags } from '@nba-draft-sim/shared';
 import { getStore, recommendationFromLesson, updateStore } from '../lib/courtVisionStore';
 import { getRequestUserId } from '../lib/requestIdentity';
 
 const router = Router();
+const GM_ADVANCED_THRESHOLD = 3;
 
 function isValidOnboarding(body: unknown): body is OnboardingResponse {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
@@ -57,6 +63,43 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   });
 
   res.json({ recommendations });
+});
+
+router.get('/advanced', async (req: Request, res: Response): Promise<void> => {
+  if (
+    !featureFlags.offseasonFoundationEnabled ||
+    !featureFlags.offseasonTeamContextEnabled
+  ) {
+    res.json({ modules: [] });
+    return;
+  }
+
+  const userId = getRequestUserId(req);
+  const store = await getStore();
+  const userProgress = store.progress_by_user[userId] ?? [];
+  const gmLessons = store.lessons.filter(
+    (lesson) => lesson.role_lens === 'gm' && lesson.published !== false
+  );
+  const gmLessonIds = new Set(gmLessons.map((lesson) => lesson.id));
+  const completedCoreGmLessons = userProgress.filter(
+    (entry) => entry.completed && gmLessonIds.has(entry.lesson_id)
+  ).length;
+
+  const modules: AdvancedModuleRecommendation[] = [];
+  if (completedCoreGmLessons >= GM_ADVANCED_THRESHOLD) {
+    modules.push({
+      id: 'offseason-simulator',
+      title: 'Offseason Simulator',
+      description:
+        'Run a full GM offseason with real team context, picks, and timeline pressure.',
+      route: '/offseason/team-context',
+      role_lens: 'gm',
+      minimum_completed_lessons: GM_ADVANCED_THRESHOLD,
+      current_completed_lessons: completedCoreGmLessons,
+    });
+  }
+
+  res.json({ modules });
 });
 
 export default router;

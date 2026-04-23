@@ -21,6 +21,29 @@
  *   offseasonRunSchema           — safeParse adapter for OffseasonRunPayload
  *   validateAccountUpgradePayload() — returns parsed payload or ValidationError
  */
+import {
+  OffseasonPhaseTransitionPayload,
+  OffseasonRunState,
+  StartOffseasonRunPayload,
+  TeamContextUpdatePayload,
+  validateOffseasonPhaseTransitionPayload,
+  validateOffseasonRunState,
+  validateStartOffseasonRunPayload,
+  validateTeamContextUpdatePayload,
+} from './src/offseason/schema';
+export type {
+  OffseasonPhase,
+  OffseasonRunState,
+  OffseasonTeamContextState,
+  OffseasonTeamSummary,
+  OffseasonRosterPlayer,
+  OffseasonDraftAsset,
+  OffseasonTimeline,
+  TeamContextStage,
+  StartOffseasonRunPayload,
+  TeamContextUpdatePayload,
+  OffseasonPhaseTransitionPayload,
+} from './src/offseason/schema';
 
 // ---------------------------------------------------------------------------
 // Shared error type
@@ -207,6 +230,16 @@ export interface RecommendationCard {
   route: string;
   role_lens: RoleLens;
   kind: 'lesson' | 'challenge';
+}
+
+export interface AdvancedModuleRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  route: string;
+  role_lens: RoleLens;
+  minimum_completed_lessons: number;
+  current_completed_lessons: number;
 }
 
 export interface DailyChallengeRecord {
@@ -551,59 +584,38 @@ export const progressWriteSchema: Schema<ProgressWritePayload> =
   makeSchema(validateProgressWritePayload);
 
 // ---------------------------------------------------------------------------
-// OffseasonRunPayload — body for POST /api/offseason/runs
+// Offseason payloads and validators
 // ---------------------------------------------------------------------------
 //
-// Creates a new offseason simulation run for a user.
+// Offseason Foundation (Phase 9):
+// - start a run
+// - update Team Context selection
+// - validate phase transition requests
+// - validate persisted run-state shape
 //
-// Fields:
-//   team_id      — short team identifier (e.g. "LAL", "BOS")
-//   season_year  — four-digit year the offseason is for (2020–2099)
 // ---------------------------------------------------------------------------
 
-export interface OffseasonRunPayload {
-  team_id: string;
-  season_year: number;
-}
+export type OffseasonRunPayload = StartOffseasonRunPayload;
 
-function validateOffseasonRunPayload(
-  body: unknown
-): ValidationResult<OffseasonRunPayload> {
-  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    return { valid: false, errors: ['Offseason run body must be a JSON object.'] };
-  }
+/** Validates offseason run creation payloads. */
+export const offseasonRunSchema: Schema<StartOffseasonRunPayload> = makeSchema(
+  validateStartOffseasonRunPayload
+);
 
-  const raw = body as Record<string, unknown>;
-  const errors: string[] = [];
+/** Validates Team Context team-selection payloads. */
+export const offseasonTeamContextSchema: Schema<TeamContextUpdatePayload> = makeSchema(
+  validateTeamContextUpdatePayload
+);
 
-  if (typeof raw.team_id !== 'string' || raw.team_id.trim() === '') {
-    errors.push('team_id is required and must be a non-empty string.');
-  } else if (raw.team_id.trim().length > 10) {
-    errors.push('team_id must be 10 characters or fewer.');
-  }
+/** Validates offseason phase transition payloads. */
+export const offseasonPhaseTransitionSchema: Schema<OffseasonPhaseTransitionPayload> = makeSchema(
+  validateOffseasonPhaseTransitionPayload
+);
 
-  if (typeof raw.season_year !== 'number' || !Number.isInteger(raw.season_year)) {
-    errors.push('season_year is required and must be an integer.');
-  } else if (raw.season_year < 2020 || raw.season_year > 2099) {
-    errors.push('season_year must be between 2020 and 2099.');
-  }
-
-  if (errors.length > 0) {
-    return { valid: false, errors };
-  }
-
-  return {
-    valid: true,
-    data: {
-      team_id: (raw.team_id as string).trim().toUpperCase(),
-      season_year: raw.season_year as number,
-    },
-  };
-}
-
-/** Validates an offseason run creation payload. */
-export const offseasonRunSchema: Schema<OffseasonRunPayload> =
-  makeSchema(validateOffseasonRunPayload);
+/** Validates persisted offseason run-state documents. */
+export const offseasonRunStateSchema: Schema<OffseasonRunState> = makeSchema(
+  validateOffseasonRunState
+);
 
 // ---------------------------------------------------------------------------
 // AccountUpgradePayload (unchanged from Phase 02-02)
