@@ -4,6 +4,8 @@ import {
   createInitialOffseasonRunState,
   featureFlags,
   offseasonCoachingHireSchema,
+  offseasonScoutingBoardUpdateSchema,
+  offseasonTradeProposalSchema,
   offseasonPhaseTransitionSchema,
   offseasonRunSchema,
   offseasonTeamContextSchema,
@@ -17,8 +19,14 @@ import {
   listCoachProfiles,
 } from '../offseason/coachTendencyEffects';
 import { migrateOffseasonRunState } from '../offseason/migrations';
+import {
+  applyScoutingBoardToRun,
+  buildInitialScoutingBoard,
+  reorderScoutingBoard,
+} from '../offseason/scoutingEngine';
 import { transitionRunPhase } from '../offseason/stateMachine';
 import { buildTeamContextForTeam, listAvailableTeams } from '../offseason/teamContext';
+import { applyTradeProposalToRun } from '../offseason/tradeEvaluator';
 
 const router = Router();
 
@@ -39,6 +47,17 @@ function isCoachingMarketEnabled(): boolean {
     featureFlags.offseasonTeamContextEnabled &&
     featureFlags.offseasonCoachingMarketEnabled
   );
+}
+
+function isScoutingEnabled(): boolean {
+  return (
+    isCoachingMarketEnabled() &&
+    featureFlags.offseasonScoutingEnabled
+  );
+}
+
+function isTradeMarketEnabled(): boolean {
+  return isScoutingEnabled() && featureFlags.offseasonTradeMarketEnabled;
 }
 
 function generateRunId(userId: string): string {
@@ -280,6 +299,186 @@ router.post(
   }
 );
 
+router.get(
+  '/:run_id/scouting-board',
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isScoutingEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Scouting is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+    let phaseMismatch = false;
+
+    await updateStore(async (store) => {
+      const runs = store.offseason_runs_by_user[userId] ?? [];
+      const index = runs.findIndex((candidate) => candidate.run_id === runId);
+
+      if (index < 0) {
+        return;
+      }
+
+      const migrated = migrateOffseasonRunState(runs[index]).state;
+      if (migrated.phase !== 'scouting_pre_draft') {
+        phaseMismatch = true;
+        return;
+      }
+
+      let prospects = migrated.scouting_pre_draft.prospects;
+      if (prospects.length === 0) {
+        prospects = await buildInitialScoutingBoard(migrated);
+      }
+
+      updatedRun = applyScoutingBoardToRun(migrated, prospects, now);
+      runs[index] = updatedRun;
+      store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+    });
+
+    if (phaseMismatch) {
+      res.status(409).json({
+        error:
+          'Run is not currently in Scouting Pre-Draft. Hire a coach and transition first.',
+      });
+      return;
+    }
+
+    if (!updatedRun) {
+      res.status(404).json({ error: 'Offseason run not found.' });
+      return;
+    }
+
+    const resolvedRun = updatedRun as OffseasonRunState;
+
+    res.json({
+      run: resolvedRun,
+      prospects: resolvedRun.scouting_pre_draft.prospects,
+    });
+  }
+);
+
+router.post(
+  '/:run_id/scouting-board/rank',
+  validateBody(offseasonScoutingBoardUpdateSchema),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isScoutingEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Scouting is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const payload = res.locals.validatedBody as { ranked_player_ids: number[] };
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+
+    await updateStore((store) => {
+      const runs = store.offseason_runs_by_user[userId] ?? [];
+      const index = runs.findIndex((candidate) => candidate.run_id === runId);
+      if (index < 0) {
+        return;
+      }
+
+      const migrated = migrateOffseasonRunState(runs[index]).state;
+      if (migrated.phase !== 'scouting_pre_draft') {
+        return;
+      }
+
+      if (migrated.scouting_pre_draft.prospects.length === 0) {
+        return;
+      }
+
+      const reordered = reorderScoutingBoard(
+        migrated.scouting_pre_draft.prospects,
+        payload.ranked_player_ids
+      );
+      updatedRun = applyScoutingBoardToRun(migrated, reordered, now);
+      runs[index] = updatedRun;
+      store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+    });
+
+    if (!updatedRun) {
+      res.status(409).json({
+        error:
+          'Unable to update scouting board. Ensure the run is in Scouting Pre-Draft with a loaded board.',
+      });
+      return;
+    }
+
+    const resolvedRun = updatedRun as OffseasonRunState;
+
+    res.json({
+      run: resolvedRun,
+      prospects: resolvedRun.scouting_pre_draft.prospects,
+    });
+  }
+);
+
+router.post(
+  '/:run_id/trade-market/proposals',
+  validateBody(offseasonTradeProposalSchema),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isTradeMarketEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Trade Market is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const payload = res.locals.validatedBody as {
+      offered_player_ids: number[];
+      offered_pick_ids: string[];
+      requested_player_ids: number[];
+      requested_pick_ids: string[];
+      decision: 'accepted' | 'rejected';
+    };
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+    let proposalResult: ReturnType<typeof applyTradeProposalToRun>['proposal'] | null =
+      null;
+
+    await updateStore((store) => {
+      const runs = store.offseason_runs_by_user[userId] ?? [];
+      const index = runs.findIndex((candidate) => candidate.run_id === runId);
+      if (index < 0) {
+        return;
+      }
+
+      const migrated = migrateOffseasonRunState(runs[index]).state;
+      if (migrated.phase !== 'trade_market') {
+        return;
+      }
+
+      const evaluation = applyTradeProposalToRun(migrated, payload, now);
+      updatedRun = evaluation.run;
+      proposalResult = evaluation.proposal;
+      runs[index] = updatedRun;
+      store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+    });
+
+    if (!updatedRun || !proposalResult) {
+      res.status(409).json({
+        error:
+          'Unable to evaluate trade proposal. Ensure the run is in Trade Market.',
+      });
+      return;
+    }
+
+    res.json({
+      run: updatedRun,
+      proposal: proposalResult,
+    });
+  }
+);
+
 router.post(
   '/:run_id/transition',
   validateBody(offseasonPhaseTransitionSchema),
@@ -305,6 +504,26 @@ router.post(
       ) {
         res.status(404).json({
           error: 'Offseason Coaching Market is disabled by feature flag.',
+        });
+        return;
+      }
+
+      if (
+        payload.next_phase === 'scouting_pre_draft' &&
+        !isScoutingEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Scouting is disabled by feature flag.',
+        });
+        return;
+      }
+
+      if (
+        payload.next_phase === 'trade_market' &&
+        !isTradeMarketEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Trade Market is disabled by feature flag.',
         });
         return;
       }

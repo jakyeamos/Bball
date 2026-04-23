@@ -10,7 +10,9 @@ import {
   LessonRecord,
   OffseasonCoachProfile,
   OffseasonRunState,
+  OffseasonScoutingProspect,
   OffseasonTeamSummary,
+  OffseasonTradeProposal,
   OnboardingResponse,
   ProfileResponse,
   ProgressWritePayload,
@@ -166,6 +168,16 @@ export interface OffseasonRunResponse {
 export interface OffseasonCoachingMarketResponse {
   run: OffseasonRunState | null;
   coaches: OffseasonCoachProfile[];
+}
+
+export interface OffseasonScoutingBoardResponse {
+  run: OffseasonRunState | null;
+  prospects: OffseasonScoutingProspect[];
+}
+
+export interface OffseasonTradeProposalResponse {
+  run: OffseasonRunState | null;
+  proposal: OffseasonTradeProposal;
 }
 
 export interface AdvancedModulesResponse {
@@ -336,6 +348,48 @@ export const apiService = {
         body: JSON.stringify({
           coach_id: coachId,
         }),
+      }
+    );
+  },
+
+  getOffseasonScoutingBoard: (
+    runId: string
+  ): Promise<OffseasonScoutingBoardResponse> => {
+    return fetchApi<OffseasonScoutingBoardResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/scouting-board`
+    );
+  },
+
+  updateOffseasonScoutingBoard: (
+    runId: string,
+    rankedPlayerIds: number[]
+  ): Promise<OffseasonScoutingBoardResponse> => {
+    return fetchApi<OffseasonScoutingBoardResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/scouting-board/rank`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ranked_player_ids: rankedPlayerIds,
+        }),
+      }
+    );
+  },
+
+  submitOffseasonTradeProposal: (
+    runId: string,
+    payload: {
+      offered_player_ids: number[];
+      offered_pick_ids: string[];
+      requested_player_ids: number[];
+      requested_pick_ids: string[];
+      decision: 'accepted' | 'rejected';
+    }
+  ): Promise<OffseasonTradeProposalResponse> => {
+    return fetchApi<OffseasonTradeProposalResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/trade-market/proposals`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
       }
     );
   },

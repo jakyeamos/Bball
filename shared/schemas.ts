@@ -23,6 +23,14 @@
  */
 import {
   CoachingHirePayload,
+  OffseasonScoutingState,
+  OffseasonScoutingProspect,
+  OffseasonTradeMarketState,
+  OffseasonTradeProposal,
+  ScoutingBoardUpdatePayload,
+  TradeProposalPayload,
+  TradeProposalDecision,
+  TradeProposalVerdict,
   OffseasonCoachProfile,
   OffseasonCoachTendencyProfile,
   OffseasonCoachingMarketState,
@@ -33,6 +41,8 @@ import {
   StartOffseasonRunPayload,
   TeamContextUpdatePayload,
   validateCoachingHirePayload,
+  validateScoutingBoardUpdatePayload,
+  validateTradeProposalPayload,
   validateOffseasonPhaseTransitionPayload,
   validateOffseasonRunState,
   validateStartOffseasonRunPayload,
@@ -45,6 +55,18 @@ export type {
   OffseasonCoachingMarketState,
   OffseasonDecisionRecord,
   OffseasonDecisionVerdict,
+  OffseasonScoutingProspect,
+  OffseasonScoutingSignals,
+  OffseasonScoutingState,
+  OffseasonTradeMarketState,
+  OffseasonTradeProposal,
+  ProspectUncertaintyBand,
+  ScoutingStage,
+  ScoutingBoardUpdatePayload,
+  TradeMarketStage,
+  TradeProposalDecision,
+  TradeProposalPayload,
+  TradeProposalVerdict,
   OffseasonPhase,
   OffseasonRunState,
   OffseasonTeamContextState,
@@ -624,6 +646,16 @@ export const offseasonTeamContextSchema: Schema<TeamContextUpdatePayload> = make
 /** Validates coaching-hire payloads. */
 export const offseasonCoachingHireSchema: Schema<CoachingHirePayload> = makeSchema(
   validateCoachingHirePayload
+);
+
+/** Validates scouting board ranking update payloads. */
+export const offseasonScoutingBoardUpdateSchema: Schema<ScoutingBoardUpdatePayload> = makeSchema(
+  validateScoutingBoardUpdatePayload
+);
+
+/** Validates trade proposal submission payloads. */
+export const offseasonTradeProposalSchema: Schema<TradeProposalPayload> = makeSchema(
+  validateTradeProposalPayload
 );
 
 /** Validates offseason phase transition payloads. */

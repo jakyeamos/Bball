@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useCoachingMarket } from '../../features/offseason/useCoachingMarket';
 
 export function CoachingMarketPage(): JSX.Element {
+  const navigate = useNavigate();
   const coachingEnabled =
     featureFlags.offseasonFoundationEnabled &&
     featureFlags.offseasonTeamContextEnabled &&
@@ -211,6 +212,7 @@ export function CoachingMarketPage(): JSX.Element {
                 type="button"
                 onClick={async () => {
                   await continueToScouting.mutateAsync(run.run_id);
+                  navigate('/offseason/scouting');
                 }}
                 className="mt-5 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
                 disabled={continueToScouting.isPending}

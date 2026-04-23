@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 10
-stopped_at: Completed 10-01-PLAN.md (coaching market + tendency propagation)
-last_updated: "2026-04-23T13:05:00.000Z"
+stopped_at: Completed 10-02-PLAN.md (scouting uncertainty + trade fit explanations)
+last_updated: "2026-04-23T13:18:00.000Z"
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 33
-  completed_plans: 30
-  percent: 91
+  completed_plans: 31
+  percent: 94
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` fo
 ## Current Position
 
 Phase: 10 (offseason-simulator-decision-loop) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 Execution reality:
 
@@ -37,7 +37,7 @@ Execution reality:
 
 ## Snapshot
 
-- 30 / 33 plans are implemented in the repo.
+- 31 / 33 plans are implemented in the repo.
 - 9 / 10 phases are implemented.
 - 3 / 10 phases are historically closed with earlier human verification checkpoints.
 - Remaining product build scope is Phase 10.
@@ -55,7 +55,7 @@ Execution reality:
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
-| 10. Offseason Simulator - Decision Loop | 1/4 | In progress | 2026-04-23 |
+| 10. Offseason Simulator - Decision Loop | 2/4 | In progress | 2026-04-23 |
 
 ## Accumulated Context
 
@@ -88,12 +88,13 @@ Execution reality:
 
 ## Session Continuity
 
-Last session: 2026-04-23T13:05:00.000Z
-Stopped at: Completed 10-01-PLAN.md (coaching market + tendency propagation)
-Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-01-SUMMARY.md
+Last session: 2026-04-23T13:18:00.000Z
+Stopped at: Completed 10-02-PLAN.md (scouting uncertainty + trade fit explanations)
+Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-02-SUMMARY.md
 
 ## Planning Update (2026-04-23)
 
 - Executed Phase 10 Plan 01 and added Coaching Market phase endpoints/UI with persisted coach hiring.
-- Added coach tendency propagation model and regression coverage for tendency computations.
-- Updated phase tracking state for Wave 2 execution (10-02 next).
+- Executed Phase 10 Plan 02 and added scouting-board uncertainty workflows plus trade fit explanation/persistence.
+- Added regression coverage for scouting uncertainty and trade evaluation behavior.
+- Updated phase tracking state for Wave 3 execution (10-03 next).

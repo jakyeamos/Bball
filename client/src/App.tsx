@@ -33,6 +33,8 @@ import { LoginPage } from './pages/LoginPage';
 import { AccountUpgradePage } from './pages/AccountUpgradePage';
 import { TeamContextPage } from './pages/offseason/TeamContextPage';
 import { CoachingMarketPage } from './pages/offseason/CoachingMarketPage';
+import { ScoutingPage } from './pages/offseason/ScoutingPage';
+import { TradeMarketPage } from './pages/offseason/TradeMarketPage';
 import { AdminLessonsPage } from './pages/admin/AdminLessonsPage';
 import { AdminDailyChallengePage } from './pages/admin/AdminDailyChallengePage';
 import { AdminTagsPage } from './pages/admin/AdminTagsPage';
@@ -104,6 +106,8 @@ function App() {
             <Route path="/upgrade-account" element={<AccountUpgradePage />} />
             <Route path="/offseason/team-context" element={<TeamContextPage />} />
             <Route path="/offseason/coaching-market" element={<CoachingMarketPage />} />
+            <Route path="/offseason/scouting" element={<ScoutingPage />} />
+            <Route path="/offseason/trade-market" element={<TradeMarketPage />} />
             <Route path="/lessons/:lessonId" element={<LessonPage />} />
             <Route path="/lessons/:lessonId/discussion" element={<LessonDiscussionPage />} />
             <Route path="/recaps/:recapId" element={<RecapPage />} />

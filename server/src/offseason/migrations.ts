@@ -2,6 +2,8 @@ import {
   OFFSEASON_SCHEMA_VERSION,
   OffseasonRunState,
   createEmptyCoachingMarketState,
+  createEmptyScoutingState,
+  createEmptyTradeMarketState,
   createInitialOffseasonRunState,
   createEmptyTeamContextState,
   validateOffseasonRunState,
@@ -158,6 +160,43 @@ function migrateV2ToV3(raw: unknown): OffseasonRunState {
   };
 }
 
+function migrateV3ToV4(raw: unknown): OffseasonRunState {
+  if (!isRecord(raw)) {
+    throw new Error('Cannot migrate non-object offseason state.');
+  }
+
+  const now = new Date().toISOString();
+  const fallback = createInitialOffseasonRunState({
+    run_id:
+      typeof raw.run_id === 'string' && raw.run_id.trim().length > 0
+        ? raw.run_id
+        : `offseason-${Date.now()}`,
+    season_year:
+      typeof raw.season_year === 'number' &&
+      Number.isInteger(raw.season_year) &&
+      raw.season_year >= 2020 &&
+      raw.season_year <= 2099
+        ? raw.season_year
+        : 2026,
+    now_iso: now,
+  });
+
+  const baseState = raw as Partial<OffseasonRunState> &
+    Record<string, unknown>;
+
+  return {
+    ...fallback,
+    ...baseState,
+    schemaVersion: 4,
+    scouting_pre_draft: isRecord(baseState.scouting_pre_draft)
+      ? (baseState.scouting_pre_draft as OffseasonRunState['scouting_pre_draft'])
+      : createEmptyScoutingState(),
+    trade_market: isRecord(baseState.trade_market)
+      ? (baseState.trade_market as OffseasonRunState['trade_market'])
+      : createEmptyTradeMarketState(),
+  };
+}
+
 export interface MigrationResult {
   migrated: boolean;
   from_version: number;
@@ -187,6 +226,13 @@ export function migrateOffseasonRunState(raw: unknown): MigrationResult {
     if (currentVersion === 2) {
       workingState = migrateV2ToV3(workingState);
       currentVersion = 3;
+      migrated = true;
+      continue;
+    }
+
+    if (currentVersion === 3) {
+      workingState = migrateV3ToV4(workingState);
+      currentVersion = 4;
       migrated = true;
       continue;
     }

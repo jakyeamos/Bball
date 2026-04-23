@@ -30,6 +30,9 @@ export type TeamContextStage =
 export type OffseasonTimeline = 'rebuilding' | 'transitioning' | 'contending';
 export type OffseasonCoachPace = 'slow' | 'medium' | 'fast';
 export type CoachingMarketStage = 'evaluate_pool' | 'coach_hired';
+export type ScoutingStage = 'build_board' | 'ready_for_trade_market';
+export type TradeMarketStage = 'explore_market' | 'ready_for_draft_night';
+export type ProspectUncertaintyBand = 'high' | 'medium' | 'low';
 export type OffseasonDecisionVerdict =
   | 'selected'
   | 'accepted'
@@ -111,6 +114,52 @@ export interface OffseasonDecisionRecord {
   created_at: string;
 }
 
+export interface OffseasonScoutingSignals {
+  production: number;
+  workout: number;
+  interview: number;
+  tools: number;
+}
+
+export interface OffseasonScoutingProspect {
+  player_id: number;
+  full_name: string;
+  position: string;
+  draft_year: number | null;
+  board_rank: number;
+  scouting_score: number;
+  uncertainty_score: number;
+  uncertainty_band: ProspectUncertaintyBand;
+  signals: OffseasonScoutingSignals;
+}
+
+export interface OffseasonScoutingState {
+  stage: ScoutingStage;
+  prospects: OffseasonScoutingProspect[];
+  last_board_update_at: string | null;
+}
+
+export type TradeProposalDecision = 'accepted' | 'rejected';
+export type TradeProposalVerdict = 'helps' | 'neutral' | 'hurts';
+
+export interface OffseasonTradeProposal {
+  id: string;
+  offered_player_ids: number[];
+  offered_pick_ids: string[];
+  requested_player_ids: number[];
+  requested_pick_ids: string[];
+  decision: TradeProposalDecision;
+  verdict: TradeProposalVerdict;
+  fit_score: number;
+  rationale: string[];
+  created_at: string;
+}
+
+export interface OffseasonTradeMarketState {
+  stage: TradeMarketStage;
+  proposals: OffseasonTradeProposal[];
+}
+
 export interface OffseasonRunState {
   schemaVersion: number;
   run_id: string;
@@ -120,6 +169,8 @@ export interface OffseasonRunState {
   updated_at: string;
   team_context: OffseasonTeamContextState;
   coaching_market: OffseasonCoachingMarketState;
+  scouting_pre_draft: OffseasonScoutingState;
+  trade_market: OffseasonTradeMarketState;
   decision_history: OffseasonDecisionRecord[];
 }
 
@@ -133,6 +184,18 @@ export interface TeamContextUpdatePayload {
 
 export interface CoachingHirePayload {
   coach_id: string;
+}
+
+export interface ScoutingBoardUpdatePayload {
+  ranked_player_ids: number[];
+}
+
+export interface TradeProposalPayload {
+  offered_player_ids: number[];
+  offered_pick_ids: string[];
+  requested_player_ids: number[];
+  requested_pick_ids: string[];
+  decision: TradeProposalDecision;
 }
 
 export interface OffseasonPhaseTransitionPayload {
@@ -168,6 +231,33 @@ export const COACHING_MARKET_STAGES: CoachingMarketStage[] = [
   'coach_hired',
 ];
 
+export const SCOUTING_STAGES: ScoutingStage[] = [
+  'build_board',
+  'ready_for_trade_market',
+];
+
+export const TRADE_MARKET_STAGES: TradeMarketStage[] = [
+  'explore_market',
+  'ready_for_draft_night',
+];
+
+export const PROSPECT_UNCERTAINTY_BANDS: ProspectUncertaintyBand[] = [
+  'high',
+  'medium',
+  'low',
+];
+
+export const TRADE_PROPOSAL_DECISIONS: TradeProposalDecision[] = [
+  'accepted',
+  'rejected',
+];
+
+export const TRADE_PROPOSAL_VERDICTS: TradeProposalVerdict[] = [
+  'helps',
+  'neutral',
+  'hurts',
+];
+
 export const OFFSEASON_DECISION_VERDICTS: OffseasonDecisionVerdict[] = [
   'selected',
   'accepted',
@@ -177,7 +267,7 @@ export const OFFSEASON_DECISION_VERDICTS: OffseasonDecisionVerdict[] = [
   'summary',
 ];
 
-export const OFFSEASON_SCHEMA_VERSION = 3;
+export const OFFSEASON_SCHEMA_VERSION = 4;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -208,6 +298,21 @@ export function createEmptyCoachingMarketState(): OffseasonCoachingMarketState {
   };
 }
 
+export function createEmptyScoutingState(): OffseasonScoutingState {
+  return {
+    stage: 'build_board',
+    prospects: [],
+    last_board_update_at: null,
+  };
+}
+
+export function createEmptyTradeMarketState(): OffseasonTradeMarketState {
+  return {
+    stage: 'explore_market',
+    proposals: [],
+  };
+}
+
 export function createInitialOffseasonRunState(input: {
   run_id: string;
   season_year: number;
@@ -224,6 +329,8 @@ export function createInitialOffseasonRunState(input: {
     updated_at: now,
     team_context: createEmptyTeamContextState(),
     coaching_market: createEmptyCoachingMarketState(),
+    scouting_pre_draft: createEmptyScoutingState(),
+    trade_market: createEmptyTradeMarketState(),
     decision_history: [],
   };
 }
@@ -315,6 +422,112 @@ export function validateCoachingHirePayload(
   };
 }
 
+export function validateScoutingBoardUpdatePayload(
+  body: unknown
+): OffseasonValidationResult<ScoutingBoardUpdatePayload> {
+  if (!isRecord(body)) {
+    return {
+      valid: false,
+      errors: ['Scouting board update body must be a JSON object.'],
+    };
+  }
+
+  const errors: string[] = [];
+  const rankedIds = body.ranked_player_ids;
+
+  if (!Array.isArray(rankedIds) || rankedIds.length === 0) {
+    errors.push('ranked_player_ids is required and must be a non-empty array.');
+  } else if (
+    rankedIds.some((id) => typeof id !== 'number' || !Number.isInteger(id))
+  ) {
+    errors.push('ranked_player_ids must contain only integer player ids.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      ranked_player_ids: [...new Set(rankedIds as number[])],
+    },
+  };
+}
+
+export function validateTradeProposalPayload(
+  body: unknown
+): OffseasonValidationResult<TradeProposalPayload> {
+  if (!isRecord(body)) {
+    return {
+      valid: false,
+      errors: ['Trade proposal body must be a JSON object.'],
+    };
+  }
+
+  const errors: string[] = [];
+  const offeredPlayerIds = body.offered_player_ids;
+  const offeredPickIds = body.offered_pick_ids;
+  const requestedPlayerIds = body.requested_player_ids;
+  const requestedPickIds = body.requested_pick_ids;
+  const decision = body.decision;
+
+  const isIntegerArray = (value: unknown): value is number[] =>
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === 'number' && Number.isInteger(entry));
+  const isStringArray = (value: unknown): value is string[] =>
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === 'string' && entry.trim().length > 0);
+
+  if (!isIntegerArray(offeredPlayerIds)) {
+    errors.push('offered_player_ids must be an array of integer ids.');
+  }
+
+  if (!isStringArray(offeredPickIds)) {
+    errors.push('offered_pick_ids must be an array of non-empty strings.');
+  }
+
+  if (!isIntegerArray(requestedPlayerIds)) {
+    errors.push('requested_player_ids must be an array of integer ids.');
+  }
+
+  if (!isStringArray(requestedPickIds)) {
+    errors.push('requested_pick_ids must be an array of non-empty strings.');
+  }
+
+  if (
+    typeof decision !== 'string' ||
+    !TRADE_PROPOSAL_DECISIONS.includes(decision as TradeProposalDecision)
+  ) {
+    errors.push('decision must be either accepted or rejected.');
+  }
+
+  const totalAssets =
+    (isIntegerArray(offeredPlayerIds) ? offeredPlayerIds.length : 0) +
+    (isStringArray(offeredPickIds) ? offeredPickIds.length : 0) +
+    (isIntegerArray(requestedPlayerIds) ? requestedPlayerIds.length : 0) +
+    (isStringArray(requestedPickIds) ? requestedPickIds.length : 0);
+
+  if (totalAssets === 0) {
+    errors.push('trade proposal must include at least one player or pick asset.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      offered_player_ids: offeredPlayerIds as number[],
+      offered_pick_ids: offeredPickIds as string[],
+      requested_player_ids: requestedPlayerIds as number[],
+      requested_pick_ids: requestedPickIds as string[],
+      decision: decision as TradeProposalDecision,
+    },
+  };
+}
+
 export function validateOffseasonPhaseTransitionPayload(
   body: unknown
 ): OffseasonValidationResult<OffseasonPhaseTransitionPayload> {
@@ -369,6 +582,8 @@ export function validateOffseasonRunState(
   const updatedAt = body.updated_at;
   const teamContext = body.team_context;
   const coachingMarket = body.coaching_market;
+  const scoutingPreDraft = body.scouting_pre_draft;
+  const tradeMarket = body.trade_market;
   const decisionHistory = body.decision_history;
 
   if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion) || schemaVersion < 1) {
@@ -515,6 +730,139 @@ export function validateOffseasonRunState(
       hiringNotes.some((note) => typeof note !== 'string')
     ) {
       errors.push('coaching_market.hiring_notes must be an array of strings.');
+    }
+  }
+
+  if (!isRecord(scoutingPreDraft)) {
+    errors.push('scouting_pre_draft must be an object.');
+  } else {
+    const scoutingStage = scoutingPreDraft.stage;
+    const prospects = scoutingPreDraft.prospects;
+    const lastBoardUpdateAt = scoutingPreDraft.last_board_update_at;
+
+    if (
+      typeof scoutingStage !== 'string' ||
+      !SCOUTING_STAGES.includes(scoutingStage as ScoutingStage)
+    ) {
+      errors.push('scouting_pre_draft.stage must be a valid scouting stage.');
+    }
+
+    if (!Array.isArray(prospects)) {
+      errors.push('scouting_pre_draft.prospects must be an array.');
+    } else {
+      for (const [index, prospect] of prospects.entries()) {
+        if (!isRecord(prospect)) {
+          errors.push(`scouting_pre_draft.prospects[${index}] must be an object.`);
+          continue;
+        }
+
+        const requiredNumericFields = [
+          'player_id',
+          'board_rank',
+          'scouting_score',
+          'uncertainty_score',
+        ] as const;
+        for (const field of requiredNumericFields) {
+          if (typeof prospect[field] !== 'number') {
+            errors.push(`scouting_pre_draft.prospects[${index}].${field} must be a number.`);
+          }
+        }
+
+        if (
+          typeof prospect.uncertainty_band !== 'string' ||
+          !PROSPECT_UNCERTAINTY_BANDS.includes(
+            prospect.uncertainty_band as ProspectUncertaintyBand
+          )
+        ) {
+          errors.push(`scouting_pre_draft.prospects[${index}].uncertainty_band must be high, medium, or low.`);
+        }
+
+        if (
+          !isRecord(prospect.signals) ||
+          typeof prospect.signals.production !== 'number' ||
+          typeof prospect.signals.workout !== 'number' ||
+          typeof prospect.signals.interview !== 'number' ||
+          typeof prospect.signals.tools !== 'number'
+        ) {
+          errors.push(`scouting_pre_draft.prospects[${index}].signals must include numeric production/workout/interview/tools values.`);
+        }
+      }
+    }
+
+    if (
+      lastBoardUpdateAt !== null &&
+      !isIsoDateString(lastBoardUpdateAt)
+    ) {
+      errors.push('scouting_pre_draft.last_board_update_at must be null or an ISO date string.');
+    }
+  }
+
+  if (!isRecord(tradeMarket)) {
+    errors.push('trade_market must be an object.');
+  } else {
+    const tradeStage = tradeMarket.stage;
+    const proposals = tradeMarket.proposals;
+
+    if (
+      typeof tradeStage !== 'string' ||
+      !TRADE_MARKET_STAGES.includes(tradeStage as TradeMarketStage)
+    ) {
+      errors.push('trade_market.stage must be a valid trade market stage.');
+    }
+
+    if (!Array.isArray(proposals)) {
+      errors.push('trade_market.proposals must be an array.');
+    } else {
+      for (const [index, proposal] of proposals.entries()) {
+        if (!isRecord(proposal)) {
+          errors.push(`trade_market.proposals[${index}] must be an object.`);
+          continue;
+        }
+
+        if (typeof proposal.id !== 'string' || proposal.id.trim().length === 0) {
+          errors.push(`trade_market.proposals[${index}].id must be a non-empty string.`);
+        }
+
+        if (
+          typeof proposal.decision !== 'string' ||
+          !TRADE_PROPOSAL_DECISIONS.includes(
+            proposal.decision as TradeProposalDecision
+          )
+        ) {
+          errors.push(`trade_market.proposals[${index}].decision must be accepted or rejected.`);
+        }
+
+        if (
+          typeof proposal.verdict !== 'string' ||
+          !TRADE_PROPOSAL_VERDICTS.includes(
+            proposal.verdict as TradeProposalVerdict
+          )
+        ) {
+          errors.push(`trade_market.proposals[${index}].verdict must be helps, neutral, or hurts.`);
+        }
+
+        const listFields = [
+          'offered_player_ids',
+          'offered_pick_ids',
+          'requested_player_ids',
+          'requested_pick_ids',
+          'rationale',
+        ] as const;
+
+        for (const field of listFields) {
+          if (!Array.isArray(proposal[field])) {
+            errors.push(`trade_market.proposals[${index}].${field} must be an array.`);
+          }
+        }
+
+        if (typeof proposal.fit_score !== 'number') {
+          errors.push(`trade_market.proposals[${index}].fit_score must be a number.`);
+        }
+
+        if (!isIsoDateString(proposal.created_at)) {
+          errors.push(`trade_market.proposals[${index}].created_at must be an ISO date string.`);
+        }
+      }
     }
   }
 

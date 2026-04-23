@@ -63,6 +63,15 @@ describe('offseason state machine', () => {
       tendency_profile: null,
       hiring_notes: [],
     },
+    scouting_pre_draft: {
+      stage: 'build_board',
+      prospects: [],
+      last_board_update_at: null,
+    },
+    trade_market: {
+      stage: 'explore_market',
+      proposals: [],
+    },
     decision_history: [],
   };
 
