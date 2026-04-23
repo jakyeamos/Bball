@@ -34,6 +34,7 @@ import {
   applyFreeAgencyOfferToRun,
   listFreeAgencyTargets,
 } from '../offseason/freeAgencyEngine';
+import { buildOffseasonRecap } from '../offseason/recapEngine';
 
 const router = Router();
 
@@ -73,6 +74,10 @@ function isDraftNightEnabled(): boolean {
 
 function isFreeAgencyEnabled(): boolean {
   return isDraftNightEnabled() && featureFlags.offseasonFreeAgencyEnabled;
+}
+
+function isDecisionLoopEnabled(): boolean {
+  return isFreeAgencyEnabled() && featureFlags.offseasonDecisionLoopEnabled;
 }
 
 function generateRunId(userId: string): string {
@@ -655,6 +660,39 @@ router.post(
   }
 );
 
+router.get(
+  '/:run_id/recap',
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isDecisionLoopEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Decision Loop recap is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const runs = await readUserRuns(userId);
+    const run = runs.find((candidate) => candidate.run_id === runId) ?? null;
+
+    if (!run) {
+      res.status(404).json({ error: 'Offseason run not found.' });
+      return;
+    }
+
+    if (run.phase !== 'post_offseason_recap' && run.phase !== 'complete') {
+      res.status(409).json({
+        error:
+          'Run is not currently in Post-Offseason Recap. Complete Free Agency first.',
+      });
+      return;
+    }
+
+    const recap = buildOffseasonRecap(run);
+    res.json({ run, recap });
+  }
+);
+
 router.post(
   '/:run_id/transition',
   validateBody(offseasonPhaseTransitionSchema),
@@ -720,6 +758,17 @@ router.post(
       ) {
         res.status(404).json({
           error: 'Offseason Free Agency is disabled by feature flag.',
+        });
+        return;
+      }
+
+      if (
+        (payload.next_phase === 'post_offseason_recap' ||
+          payload.next_phase === 'complete') &&
+        !isDecisionLoopEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Decision Loop recap is disabled by feature flag.',
         });
         return;
       }

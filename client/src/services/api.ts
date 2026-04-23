@@ -12,6 +12,7 @@ import {
   OffseasonFreeAgencySigning,
   OffseasonFreeAgencyTarget,
   OffseasonCoachProfile,
+  OffseasonRecapReport,
   OffseasonRunState,
   OffseasonScoutingProspect,
   OffseasonTeamSummary,
@@ -196,6 +197,11 @@ export interface OffseasonFreeAgencyTargetsResponse {
 export interface OffseasonFreeAgencyOfferResponse {
   run: OffseasonRunState | null;
   signing: OffseasonFreeAgencySigning;
+}
+
+export interface OffseasonRecapResponse {
+  run: OffseasonRunState | null;
+  recap: OffseasonRecapReport;
 }
 
 export interface AdvancedModulesResponse {
@@ -447,6 +453,14 @@ export const apiService = {
         method: 'POST',
         body: JSON.stringify(payload),
       }
+    );
+  },
+
+  getOffseasonRecap: (
+    runId: string
+  ): Promise<OffseasonRecapResponse> => {
+    return fetchApi<OffseasonRecapResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/recap`
     );
   },
 

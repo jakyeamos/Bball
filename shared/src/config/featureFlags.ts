@@ -69,6 +69,7 @@ export const featureFlags = {
   offseasonTradeMarketEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_TRADE_MARKET', defaultOn),
   offseasonDraftNightEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_DRAFT_NIGHT', defaultOn),
   offseasonFreeAgencyEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_FREE_AGENCY', defaultOn),
+  offseasonDecisionLoopEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_DECISION_LOOP', defaultOn),
 };
 
 export type FeatureFlags = typeof featureFlags;

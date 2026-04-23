@@ -20,7 +20,7 @@ The roadmap below reflects the code that is actually present in the repo as of 2
 - **Phase 7 now includes** draft teaching overlays, post-draft analysis, and capstone surfacing across the IQ track pages.
 - **Phase 8 now includes** profile metrics/recommendations plus login/account-upgrade surfaces with guest fallback when Supabase admin env is absent.
 - **Phase 9 foundation implementation is now in repo** (schema-versioned run state, Team Context, GM entry/recommendation), with one remaining human verification gate for discoverability/rollout safety.
-- **Phase 10 execution is now in progress** with 10-01 through 10-03 implemented (coaching market, scouting uncertainty, trade fit explanations, draft night, and free agency).
+- **Phase 10 implementation is now complete through 10-04** (coaching market, scouting uncertainty, trade fit explanations, draft night, free agency, and recap), with a final human acceptance gate pending before full rollout.
 - **The working tree also contains in-flight data/model work beyond the original Phase 3 close-out**: calibration artifacts/scripts, role inference, advanced player-model tests, and richer player valuation logic are present but were never folded back into the roadmap.
 
 ## Phases
@@ -42,7 +42,7 @@ Checkboxes below reflect implementation landed in the repo. Remaining manual ver
 - [x] **Phase 7: Draft Simulator Teaching Layer** - Implemented 2026-04-01 with overlays, post-draft analysis, and capstone positioning
 - [x] **Phase 8: User Profile and Account Upgrade** - Implemented 2026-04-01; live Supabase upgrade/sync verification remains open
 - [x] **Phase 9: Offseason Simulator - Foundation** - Implemented 2026-04-22; final human verification gate pending
-- [ ] **Phase 10: Offseason Simulator - Decision Loop** - Coaching market, scouting, trade market, draft night, free agency, and post-offseason recap
+- [x] **Phase 10: Offseason Simulator - Decision Loop** - Coaching market, scouting, trade market, draft night, free agency, and post-offseason recap (implemented 2026-04-23; final human acceptance gate pending)
 
 ## Phase Details
 
@@ -247,7 +247,7 @@ Plans:
 - [x] 10-01-PLAN.md - Coaching market + tendency propagation (OSIM-02)
 - [x] 10-02-PLAN.md - Scouting uncertainty + trade fit explanations (OSIM-03, OSIM-04)
 - [x] 10-03-PLAN.md - Draft Night + Free Agency phases (OSIM-05, OSIM-06)
-- [ ] 10-04-PLAN.md - Post-offseason recap + full-loop verification gate (OSIM-07)
+- [x] 10-04-PLAN.md - Post-offseason recap + full-loop verification gate (OSIM-07, pending human verification gate)
 
 ## Progress
 
@@ -268,14 +268,14 @@ Implementation is now complete through Phase 9 in the repo. The remaining open i
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
-| 10. Offseason Simulator - Decision Loop | 3/4 | In Progress | 2026-04-23 |
+| 10. Offseason Simulator - Decision Loop | 4/4 | Implemented pending final human verification gate | 2026-04-23 |
 
 ### Phase 11: NBA Big Board Creator — private-first prospect evaluation platform with modular scoring, historical comps, film workflow, and auditable big board generation
 
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 10
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 11 to break down)

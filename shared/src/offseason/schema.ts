@@ -208,6 +208,26 @@ export interface OffseasonFreeAgencyState {
   signings: OffseasonFreeAgencySigning[];
 }
 
+export interface OffseasonRecapMoment {
+  id: string;
+  phase: Exclude<OffseasonPhase, 'team_context' | 'complete'>;
+  title: string;
+  verdict: OffseasonDecisionVerdict;
+  summary: string;
+  created_at: string;
+}
+
+export interface OffseasonRecapReport {
+  run_id: string;
+  team_grade: DraftGrade;
+  overall_score: number;
+  fit_report: string[];
+  developmental_environment_score: number;
+  projected_direction: string;
+  explanation: string[];
+  key_moments: OffseasonRecapMoment[];
+}
+
 export interface OffseasonRunState {
   schemaVersion: number;
   run_id: string;

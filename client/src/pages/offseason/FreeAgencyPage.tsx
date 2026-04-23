@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useFreeAgency } from '../../features/offseason/useFreeAgency';
 
 export function FreeAgencyPage(): JSX.Element {
+  const navigate = useNavigate();
   const freeAgencyEnabled =
     featureFlags.offseasonFoundationEnabled &&
     featureFlags.offseasonTeamContextEnabled &&
@@ -209,6 +210,7 @@ export function FreeAgencyPage(): JSX.Element {
             type="button"
             onClick={async () => {
               await continueToRecap.mutateAsync(run.run_id);
+              navigate('/offseason/recap');
             }}
             className="mt-6 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
             disabled={continueToRecap.isPending}
@@ -220,4 +222,3 @@ export function FreeAgencyPage(): JSX.Element {
     </div>
   );
 }
-

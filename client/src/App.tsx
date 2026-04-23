@@ -37,6 +37,7 @@ import { ScoutingPage } from './pages/offseason/ScoutingPage';
 import { TradeMarketPage } from './pages/offseason/TradeMarketPage';
 import { DraftNightPage } from './pages/offseason/DraftNightPage';
 import { FreeAgencyPage } from './pages/offseason/FreeAgencyPage';
+import { OffseasonRecapPage } from './pages/offseason/OffseasonRecapPage';
 import { AdminLessonsPage } from './pages/admin/AdminLessonsPage';
 import { AdminDailyChallengePage } from './pages/admin/AdminDailyChallengePage';
 import { AdminTagsPage } from './pages/admin/AdminTagsPage';
@@ -112,6 +113,7 @@ function App() {
             <Route path="/offseason/trade-market" element={<TradeMarketPage />} />
             <Route path="/offseason/draft-night" element={<DraftNightPage />} />
             <Route path="/offseason/free-agency" element={<FreeAgencyPage />} />
+            <Route path="/offseason/recap" element={<OffseasonRecapPage />} />
             <Route path="/lessons/:lessonId" element={<LessonPage />} />
             <Route path="/lessons/:lessonId/discussion" element={<LessonDiscussionPage />} />
             <Route path="/recaps/:recapId" element={<RecapPage />} />

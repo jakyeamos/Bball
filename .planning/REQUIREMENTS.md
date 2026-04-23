@@ -95,7 +95,7 @@
 - [x] **OSIM-04**: Offseason sim engine: Trade Market phase ??? user can explore trades involving players and picks; fit-based scoring explains why a trade helps or hurts
 - [x] **OSIM-05**: Offseason sim engine: Draft Night phase ??? user makes picks using the existing draft engine with teaching overlays and explanation-first grades
 - [x] **OSIM-06**: Offseason sim engine: Free Agency and Roster Balancing phase ??? user fills remaining needs using simplified but realistic spending constraints
-- [ ] **OSIM-07**: Offseason sim engine: Post-Offseason Recap ??? team grade, fit report, developmental environment assessment, and projected direction with explanations for why the offseason succeeded or failed
+- [x] **OSIM-07**: Offseason sim engine: Post-Offseason Recap ??? team grade, fit report, developmental environment assessment, and projected direction with explanations for why the offseason succeeded or failed
 - [ ] **OSIM-08**: Save and resume works ??? every phase transition persists to Supabase; user can close the browser and return to any in-progress run
 - [ ] **OSIM-09**: Offseason sim state schema includes a `schemaVersion` field from day one ??? migration function handles version upgrades for saved runs
 - [ ] **OSIM-10**: Offseason simulator is reachable from the GM IQ lens directly, and surfaced as a recommended advanced module after completing core GM IQ lessons
@@ -210,7 +210,7 @@
 | OSIM-04 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-05 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-06 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
-| OSIM-07 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
+| OSIM-07 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 
 **Coverage:**
 - v1 requirements: 60 total
