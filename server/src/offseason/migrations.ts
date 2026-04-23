@@ -2,6 +2,8 @@ import {
   OFFSEASON_SCHEMA_VERSION,
   OffseasonRunState,
   createEmptyCoachingMarketState,
+  createEmptyDraftNightState,
+  createEmptyFreeAgencyState,
   createEmptyScoutingState,
   createEmptyTradeMarketState,
   createInitialOffseasonRunState,
@@ -197,6 +199,43 @@ function migrateV3ToV4(raw: unknown): OffseasonRunState {
   };
 }
 
+function migrateV4ToV5(raw: unknown): OffseasonRunState {
+  if (!isRecord(raw)) {
+    throw new Error('Cannot migrate non-object offseason state.');
+  }
+
+  const now = new Date().toISOString();
+  const fallback = createInitialOffseasonRunState({
+    run_id:
+      typeof raw.run_id === 'string' && raw.run_id.trim().length > 0
+        ? raw.run_id
+        : `offseason-${Date.now()}`,
+    season_year:
+      typeof raw.season_year === 'number' &&
+      Number.isInteger(raw.season_year) &&
+      raw.season_year >= 2020 &&
+      raw.season_year <= 2099
+        ? raw.season_year
+        : 2026,
+    now_iso: now,
+  });
+
+  const baseState = raw as Partial<OffseasonRunState> &
+    Record<string, unknown>;
+
+  return {
+    ...fallback,
+    ...baseState,
+    schemaVersion: 5,
+    draft_night: isRecord(baseState.draft_night)
+      ? (baseState.draft_night as OffseasonRunState['draft_night'])
+      : createEmptyDraftNightState(),
+    free_agency: isRecord(baseState.free_agency)
+      ? (baseState.free_agency as OffseasonRunState['free_agency'])
+      : createEmptyFreeAgencyState(),
+  };
+}
+
 export interface MigrationResult {
   migrated: boolean;
   from_version: number;
@@ -233,6 +272,13 @@ export function migrateOffseasonRunState(raw: unknown): MigrationResult {
     if (currentVersion === 3) {
       workingState = migrateV3ToV4(workingState);
       currentVersion = 4;
+      migrated = true;
+      continue;
+    }
+
+    if (currentVersion === 4) {
+      workingState = migrateV4ToV5(workingState);
+      currentVersion = 5;
       migrated = true;
       continue;
     }

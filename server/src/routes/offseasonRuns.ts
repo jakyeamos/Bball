@@ -2,6 +2,8 @@ import { Request, Response, Router } from 'express';
 import {
   OffseasonRunState,
   createInitialOffseasonRunState,
+  offseasonDraftPickSchema,
+  offseasonFreeAgencyOfferSchema,
   featureFlags,
   offseasonCoachingHireSchema,
   offseasonScoutingBoardUpdateSchema,
@@ -24,9 +26,14 @@ import {
   buildInitialScoutingBoard,
   reorderScoutingBoard,
 } from '../offseason/scoutingEngine';
+import { applyDraftPickToRun } from '../offseason/draftNightEngine';
 import { transitionRunPhase } from '../offseason/stateMachine';
 import { buildTeamContextForTeam, listAvailableTeams } from '../offseason/teamContext';
 import { applyTradeProposalToRun } from '../offseason/tradeEvaluator';
+import {
+  applyFreeAgencyOfferToRun,
+  listFreeAgencyTargets,
+} from '../offseason/freeAgencyEngine';
 
 const router = Router();
 
@@ -58,6 +65,14 @@ function isScoutingEnabled(): boolean {
 
 function isTradeMarketEnabled(): boolean {
   return isScoutingEnabled() && featureFlags.offseasonTradeMarketEnabled;
+}
+
+function isDraftNightEnabled(): boolean {
+  return isTradeMarketEnabled() && featureFlags.offseasonDraftNightEnabled;
+}
+
+function isFreeAgencyEnabled(): boolean {
+  return isDraftNightEnabled() && featureFlags.offseasonFreeAgencyEnabled;
 }
 
 function generateRunId(userId: string): string {
@@ -480,6 +495,167 @@ router.post(
 );
 
 router.post(
+  '/:run_id/draft-night/picks',
+  validateBody(offseasonDraftPickSchema),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isDraftNightEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Draft Night is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const payload = res.locals.validatedBody as { player_id: number };
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+    let pickResult: ReturnType<typeof applyDraftPickToRun>['pick'] | null = null;
+
+    try {
+      await updateStore((store) => {
+        const runs = store.offseason_runs_by_user[userId] ?? [];
+        const index = runs.findIndex((candidate) => candidate.run_id === runId);
+        if (index < 0) {
+          return;
+        }
+
+        const migrated = migrateOffseasonRunState(runs[index]).state;
+        if (migrated.phase !== 'draft_night') {
+          return;
+        }
+
+        const draftResult = applyDraftPickToRun(migrated, payload, now);
+        updatedRun = draftResult.run;
+        pickResult = draftResult.pick;
+        runs[index] = updatedRun;
+        store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+      });
+    } catch (error) {
+      res.status(400).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unable to process draft-night pick.',
+      });
+      return;
+    }
+
+    if (!updatedRun || !pickResult) {
+      res.status(409).json({
+        error: 'Unable to submit draft pick. Ensure the run is in Draft Night.',
+      });
+      return;
+    }
+
+    res.json({
+      run: updatedRun,
+      pick: pickResult,
+    });
+  }
+);
+
+router.get(
+  '/:run_id/free-agency/targets',
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isFreeAgencyEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Free Agency is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const runs = await readUserRuns(userId);
+    const run = runs.find((candidate) => candidate.run_id === runId) ?? null;
+
+    if (!run) {
+      res.status(404).json({ error: 'Offseason run not found.' });
+      return;
+    }
+
+    if (run.phase !== 'free_agency') {
+      res.status(409).json({
+        error:
+          'Run is not currently in Free Agency. Complete Draft Night first.',
+      });
+      return;
+    }
+
+    const targets = listFreeAgencyTargets(run);
+    res.json({ run, targets });
+  }
+);
+
+router.post(
+  '/:run_id/free-agency/offers',
+  validateBody(offseasonFreeAgencyOfferSchema),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isFreeAgencyEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Free Agency is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const payload = res.locals.validatedBody as {
+      player_id: number;
+      contract_millions: number;
+      decision: 'signed' | 'declined';
+    };
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+    let signingResult: ReturnType<typeof applyFreeAgencyOfferToRun>['signing'] | null =
+      null;
+
+    try {
+      await updateStore((store) => {
+        const runs = store.offseason_runs_by_user[userId] ?? [];
+        const index = runs.findIndex((candidate) => candidate.run_id === runId);
+        if (index < 0) {
+          return;
+        }
+
+        const migrated = migrateOffseasonRunState(runs[index]).state;
+        if (migrated.phase !== 'free_agency') {
+          return;
+        }
+
+        const freeAgencyResult = applyFreeAgencyOfferToRun(migrated, payload, now);
+        updatedRun = freeAgencyResult.run;
+        signingResult = freeAgencyResult.signing;
+        runs[index] = updatedRun;
+        store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+      });
+    } catch (error) {
+      res.status(400).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unable to process free-agency offer.',
+      });
+      return;
+    }
+
+    if (!updatedRun || !signingResult) {
+      res.status(409).json({
+        error:
+          'Unable to process free-agency offer. Ensure the run is in Free Agency.',
+      });
+      return;
+    }
+
+    res.json({
+      run: updatedRun,
+      signing: signingResult,
+    });
+  }
+);
+
+router.post(
   '/:run_id/transition',
   validateBody(offseasonPhaseTransitionSchema),
   async (req: Request, res: Response): Promise<void> => {
@@ -524,6 +700,26 @@ router.post(
       ) {
         res.status(404).json({
           error: 'Offseason Trade Market is disabled by feature flag.',
+        });
+        return;
+      }
+
+      if (
+        payload.next_phase === 'draft_night' &&
+        !isDraftNightEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Draft Night is disabled by feature flag.',
+        });
+        return;
+      }
+
+      if (
+        payload.next_phase === 'free_agency' &&
+        !isFreeAgencyEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Free Agency is disabled by feature flag.',
         });
         return;
       }

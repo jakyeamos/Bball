@@ -72,6 +72,17 @@ describe('offseason state machine', () => {
       stage: 'explore_market',
       proposals: [],
     },
+    draft_night: {
+      stage: 'make_picks',
+      picks: [],
+    },
+    free_agency: {
+      stage: 'target_signings',
+      salary_cap_millions: 136,
+      cap_space_millions: 36,
+      roster_limit: 15,
+      signings: [],
+    },
     decision_history: [],
   };
 

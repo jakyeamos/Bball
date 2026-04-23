@@ -24,9 +24,20 @@
 import {
   CoachingHirePayload,
   OffseasonScoutingState,
+  OffseasonDraftNightState,
+  OffseasonDraftPickResult,
+  OffseasonFreeAgencyState,
+  OffseasonFreeAgencySigning,
+  OffseasonFreeAgencyTarget,
   OffseasonScoutingProspect,
   OffseasonTradeMarketState,
   OffseasonTradeProposal,
+  DraftPickPayload,
+  FreeAgencyOfferPayload,
+  DraftNightStage,
+  FreeAgencyStage,
+  DraftGrade,
+  FreeAgencyDecision,
   ScoutingBoardUpdatePayload,
   TradeProposalPayload,
   TradeProposalDecision,
@@ -41,6 +52,8 @@ import {
   StartOffseasonRunPayload,
   TeamContextUpdatePayload,
   validateCoachingHirePayload,
+  validateDraftPickPayload,
+  validateFreeAgencyOfferPayload,
   validateScoutingBoardUpdatePayload,
   validateTradeProposalPayload,
   validateOffseasonPhaseTransitionPayload,
@@ -55,6 +68,11 @@ export type {
   OffseasonCoachingMarketState,
   OffseasonDecisionRecord,
   OffseasonDecisionVerdict,
+  OffseasonDraftNightState,
+  OffseasonDraftPickResult,
+  OffseasonFreeAgencyState,
+  OffseasonFreeAgencySigning,
+  OffseasonFreeAgencyTarget,
   OffseasonScoutingProspect,
   OffseasonScoutingSignals,
   OffseasonScoutingState,
@@ -67,6 +85,12 @@ export type {
   TradeProposalDecision,
   TradeProposalPayload,
   TradeProposalVerdict,
+  DraftPickPayload,
+  FreeAgencyOfferPayload,
+  DraftNightStage,
+  FreeAgencyStage,
+  DraftGrade,
+  FreeAgencyDecision,
   OffseasonPhase,
   OffseasonRunState,
   OffseasonTeamContextState,
@@ -656,6 +680,16 @@ export const offseasonScoutingBoardUpdateSchema: Schema<ScoutingBoardUpdatePaylo
 /** Validates trade proposal submission payloads. */
 export const offseasonTradeProposalSchema: Schema<TradeProposalPayload> = makeSchema(
   validateTradeProposalPayload
+);
+
+/** Validates draft-pick submission payloads. */
+export const offseasonDraftPickSchema: Schema<DraftPickPayload> = makeSchema(
+  validateDraftPickPayload
+);
+
+/** Validates free-agency offer payloads. */
+export const offseasonFreeAgencyOfferSchema: Schema<FreeAgencyOfferPayload> = makeSchema(
+  validateFreeAgencyOfferPayload
 );
 
 /** Validates offseason phase transition payloads. */

@@ -93,8 +93,8 @@
 - [x] **OSIM-02**: Offseason sim engine: Coaching Market phase ??? user interviews and hires from a pool of real coaches; selected coach's tendency tags adjust valuations and grade weights for the rest of the run
 - [x] **OSIM-03**: Offseason sim engine: Scouting and Pre-Draft phase ??? user builds a draft board using stats, workouts, interview signals, and explicit uncertainty signals; no pick is ever "certain"; **player stat presentation aligns with DATA-06** (same contracts and docs as draft sim / `PlayerFeatures` pipeline)
 - [x] **OSIM-04**: Offseason sim engine: Trade Market phase ??? user can explore trades involving players and picks; fit-based scoring explains why a trade helps or hurts
-- [ ] **OSIM-05**: Offseason sim engine: Draft Night phase ??? user makes picks using the existing draft engine with teaching overlays and explanation-first grades
-- [ ] **OSIM-06**: Offseason sim engine: Free Agency and Roster Balancing phase ??? user fills remaining needs using simplified but realistic spending constraints
+- [x] **OSIM-05**: Offseason sim engine: Draft Night phase ??? user makes picks using the existing draft engine with teaching overlays and explanation-first grades
+- [x] **OSIM-06**: Offseason sim engine: Free Agency and Roster Balancing phase ??? user fills remaining needs using simplified but realistic spending constraints
 - [ ] **OSIM-07**: Offseason sim engine: Post-Offseason Recap ??? team grade, fit report, developmental environment assessment, and projected direction with explanations for why the offseason succeeded or failed
 - [ ] **OSIM-08**: Save and resume works ??? every phase transition persists to Supabase; user can close the browser and return to any in-progress run
 - [ ] **OSIM-09**: Offseason sim state schema includes a `schemaVersion` field from day one ??? migration function handles version upgrades for saved runs
@@ -208,8 +208,8 @@
 | OSIM-02 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-03 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-04 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
-| OSIM-05 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
-| OSIM-06 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
+| OSIM-05 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
+| OSIM-06 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-07 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
 
 **Coverage:**

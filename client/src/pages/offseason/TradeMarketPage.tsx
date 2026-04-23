@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useTradeMarket } from '../../features/offseason/useTradeMarket';
 
 export function TradeMarketPage(): JSX.Element {
+  const navigate = useNavigate();
   const tradeEnabled =
     featureFlags.offseasonFoundationEnabled &&
     featureFlags.offseasonTeamContextEnabled &&
@@ -256,6 +257,7 @@ export function TradeMarketPage(): JSX.Element {
             type="button"
             onClick={async () => {
               await continueToDraftNight.mutateAsync(run.run_id);
+              navigate('/offseason/draft-night');
             }}
             className="mt-6 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
             disabled={continueToDraftNight.isPending}
@@ -267,4 +269,3 @@ export function TradeMarketPage(): JSX.Element {
     </div>
   );
 }
-

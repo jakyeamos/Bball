@@ -32,7 +32,11 @@ export type OffseasonCoachPace = 'slow' | 'medium' | 'fast';
 export type CoachingMarketStage = 'evaluate_pool' | 'coach_hired';
 export type ScoutingStage = 'build_board' | 'ready_for_trade_market';
 export type TradeMarketStage = 'explore_market' | 'ready_for_draft_night';
+export type DraftNightStage = 'make_picks' | 'ready_for_free_agency';
+export type FreeAgencyStage = 'target_signings' | 'ready_for_recap';
 export type ProspectUncertaintyBand = 'high' | 'medium' | 'low';
+export type DraftGrade = 'A' | 'B' | 'C' | 'D' | 'F';
+export type FreeAgencyDecision = 'signed' | 'declined';
 export type OffseasonDecisionVerdict =
   | 'selected'
   | 'accepted'
@@ -160,6 +164,50 @@ export interface OffseasonTradeMarketState {
   proposals: OffseasonTradeProposal[];
 }
 
+export interface OffseasonDraftPickResult {
+  id: string;
+  pick_number: number;
+  player_id: number;
+  player_name: string;
+  board_rank: number;
+  fit_score: number;
+  grade: DraftGrade;
+  explanation: string[];
+  created_at: string;
+}
+
+export interface OffseasonDraftNightState {
+  stage: DraftNightStage;
+  picks: OffseasonDraftPickResult[];
+}
+
+export interface OffseasonFreeAgencyTarget {
+  player_id: number;
+  player_name: string;
+  position: string;
+  board_rank: number;
+  asking_price_millions: number;
+}
+
+export interface OffseasonFreeAgencySigning {
+  id: string;
+  player_id: number;
+  player_name: string;
+  decision: FreeAgencyDecision;
+  contract_millions: number;
+  fit_score: number;
+  explanation: string[];
+  created_at: string;
+}
+
+export interface OffseasonFreeAgencyState {
+  stage: FreeAgencyStage;
+  salary_cap_millions: number;
+  cap_space_millions: number;
+  roster_limit: number;
+  signings: OffseasonFreeAgencySigning[];
+}
+
 export interface OffseasonRunState {
   schemaVersion: number;
   run_id: string;
@@ -171,6 +219,8 @@ export interface OffseasonRunState {
   coaching_market: OffseasonCoachingMarketState;
   scouting_pre_draft: OffseasonScoutingState;
   trade_market: OffseasonTradeMarketState;
+  draft_night: OffseasonDraftNightState;
+  free_agency: OffseasonFreeAgencyState;
   decision_history: OffseasonDecisionRecord[];
 }
 
@@ -196,6 +246,16 @@ export interface TradeProposalPayload {
   requested_player_ids: number[];
   requested_pick_ids: string[];
   decision: TradeProposalDecision;
+}
+
+export interface DraftPickPayload {
+  player_id: number;
+}
+
+export interface FreeAgencyOfferPayload {
+  player_id: number;
+  contract_millions: number;
+  decision: FreeAgencyDecision;
 }
 
 export interface OffseasonPhaseTransitionPayload {
@@ -241,6 +301,16 @@ export const TRADE_MARKET_STAGES: TradeMarketStage[] = [
   'ready_for_draft_night',
 ];
 
+export const DRAFT_NIGHT_STAGES: DraftNightStage[] = [
+  'make_picks',
+  'ready_for_free_agency',
+];
+
+export const FREE_AGENCY_STAGES: FreeAgencyStage[] = [
+  'target_signings',
+  'ready_for_recap',
+];
+
 export const PROSPECT_UNCERTAINTY_BANDS: ProspectUncertaintyBand[] = [
   'high',
   'medium',
@@ -258,6 +328,13 @@ export const TRADE_PROPOSAL_VERDICTS: TradeProposalVerdict[] = [
   'hurts',
 ];
 
+export const DRAFT_GRADES: DraftGrade[] = ['A', 'B', 'C', 'D', 'F'];
+
+export const FREE_AGENCY_DECISIONS: FreeAgencyDecision[] = [
+  'signed',
+  'declined',
+];
+
 export const OFFSEASON_DECISION_VERDICTS: OffseasonDecisionVerdict[] = [
   'selected',
   'accepted',
@@ -267,7 +344,7 @@ export const OFFSEASON_DECISION_VERDICTS: OffseasonDecisionVerdict[] = [
   'summary',
 ];
 
-export const OFFSEASON_SCHEMA_VERSION = 4;
+export const OFFSEASON_SCHEMA_VERSION = 5;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -313,6 +390,23 @@ export function createEmptyTradeMarketState(): OffseasonTradeMarketState {
   };
 }
 
+export function createEmptyDraftNightState(): OffseasonDraftNightState {
+  return {
+    stage: 'make_picks',
+    picks: [],
+  };
+}
+
+export function createEmptyFreeAgencyState(): OffseasonFreeAgencyState {
+  return {
+    stage: 'target_signings',
+    salary_cap_millions: 136,
+    cap_space_millions: 36,
+    roster_limit: 15,
+    signings: [],
+  };
+}
+
 export function createInitialOffseasonRunState(input: {
   run_id: string;
   season_year: number;
@@ -331,6 +425,8 @@ export function createInitialOffseasonRunState(input: {
     coaching_market: createEmptyCoachingMarketState(),
     scouting_pre_draft: createEmptyScoutingState(),
     trade_market: createEmptyTradeMarketState(),
+    draft_night: createEmptyDraftNightState(),
+    free_agency: createEmptyFreeAgencyState(),
     decision_history: [],
   };
 }
@@ -528,6 +624,80 @@ export function validateTradeProposalPayload(
   };
 }
 
+export function validateDraftPickPayload(
+  body: unknown
+): OffseasonValidationResult<DraftPickPayload> {
+  if (!isRecord(body)) {
+    return {
+      valid: false,
+      errors: ['Draft pick body must be a JSON object.'],
+    };
+  }
+
+  const errors: string[] = [];
+  const playerId = body.player_id;
+  if (typeof playerId !== 'number' || !Number.isInteger(playerId)) {
+    errors.push('player_id is required and must be an integer.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: { player_id: playerId as number },
+  };
+}
+
+export function validateFreeAgencyOfferPayload(
+  body: unknown
+): OffseasonValidationResult<FreeAgencyOfferPayload> {
+  if (!isRecord(body)) {
+    return {
+      valid: false,
+      errors: ['Free agency offer body must be a JSON object.'],
+    };
+  }
+
+  const errors: string[] = [];
+  const playerId = body.player_id;
+  const contractMillions = body.contract_millions;
+  const decision = body.decision;
+
+  if (typeof playerId !== 'number' || !Number.isInteger(playerId)) {
+    errors.push('player_id is required and must be an integer.');
+  }
+
+  if (
+    typeof contractMillions !== 'number' ||
+    !Number.isFinite(contractMillions) ||
+    contractMillions <= 0
+  ) {
+    errors.push('contract_millions must be a positive number.');
+  }
+
+  if (
+    typeof decision !== 'string' ||
+    !FREE_AGENCY_DECISIONS.includes(decision as FreeAgencyDecision)
+  ) {
+    errors.push('decision must be either signed or declined.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: {
+      player_id: playerId as number,
+      contract_millions: Math.round((contractMillions as number) * 100) / 100,
+      decision: decision as FreeAgencyDecision,
+    },
+  };
+}
+
 export function validateOffseasonPhaseTransitionPayload(
   body: unknown
 ): OffseasonValidationResult<OffseasonPhaseTransitionPayload> {
@@ -584,6 +754,8 @@ export function validateOffseasonRunState(
   const coachingMarket = body.coaching_market;
   const scoutingPreDraft = body.scouting_pre_draft;
   const tradeMarket = body.trade_market;
+  const draftNight = body.draft_night;
+  const freeAgency = body.free_agency;
   const decisionHistory = body.decision_history;
 
   if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion) || schemaVersion < 1) {
@@ -861,6 +1033,140 @@ export function validateOffseasonRunState(
 
         if (!isIsoDateString(proposal.created_at)) {
           errors.push(`trade_market.proposals[${index}].created_at must be an ISO date string.`);
+        }
+      }
+    }
+  }
+
+  if (!isRecord(draftNight)) {
+    errors.push('draft_night must be an object.');
+  } else {
+    const stage = draftNight.stage;
+    const picks = draftNight.picks;
+
+    if (
+      typeof stage !== 'string' ||
+      !DRAFT_NIGHT_STAGES.includes(stage as DraftNightStage)
+    ) {
+      errors.push('draft_night.stage must be a valid draft night stage.');
+    }
+
+    if (!Array.isArray(picks)) {
+      errors.push('draft_night.picks must be an array.');
+    } else {
+      for (const [index, pick] of picks.entries()) {
+        if (!isRecord(pick)) {
+          errors.push(`draft_night.picks[${index}] must be an object.`);
+          continue;
+        }
+
+        if (typeof pick.id !== 'string' || pick.id.trim().length === 0) {
+          errors.push(`draft_night.picks[${index}].id must be a non-empty string.`);
+        }
+
+        const numericFields = [
+          'pick_number',
+          'player_id',
+          'board_rank',
+          'fit_score',
+        ] as const;
+
+        for (const field of numericFields) {
+          if (typeof pick[field] !== 'number') {
+            errors.push(`draft_night.picks[${index}].${field} must be a number.`);
+          }
+        }
+
+        if (
+          typeof pick.grade !== 'string' ||
+          !DRAFT_GRADES.includes(pick.grade as DraftGrade)
+        ) {
+          errors.push(`draft_night.picks[${index}].grade must be a valid draft grade.`);
+        }
+
+        if (
+          !Array.isArray(pick.explanation) ||
+          pick.explanation.some((line) => typeof line !== 'string')
+        ) {
+          errors.push(`draft_night.picks[${index}].explanation must be an array of strings.`);
+        }
+
+        if (!isIsoDateString(pick.created_at)) {
+          errors.push(`draft_night.picks[${index}].created_at must be an ISO date string.`);
+        }
+      }
+    }
+  }
+
+  if (!isRecord(freeAgency)) {
+    errors.push('free_agency must be an object.');
+  } else {
+    const stage = freeAgency.stage;
+    const salaryCap = freeAgency.salary_cap_millions;
+    const capSpace = freeAgency.cap_space_millions;
+    const rosterLimit = freeAgency.roster_limit;
+    const signings = freeAgency.signings;
+
+    if (
+      typeof stage !== 'string' ||
+      !FREE_AGENCY_STAGES.includes(stage as FreeAgencyStage)
+    ) {
+      errors.push('free_agency.stage must be a valid free agency stage.');
+    }
+
+    if (typeof salaryCap !== 'number' || !Number.isFinite(salaryCap)) {
+      errors.push('free_agency.salary_cap_millions must be a finite number.');
+    }
+
+    if (typeof capSpace !== 'number' || !Number.isFinite(capSpace)) {
+      errors.push('free_agency.cap_space_millions must be a finite number.');
+    }
+
+    if (typeof rosterLimit !== 'number' || !Number.isInteger(rosterLimit)) {
+      errors.push('free_agency.roster_limit must be an integer.');
+    }
+
+    if (!Array.isArray(signings)) {
+      errors.push('free_agency.signings must be an array.');
+    } else {
+      for (const [index, signing] of signings.entries()) {
+        if (!isRecord(signing)) {
+          errors.push(`free_agency.signings[${index}] must be an object.`);
+          continue;
+        }
+
+        if (typeof signing.id !== 'string' || signing.id.trim().length === 0) {
+          errors.push(`free_agency.signings[${index}].id must be a non-empty string.`);
+        }
+
+        if (typeof signing.player_id !== 'number') {
+          errors.push(`free_agency.signings[${index}].player_id must be a number.`);
+        }
+
+        if (
+          typeof signing.decision !== 'string' ||
+          !FREE_AGENCY_DECISIONS.includes(signing.decision as FreeAgencyDecision)
+        ) {
+          errors.push(`free_agency.signings[${index}].decision must be signed or declined.`);
+        }
+
+        if (typeof signing.contract_millions !== 'number') {
+          errors.push(`free_agency.signings[${index}].contract_millions must be a number.`);
+        }
+
+        if (typeof signing.fit_score !== 'number') {
+          errors.push(`free_agency.signings[${index}].fit_score must be a number.`);
+        }
+
+        if (
+          !Array.isArray(signing.explanation) ||
+          signing.explanation.some((line) => typeof line !== 'string')
+        ) {
+          errors.push(`free_agency.signings[${index}].explanation must be an array of strings.`);
+        }
+
+        if (!isIsoDateString(signing.created_at)) {
+          errors.push(`free_agency.signings[${index}].created_at must be an ISO date string.`);
         }
       }
     }

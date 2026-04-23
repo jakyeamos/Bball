@@ -8,6 +8,9 @@ import {
   DraftTeachingMoment,
   LessonProgressRecord,
   LessonRecord,
+  OffseasonDraftPickResult,
+  OffseasonFreeAgencySigning,
+  OffseasonFreeAgencyTarget,
   OffseasonCoachProfile,
   OffseasonRunState,
   OffseasonScoutingProspect,
@@ -178,6 +181,21 @@ export interface OffseasonScoutingBoardResponse {
 export interface OffseasonTradeProposalResponse {
   run: OffseasonRunState | null;
   proposal: OffseasonTradeProposal;
+}
+
+export interface OffseasonDraftPickResponse {
+  run: OffseasonRunState | null;
+  pick: OffseasonDraftPickResult;
+}
+
+export interface OffseasonFreeAgencyTargetsResponse {
+  run: OffseasonRunState | null;
+  targets: OffseasonFreeAgencyTarget[];
+}
+
+export interface OffseasonFreeAgencyOfferResponse {
+  run: OffseasonRunState | null;
+  signing: OffseasonFreeAgencySigning;
 }
 
 export interface AdvancedModulesResponse {
@@ -387,6 +405,44 @@ export const apiService = {
   ): Promise<OffseasonTradeProposalResponse> => {
     return fetchApi<OffseasonTradeProposalResponse>(
       `/api/offseason/runs/${encodeURIComponent(runId)}/trade-market/proposals`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    );
+  },
+
+  submitOffseasonDraftPick: (
+    runId: string,
+    playerId: number
+  ): Promise<OffseasonDraftPickResponse> => {
+    return fetchApi<OffseasonDraftPickResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/draft-night/picks`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ player_id: playerId }),
+      }
+    );
+  },
+
+  getOffseasonFreeAgencyTargets: (
+    runId: string
+  ): Promise<OffseasonFreeAgencyTargetsResponse> => {
+    return fetchApi<OffseasonFreeAgencyTargetsResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/free-agency/targets`
+    );
+  },
+
+  submitOffseasonFreeAgencyOffer: (
+    runId: string,
+    payload: {
+      player_id: number;
+      contract_millions: number;
+      decision: 'signed' | 'declined';
+    }
+  ): Promise<OffseasonFreeAgencyOfferResponse> => {
+    return fetchApi<OffseasonFreeAgencyOfferResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/free-agency/offers`,
       {
         method: 'POST',
         body: JSON.stringify(payload),
