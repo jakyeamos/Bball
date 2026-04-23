@@ -26,6 +26,8 @@ describe('offseason migrations', () => {
     expect(result.state.schemaVersion).toBe(OFFSEASON_SCHEMA_VERSION);
     expect(result.state.team_context.selected_team_id).toBe(1610612747);
     expect(result.state.team_context.needs).toContain('Add two-way wing size');
+    expect(result.state.coaching_market.selected_coach).toBeNull();
+    expect(result.state.decision_history).toEqual([]);
   });
 
   it('throws when the payload cannot be migrated into a valid run state', () => {
@@ -55,6 +57,13 @@ describe('offseason state machine', () => {
       timeline: null,
       needs: [],
     },
+    coaching_market: {
+      stage: 'evaluate_pool',
+      selected_coach: null,
+      tendency_profile: null,
+      hiring_notes: [],
+    },
+    decision_history: [],
   };
 
   it('allows adjacent phase transitions', () => {

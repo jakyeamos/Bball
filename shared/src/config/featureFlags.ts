@@ -64,6 +64,7 @@ export const featureFlags = {
   lessonLibraryPublicEnabled: readBooleanFlag('VITE_ENABLE_PUBLIC_LIBRARY', defaultOn),
   offseasonFoundationEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_FOUNDATION', defaultOn),
   offseasonTeamContextEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_TEAM_CONTEXT', defaultOn),
+  offseasonCoachingMarketEnabled: readBooleanFlag('VITE_ENABLE_OFFSEASON_COACHING_MARKET', defaultOn),
 };
 
 export type FeatureFlags = typeof featureFlags;

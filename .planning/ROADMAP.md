@@ -20,7 +20,7 @@ The roadmap below reflects the code that is actually present in the repo as of 2
 - **Phase 7 now includes** draft teaching overlays, post-draft analysis, and capstone surfacing across the IQ track pages.
 - **Phase 8 now includes** profile metrics/recommendations plus login/account-upgrade surfaces with guest fallback when Supabase admin env is absent.
 - **Phase 9 foundation implementation is now in repo** (schema-versioned run state, Team Context, GM entry/recommendation), with one remaining human verification gate for discoverability/rollout safety.
-- **Phase 10 is still not started product work.**
+- **Phase 10 execution is now in progress** with 10-01 (Coaching Market + tendency propagation) implemented.
 - **The working tree also contains in-flight data/model work beyond the original Phase 3 close-out**: calibration artifacts/scripts, role inference, advanced player-model tests, and richer player valuation logic are present but were never folded back into the roadmap.
 
 ## Phases
@@ -244,8 +244,8 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 10-01-PLAN.md - Coaching market + tendency propagation (OSIM-02)
-- [ ] 10-02-PLAN.md - Scouting uncertainty + trade fit explanations (OSIM-03, OSIM-04)
+- [x] 10-01-PLAN.md - Coaching market + tendency propagation (OSIM-02)
+- [x] 10-02-PLAN.md - Scouting uncertainty + trade fit explanations (OSIM-03, OSIM-04)
 - [ ] 10-03-PLAN.md - Draft Night + Free Agency phases (OSIM-05, OSIM-06)
 - [ ] 10-04-PLAN.md - Post-offseason recap + full-loop verification gate (OSIM-07)
 
@@ -268,7 +268,7 @@ Implementation is now complete through Phase 9 in the repo. The remaining open i
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
-| 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
+| 10. Offseason Simulator - Decision Loop | 1/4 | In Progress | 2026-04-23 |
 
 ### Phase 11: NBA Big Board Creator — private-first prospect evaluation platform with modular scoring, historical comps, film workflow, and auditable big board generation
 

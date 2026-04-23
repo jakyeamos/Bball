@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: implementation-complete-through-phase-9-pending-manual-qa
-stopped_at: Phase 9 executed; final human verification gate pending for GM discoverability/rollout
-last_updated: "2026-04-22T21:47:30.000Z"
+status: Executing Phase 10
+stopped_at: Completed 10-01-PLAN.md (coaching market + tendency propagation)
+last_updated: "2026-04-23T13:05:00.000Z"
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 33
-  completed_plans: 38
+  completed_plans: 30
+  percent: 91
 ---
 
 # Project State
@@ -19,12 +20,12 @@ progress:
 See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` for the execution-truth snapshot synced on 2026-04-22.
 
 **Core value:** The platform only succeeds if users' basketball IQ genuinely improves - education comes before surface polish.
-**Current focus:** Clear remaining manual verification gates (Phase 04/08 plus Phase 09 GM discoverability) and decide when to start Phase 10 planning.
+**Current focus:** Phase 10 — offseason-simulator-decision-loop
 
 ## Current Position
 
-Phase: 09
-Plan: 09-03 complete in code, pending human verification checkpoint
+Phase: 10 (offseason-simulator-decision-loop) — EXECUTING
+Plan: 2 of 4
 
 Execution reality:
 
@@ -36,7 +37,7 @@ Execution reality:
 
 ## Snapshot
 
-- 29 / 33 plans are implemented in the repo.
+- 30 / 33 plans are implemented in the repo.
 - 9 / 10 phases are implemented.
 - 3 / 10 phases are historically closed with earlier human verification checkpoints.
 - Remaining product build scope is Phase 10.
@@ -54,7 +55,7 @@ Execution reality:
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
-| 10. Offseason Simulator - Decision Loop | 0/4 | Not started | - |
+| 10. Offseason Simulator - Decision Loop | 1/4 | In progress | 2026-04-23 |
 
 ## Accumulated Context
 
@@ -87,13 +88,12 @@ Execution reality:
 
 ## Session Continuity
 
-Last session: 2026-04-22T21:47:30.000Z
-Stopped at: Phase 09 executed and validated in code/tests; human verification gate remains open
-Resume file: .planning/phases/09-offseason-simulator-foundation/09-03-SUMMARY.md
+Last session: 2026-04-23T13:05:00.000Z
+Stopped at: Completed 10-01-PLAN.md (coaching market + tendency propagation)
+Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-01-SUMMARY.md
 
-## Planning Update (2026-04-22)
+## Planning Update (2026-04-23)
 
-- Added per-plan summary files for 09-01 through 09-03.
-- Updated phase summary docs for 09 to reflect implementation and remaining verification gate.
-- Synced `ROADMAP.md` and `STATE.md` to the current repo implementation.
-- Next execution target: Phase 09 human verification gate, then Phase 10 planning.
+- Executed Phase 10 Plan 01 and added Coaching Market phase endpoints/UI with persisted coach hiring.
+- Added coach tendency propagation model and regression coverage for tendency computations.
+- Updated phase tracking state for Wave 2 execution (10-02 next).

@@ -28,6 +28,15 @@ export type TeamContextStage =
   | 'ready_for_coaching_market';
 
 export type OffseasonTimeline = 'rebuilding' | 'transitioning' | 'contending';
+export type OffseasonCoachPace = 'slow' | 'medium' | 'fast';
+export type CoachingMarketStage = 'evaluate_pool' | 'coach_hired';
+export type OffseasonDecisionVerdict =
+  | 'selected'
+  | 'accepted'
+  | 'rejected'
+  | 'graded'
+  | 'signed'
+  | 'summary';
 
 export interface OffseasonTeamSummary {
   id: number;
@@ -66,6 +75,42 @@ export interface OffseasonTeamContextState {
   needs: string[];
 }
 
+export interface OffseasonCoachProfile {
+  id: string;
+  team_abbreviation: string;
+  head_coach_name: string;
+  pace: OffseasonCoachPace;
+  scheme: string;
+  youth_development: boolean;
+  driver_friendly: boolean;
+  shooter_friendly: boolean;
+}
+
+export interface OffseasonCoachTendencyProfile {
+  pace_bias: number;
+  spacing_bias: number;
+  rim_pressure_bias: number;
+  defense_bias: number;
+  development_bias: number;
+}
+
+export interface OffseasonCoachingMarketState {
+  stage: CoachingMarketStage;
+  selected_coach: OffseasonCoachProfile | null;
+  tendency_profile: OffseasonCoachTendencyProfile | null;
+  hiring_notes: string[];
+}
+
+export interface OffseasonDecisionRecord {
+  id: string;
+  phase: Exclude<OffseasonPhase, 'team_context' | 'complete'>;
+  title: string;
+  verdict: OffseasonDecisionVerdict;
+  summary: string;
+  details: string[];
+  created_at: string;
+}
+
 export interface OffseasonRunState {
   schemaVersion: number;
   run_id: string;
@@ -74,6 +119,8 @@ export interface OffseasonRunState {
   created_at: string;
   updated_at: string;
   team_context: OffseasonTeamContextState;
+  coaching_market: OffseasonCoachingMarketState;
+  decision_history: OffseasonDecisionRecord[];
 }
 
 export interface StartOffseasonRunPayload {
@@ -82,6 +129,10 @@ export interface StartOffseasonRunPayload {
 
 export interface TeamContextUpdatePayload {
   team_id: number;
+}
+
+export interface CoachingHirePayload {
+  coach_id: string;
 }
 
 export interface OffseasonPhaseTransitionPayload {
@@ -112,7 +163,21 @@ export const OFFSEASON_TIMELINES: OffseasonTimeline[] = [
   'contending',
 ];
 
-export const OFFSEASON_SCHEMA_VERSION = 2;
+export const COACHING_MARKET_STAGES: CoachingMarketStage[] = [
+  'evaluate_pool',
+  'coach_hired',
+];
+
+export const OFFSEASON_DECISION_VERDICTS: OffseasonDecisionVerdict[] = [
+  'selected',
+  'accepted',
+  'rejected',
+  'graded',
+  'signed',
+  'summary',
+];
+
+export const OFFSEASON_SCHEMA_VERSION = 3;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -134,6 +199,15 @@ export function createEmptyTeamContextState(): OffseasonTeamContextState {
   };
 }
 
+export function createEmptyCoachingMarketState(): OffseasonCoachingMarketState {
+  return {
+    stage: 'evaluate_pool',
+    selected_coach: null,
+    tendency_profile: null,
+    hiring_notes: [],
+  };
+}
+
 export function createInitialOffseasonRunState(input: {
   run_id: string;
   season_year: number;
@@ -149,6 +223,8 @@ export function createInitialOffseasonRunState(input: {
     created_at: now,
     updated_at: now,
     team_context: createEmptyTeamContextState(),
+    coaching_market: createEmptyCoachingMarketState(),
+    decision_history: [],
   };
 }
 
@@ -210,6 +286,35 @@ export function validateTeamContextUpdatePayload(
   };
 }
 
+export function validateCoachingHirePayload(
+  body: unknown
+): OffseasonValidationResult<CoachingHirePayload> {
+  if (!isRecord(body)) {
+    return {
+      valid: false,
+      errors: ['Coaching hire body must be a JSON object.'],
+    };
+  }
+
+  const errors: string[] = [];
+  const coachId = body.coach_id;
+  const normalizedCoachId =
+    typeof coachId === 'string' ? coachId.trim() : '';
+
+  if (normalizedCoachId.length === 0) {
+    errors.push('coach_id is required and must be a non-empty string.');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    data: { coach_id: normalizedCoachId },
+  };
+}
+
 export function validateOffseasonPhaseTransitionPayload(
   body: unknown
 ): OffseasonValidationResult<OffseasonPhaseTransitionPayload> {
@@ -263,6 +368,8 @@ export function validateOffseasonRunState(
   const createdAt = body.created_at;
   const updatedAt = body.updated_at;
   const teamContext = body.team_context;
+  const coachingMarket = body.coaching_market;
+  const decisionHistory = body.decision_history;
 
   if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion) || schemaVersion < 1) {
     errors.push('schemaVersion must be a positive integer.');
@@ -342,6 +449,124 @@ export function validateOffseasonRunState(
 
     if (!Array.isArray(needs) || needs.some((need) => typeof need !== 'string')) {
       errors.push('team_context.needs must be an array of strings.');
+    }
+  }
+
+  if (!isRecord(coachingMarket)) {
+    errors.push('coaching_market must be an object.');
+  } else {
+    const stage = coachingMarket.stage;
+    const selectedCoach = coachingMarket.selected_coach;
+    const tendencyProfile = coachingMarket.tendency_profile;
+    const hiringNotes = coachingMarket.hiring_notes;
+
+    if (
+      typeof stage !== 'string' ||
+      !COACHING_MARKET_STAGES.includes(stage as CoachingMarketStage)
+    ) {
+      errors.push('coaching_market.stage must be a valid Coaching Market stage.');
+    }
+
+    if (selectedCoach !== null) {
+      if (!isRecord(selectedCoach)) {
+        errors.push('coaching_market.selected_coach must be null or an object.');
+      } else {
+        const requiredCoachFields: Array<keyof OffseasonCoachProfile> = [
+          'id',
+          'team_abbreviation',
+          'head_coach_name',
+          'pace',
+          'scheme',
+          'youth_development',
+          'driver_friendly',
+          'shooter_friendly',
+        ];
+
+        for (const field of requiredCoachFields) {
+          if (selectedCoach[field] === undefined || selectedCoach[field] === null || selectedCoach[field] === '') {
+            errors.push(`coaching_market.selected_coach.${field} is required when selected_coach is set.`);
+          }
+        }
+      }
+    }
+
+    if (tendencyProfile !== null) {
+      if (!isRecord(tendencyProfile)) {
+        errors.push('coaching_market.tendency_profile must be null or an object.');
+      } else {
+        const requiredBiases: Array<keyof OffseasonCoachTendencyProfile> = [
+          'pace_bias',
+          'spacing_bias',
+          'rim_pressure_bias',
+          'defense_bias',
+          'development_bias',
+        ];
+
+        for (const biasField of requiredBiases) {
+          if (typeof tendencyProfile[biasField] !== 'number') {
+            errors.push(`coaching_market.tendency_profile.${biasField} must be a number when tendency_profile is set.`);
+          }
+        }
+      }
+    }
+
+    if (
+      !Array.isArray(hiringNotes) ||
+      hiringNotes.some((note) => typeof note !== 'string')
+    ) {
+      errors.push('coaching_market.hiring_notes must be an array of strings.');
+    }
+  }
+
+  if (!Array.isArray(decisionHistory)) {
+    errors.push('decision_history must be an array.');
+  } else {
+    for (const [index, decision] of decisionHistory.entries()) {
+      if (!isRecord(decision)) {
+        errors.push(`decision_history[${index}] must be an object.`);
+        continue;
+      }
+
+      if (typeof decision.id !== 'string' || decision.id.trim().length === 0) {
+        errors.push(`decision_history[${index}].id must be a non-empty string.`);
+      }
+
+      if (
+        typeof decision.phase !== 'string' ||
+        !OFFSEASON_PHASE_ORDER.includes(decision.phase as OffseasonPhase) ||
+        decision.phase === 'team_context' ||
+        decision.phase === 'complete'
+      ) {
+        errors.push(`decision_history[${index}].phase must be a valid decision-loop phase.`);
+      }
+
+      if (typeof decision.title !== 'string' || decision.title.trim().length === 0) {
+        errors.push(`decision_history[${index}].title must be a non-empty string.`);
+      }
+
+      if (
+        typeof decision.verdict !== 'string' ||
+        !OFFSEASON_DECISION_VERDICTS.includes(
+          decision.verdict as OffseasonDecisionVerdict
+        )
+      ) {
+        errors.push(`decision_history[${index}].verdict must be a valid decision verdict.`);
+      }
+
+      if (typeof decision.summary !== 'string' || decision.summary.trim().length === 0) {
+        errors.push(`decision_history[${index}].summary must be a non-empty string.`);
+      }
+
+      if (
+        !Array.isArray(decision.details) ||
+        decision.details.some((detail) => typeof detail !== 'string')
+      ) {
+        errors.push(`decision_history[${index}].details must be an array of strings.`);
+      }
+
+      if (!isIsoDateString(decision.created_at)) {
+        errors.push(`decision_history[${index}].created_at must be an ISO date string.`);
+      }
     }
   }
 

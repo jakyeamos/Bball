@@ -90,7 +90,7 @@
 ### NBA Offseason Simulator ??? Data and Engine
 
 - [ ] **OSIM-01**: Offseason sim engine: Team Context phase ??? user selects a real NBA team and the system loads real roster, draft picks, timeline assessment, and obvious team needs
-- [ ] **OSIM-02**: Offseason sim engine: Coaching Market phase ??? user interviews and hires from a pool of real coaches; selected coach's tendency tags adjust valuations and grade weights for the rest of the run
+- [x] **OSIM-02**: Offseason sim engine: Coaching Market phase ??? user interviews and hires from a pool of real coaches; selected coach's tendency tags adjust valuations and grade weights for the rest of the run
 - [ ] **OSIM-03**: Offseason sim engine: Scouting and Pre-Draft phase ??? user builds a draft board using stats, workouts, interview signals, and explicit uncertainty signals; no pick is ever "certain"; **player stat presentation aligns with DATA-06** (same contracts and docs as draft sim / `PlayerFeatures` pipeline)
 - [ ] **OSIM-04**: Offseason sim engine: Trade Market phase ??? user can explore trades involving players and picks; fit-based scoring explains why a trade helps or hurts
 - [ ] **OSIM-05**: Offseason sim engine: Draft Night phase ??? user makes picks using the existing draft engine with teaching overlays and explanation-first grades
@@ -205,7 +205,7 @@
 | OSIM-08 | Phase 9: Offseason Simulator ??? Foundation | Pending |
 | OSIM-09 | Phase 9: Offseason Simulator ??? Foundation | Pending |
 | OSIM-10 | Phase 9: Offseason Simulator ??? Foundation | Pending |
-| OSIM-02 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
+| OSIM-02 | Phase 10: Offseason Simulator ??? Decision Loop | Complete |
 | OSIM-03 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
 | OSIM-04 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
 | OSIM-05 | Phase 10: Offseason Simulator ??? Decision Loop | Pending |
@@ -220,4 +220,3 @@
 ---
 *Requirements defined: 2026-03-09*
 *Last updated: 2026-03-24 — DATA-06 unified stat utilization + DRAFT-02/03 stat alignment*
-

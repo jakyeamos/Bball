@@ -43,6 +43,16 @@ export function transitionRunPhase(
     );
   }
 
+  if (
+    run.phase === 'coaching_market' &&
+    nextPhase === 'scouting_pre_draft' &&
+    run.coaching_market.selected_coach === null
+  ) {
+    throw new Error(
+      'Cannot leave Coaching Market before hiring a coach.'
+    );
+  }
+
   return {
     ...run,
     phase: nextPhase,

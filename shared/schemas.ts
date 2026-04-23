@@ -22,16 +22,29 @@
  *   validateAccountUpgradePayload() — returns parsed payload or ValidationError
  */
 import {
+  CoachingHirePayload,
+  OffseasonCoachProfile,
+  OffseasonCoachTendencyProfile,
+  OffseasonCoachingMarketState,
+  OffseasonDecisionRecord,
+  OffseasonDecisionVerdict,
   OffseasonPhaseTransitionPayload,
   OffseasonRunState,
   StartOffseasonRunPayload,
   TeamContextUpdatePayload,
+  validateCoachingHirePayload,
   validateOffseasonPhaseTransitionPayload,
   validateOffseasonRunState,
   validateStartOffseasonRunPayload,
   validateTeamContextUpdatePayload,
 } from './src/offseason/schema';
 export type {
+  OffseasonCoachProfile,
+  OffseasonCoachPace,
+  OffseasonCoachTendencyProfile,
+  OffseasonCoachingMarketState,
+  OffseasonDecisionRecord,
+  OffseasonDecisionVerdict,
   OffseasonPhase,
   OffseasonRunState,
   OffseasonTeamContextState,
@@ -42,6 +55,7 @@ export type {
   TeamContextStage,
   StartOffseasonRunPayload,
   TeamContextUpdatePayload,
+  CoachingHirePayload,
   OffseasonPhaseTransitionPayload,
 } from './src/offseason/schema';
 
@@ -605,6 +619,11 @@ export const offseasonRunSchema: Schema<StartOffseasonRunPayload> = makeSchema(
 /** Validates Team Context team-selection payloads. */
 export const offseasonTeamContextSchema: Schema<TeamContextUpdatePayload> = makeSchema(
   validateTeamContextUpdatePayload
+);
+
+/** Validates coaching-hire payloads. */
+export const offseasonCoachingHireSchema: Schema<CoachingHirePayload> = makeSchema(
+  validateCoachingHirePayload
 );
 
 /** Validates offseason phase transition payloads. */

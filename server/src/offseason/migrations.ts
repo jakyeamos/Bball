@@ -1,6 +1,7 @@
 import {
   OFFSEASON_SCHEMA_VERSION,
   OffseasonRunState,
+  createEmptyCoachingMarketState,
   createInitialOffseasonRunState,
   createEmptyTeamContextState,
   validateOffseasonRunState,
@@ -71,7 +72,7 @@ function migrateV1ToV2(raw: LegacyOffseasonRunStateV1): OffseasonRunState {
 
   return {
     ...fallback,
-    schemaVersion: OFFSEASON_SCHEMA_VERSION,
+    schemaVersion: 2,
     phase: raw.phase === 'coaching_market' ? 'coaching_market' : 'team_context',
     created_at:
       typeof raw.created_at === 'string' && raw.created_at.trim().length > 0
@@ -110,6 +111,53 @@ function migrateV1ToV2(raw: LegacyOffseasonRunStateV1): OffseasonRunState {
   };
 }
 
+function migrateV2ToV3(raw: unknown): OffseasonRunState {
+  if (!isRecord(raw)) {
+    throw new Error('Cannot migrate non-object offseason state.');
+  }
+
+  const now = new Date().toISOString();
+  const fallback = createInitialOffseasonRunState({
+    run_id:
+      typeof raw.run_id === 'string' && raw.run_id.trim().length > 0
+        ? raw.run_id
+        : `offseason-${Date.now()}`,
+    season_year:
+      typeof raw.season_year === 'number' &&
+      Number.isInteger(raw.season_year) &&
+      raw.season_year >= 2020 &&
+      raw.season_year <= 2099
+        ? raw.season_year
+        : 2026,
+    now_iso: now,
+  });
+
+  const baseState = raw as Partial<OffseasonRunState> &
+    Record<string, unknown>;
+
+  return {
+    ...fallback,
+    ...baseState,
+    schemaVersion: 3,
+    created_at:
+      typeof baseState.created_at === 'string' &&
+      baseState.created_at.trim().length > 0
+        ? baseState.created_at
+        : fallback.created_at,
+    updated_at:
+      typeof baseState.updated_at === 'string' &&
+      baseState.updated_at.trim().length > 0
+        ? baseState.updated_at
+        : fallback.updated_at,
+    coaching_market: isRecord(baseState.coaching_market)
+      ? (baseState.coaching_market as OffseasonRunState['coaching_market'])
+      : createEmptyCoachingMarketState(),
+    decision_history: Array.isArray(baseState.decision_history)
+      ? (baseState.decision_history as OffseasonRunState['decision_history'])
+      : [],
+  };
+}
+
 export interface MigrationResult {
   migrated: boolean;
   from_version: number;
@@ -131,7 +179,14 @@ export function migrateOffseasonRunState(raw: unknown): MigrationResult {
   while (currentVersion < OFFSEASON_SCHEMA_VERSION) {
     if (currentVersion === 1) {
       workingState = migrateV1ToV2(workingState as LegacyOffseasonRunStateV1);
-      currentVersion = OFFSEASON_SCHEMA_VERSION;
+      currentVersion = 2;
+      migrated = true;
+      continue;
+    }
+
+    if (currentVersion === 2) {
+      workingState = migrateV2ToV3(workingState);
+      currentVersion = 3;
       migrated = true;
       continue;
     }

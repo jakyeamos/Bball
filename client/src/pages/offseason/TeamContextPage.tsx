@@ -1,12 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useTeamContext } from '../../features/offseason/useTeamContext';
 
 export function TeamContextPage(): JSX.Element {
+  const navigate = useNavigate();
   const offseasonEnabled =
     featureFlags.offseasonFoundationEnabled &&
     featureFlags.offseasonTeamContextEnabled;
+  const coachingMarketEnabled = featureFlags.offseasonCoachingMarketEnabled;
   const {
     teamsQuery,
     activeRunQuery,
@@ -140,8 +142,14 @@ export function TeamContextPage(): JSX.Element {
               <div className="mt-5 flex gap-3">
                 <button
                   type="button"
-                  onClick={() => continueToCoachingMarket.mutate()}
+                  onClick={async () => {
+                    const nextRun = await continueToCoachingMarket.mutateAsync();
+                    if (nextRun?.phase === 'coaching_market') {
+                      navigate('/offseason/coaching-market');
+                    }
+                  }}
                   className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
+                  disabled={!coachingMarketEnabled || continueToCoachingMarket.isPending}
                 >
                   Continue to Coaching Market
                 </button>
@@ -149,6 +157,11 @@ export function TeamContextPage(): JSX.Element {
                   Resume-safe: state is saved on every step.
                 </span>
               </div>
+              {!coachingMarketEnabled ? (
+                <p className="mt-3 text-xs text-cv-chalk/60">
+                  Coaching Market is currently disabled by feature flag.
+                </p>
+              ) : null}
             </>
           ) : (
             <div className="rounded-cv border border-cv-court/20 bg-cv-navy/35 p-5">

@@ -8,6 +8,7 @@ import {
   DraftTeachingMoment,
   LessonProgressRecord,
   LessonRecord,
+  OffseasonCoachProfile,
   OffseasonRunState,
   OffseasonTeamSummary,
   OnboardingResponse,
@@ -162,6 +163,11 @@ export interface OffseasonRunResponse {
   run: OffseasonRunState | null;
 }
 
+export interface OffseasonCoachingMarketResponse {
+  run: OffseasonRunState | null;
+  coaches: OffseasonCoachProfile[];
+}
+
 export interface AdvancedModulesResponse {
   modules: AdvancedModuleRecommendation[];
 }
@@ -307,6 +313,29 @@ export const apiService = {
       {
         method: 'POST',
         body: JSON.stringify({ team_id: teamId }),
+      }
+    );
+  },
+
+  getOffseasonCoachingMarket: (
+    runId: string
+  ): Promise<OffseasonCoachingMarketResponse> => {
+    return fetchApi<OffseasonCoachingMarketResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/coaching-market`
+    );
+  },
+
+  hireOffseasonCoach: (
+    runId: string,
+    coachId: string
+  ): Promise<OffseasonRunResponse> => {
+    return fetchApi<OffseasonRunResponse>(
+      `/api/offseason/runs/${encodeURIComponent(runId)}/coaching-market/hire`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          coach_id: coachId,
+        }),
       }
     );
   },

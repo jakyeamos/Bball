@@ -3,6 +3,7 @@ import {
   OffseasonRunState,
   createInitialOffseasonRunState,
   featureFlags,
+  offseasonCoachingHireSchema,
   offseasonPhaseTransitionSchema,
   offseasonRunSchema,
   offseasonTeamContextSchema,
@@ -10,6 +11,11 @@ import {
 import { updateStore } from '../lib/courtVisionStore';
 import { getRequestUserId } from '../lib/requestIdentity';
 import { validateBody } from '../middleware/validateBody';
+import { hireCoachForRun } from '../offseason/decisionEngine';
+import {
+  findCoachProfileById,
+  listCoachProfiles,
+} from '../offseason/coachTendencyEffects';
 import { migrateOffseasonRunState } from '../offseason/migrations';
 import { transitionRunPhase } from '../offseason/stateMachine';
 import { buildTeamContextForTeam, listAvailableTeams } from '../offseason/teamContext';
@@ -24,6 +30,14 @@ function isTeamContextEnabled(): boolean {
   return (
     featureFlags.offseasonFoundationEnabled &&
     featureFlags.offseasonTeamContextEnabled
+  );
+}
+
+function isCoachingMarketEnabled(): boolean {
+  return (
+    featureFlags.offseasonFoundationEnabled &&
+    featureFlags.offseasonTeamContextEnabled &&
+    featureFlags.offseasonCoachingMarketEnabled
   );
 }
 
@@ -177,6 +191,95 @@ router.post(
   }
 );
 
+router.get(
+  '/:run_id/coaching-market',
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isCoachingMarketEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Coaching Market is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const runs = await readUserRuns(userId);
+    const run = runs.find((candidate) => candidate.run_id === runId) ?? null;
+
+    if (!run) {
+      res.status(404).json({ error: 'Offseason run not found.' });
+      return;
+    }
+
+    if (run.phase !== 'coaching_market') {
+      res.status(409).json({
+        error:
+          'Run is not currently in the Coaching Market phase. Complete Team Context first.',
+      });
+      return;
+    }
+
+    const coaches = listCoachProfiles();
+    res.json({ run, coaches });
+  }
+);
+
+router.post(
+  '/:run_id/coaching-market/hire',
+  validateBody(offseasonCoachingHireSchema),
+  async (req: Request, res: Response): Promise<void> => {
+    if (!isCoachingMarketEnabled()) {
+      res.status(404).json({
+        error: 'Offseason Coaching Market is disabled by feature flag.',
+      });
+      return;
+    }
+
+    const runId = req.params.run_id;
+    const userId = getRequestUserId(req);
+    const payload = res.locals.validatedBody as { coach_id: string };
+    const coach = findCoachProfileById(payload.coach_id);
+
+    if (!coach) {
+      res.status(404).json({
+        error: `Coach not found for coach_id=${payload.coach_id}.`,
+      });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    let updatedRun: OffseasonRunState | null = null;
+
+    await updateStore((store) => {
+      const runs = store.offseason_runs_by_user[userId] ?? [];
+      const index = runs.findIndex((candidate) => candidate.run_id === runId);
+      if (index < 0) {
+        return;
+      }
+
+      const migrated = migrateOffseasonRunState(runs[index]).state;
+
+      if (migrated.phase !== 'coaching_market') {
+        return;
+      }
+
+      updatedRun = hireCoachForRun(migrated, coach, now);
+      runs[index] = updatedRun;
+      store.offseason_runs_by_user[userId] = sortRunsByRecency(runs);
+    });
+
+    if (!updatedRun) {
+      res.status(409).json({
+        error:
+          'Unable to hire coach. Confirm the run exists and is in Coaching Market.',
+      });
+      return;
+    }
+
+    res.json({ run: updatedRun });
+  }
+);
+
 router.post(
   '/:run_id/transition',
   validateBody(offseasonPhaseTransitionSchema),
@@ -195,6 +298,17 @@ router.post(
         expected_phase: OffseasonRunState['phase'];
         next_phase: OffseasonRunState['phase'];
       };
+
+      if (
+        payload.next_phase === 'coaching_market' &&
+        !isCoachingMarketEnabled()
+      ) {
+        res.status(404).json({
+          error: 'Offseason Coaching Market is disabled by feature flag.',
+        });
+        return;
+      }
+
       const now = new Date().toISOString();
       let nextRun: OffseasonRunState | null = null;
 
