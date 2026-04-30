@@ -26,7 +26,7 @@ const CONSTRAINTS = DRAFT_CONSTRAINTS || {
 
 export function LobbyPage() {
   const navigate = useNavigate();
-  const { lobby, isConnected } = useApp();
+  const { lobby, isConnected, error: connectionError } = useApp();
 
   const [mode, setMode] = useState<'select' | 'create' | 'join'>('select');
   const [displayName, setDisplayName] = useState('');
@@ -108,36 +108,46 @@ export function LobbyPage() {
     }
   };
 
+  const visibleError = error || connectionError;
+  const shellClass = 'min-h-screen bg-cv-navy px-4 py-12';
+  const panelClass = 'mx-auto w-full';
+  const fieldPanelClass = 'rounded-cv border border-cv-court/20 bg-cv-navy/35 p-4';
+  const fieldLabelClass = 'mb-2 block text-sm font-medium text-cv-chalk';
+  const nativeFieldClass = 'w-full rounded-lg border border-cv-court/20 bg-cv-navy/40 px-3 py-2 text-cv-chalk focus:outline-none focus:ring-2 focus:ring-cv-accent';
+  const backButtonClass = 'mb-6 text-sm font-semibold text-cv-chalk/70 hover:text-cv-chalk';
+  const errorClass = 'mb-4 rounded-cv border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100';
+
   if (mode === 'select') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full" padding="lg">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Court Vision
+      <div className={shellClass}>
+        <Card className={`${panelClass} max-w-md border-cv-court/30 bg-cv-steel/90`} padding="lg">
+          <div className="mb-8 text-center">
+            <p className="mb-3 text-xs uppercase tracking-[0.24em] text-cv-accent">Draft Sim Lobby</p>
+            <h1 className="mb-3 text-4xl font-semibold text-cv-chalk">
+              Create your draft room
             </h1>
-            <p className="text-gray-600">
-              Draft your team, coach to victory, win the championship
+            <p className="text-sm leading-6 text-cv-chalk/70">
+              Name your team, create a lobby, or join a public room before entering the active draft board.
             </p>
 
             {/* Connection Status */}
             <div className="mt-4">
               {isConnected ? (
-                <span className="text-green-600 text-sm">✓ Connected</span>
+                <span className="text-sm font-semibold text-emerald-300">Connected to draft server</span>
               ) : (
-                <span className="text-orange-600 text-sm">⏳ Connecting to server...</span>
+                <span className="text-sm font-semibold text-amber-200">Connecting to draft server...</span>
               )}
             </div>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
+          {visibleError && (
+            <div className={errorClass}>
+              {visibleError}
             </div>
           )}
 
           {/* Team Name Input - Required first */}
-          <div className={`p-4 rounded-lg border-2 ${!displayName.trim() ? 'border-orange-400 bg-orange-50' : 'border-green-400 bg-green-50'}`}>
+          <div className={fieldPanelClass}>
             <Input
               label="Team Name"
               value={displayName}
@@ -147,13 +157,13 @@ export function LobbyPage() {
               required
             />
             {!displayName.trim() && (
-              <p className="mt-2 text-sm font-medium text-orange-700 flex items-center gap-2">
-                ⚠️ Please enter a team name to continue
+              <p className="mt-2 text-sm font-medium text-amber-200">
+                Enter a team name to continue.
               </p>
             )}
             {displayName.trim() && (
-              <p className="mt-2 text-sm font-medium text-green-700 flex items-center gap-2">
-                ✓ Team name set
+              <p className="mt-2 text-sm font-medium text-emerald-300">
+                Team name set.
               </p>
             )}
           </div>
@@ -196,32 +206,36 @@ export function LobbyPage() {
 
   if (mode === 'create') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-        <Card className="max-w-2xl w-full" padding="lg">
-          <div className="mb-6">
-            <button
-              onClick={() => setMode('select')}
-              className="text-primary-600 hover:text-primary-700 flex items-center gap-2"
-            >
-              ← Back
-            </button>
-          </div>
+      <div className={shellClass}>
+        <Card className={`${panelClass} max-w-2xl border-cv-court/30 bg-cv-steel/90`} padding="lg">
+          <button
+            onClick={() => setMode('select')}
+            className={backButtonClass}
+          >
+            Back to lobby options
+          </button>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <h2 className="mb-2 text-2xl font-semibold text-cv-chalk">
             Create Lobby
           </h2>
+          <p className="mb-6 text-sm leading-6 text-cv-chalk/70">
+            Choose a room size and season cadence. Coaching decisions happen later in the season loop.
+          </p>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
+          {visibleError && (
+            <div className={errorClass}>
+              {visibleError}
             </div>
           )}
 
           <form onSubmit={handleCreateLobby} className="space-y-6">
             {/* Public/Private Toggle */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between rounded-cv border border-cv-court/20 bg-cv-navy/35 p-4">
               <div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm font-semibold text-cv-chalk">
+                  Lobby visibility
+                </p>
+                <p className="mt-1 text-xs text-cv-chalk/60">
                   {isPublic ? 'Visible in lobby browser' : 'Private - invite code only'}
                 </p>
               </div>
@@ -232,13 +246,13 @@ export function LobbyPage() {
                   onChange={(e) => setIsPublic(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                <div className="peer h-6 w-11 rounded-full bg-cv-navy/60 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-cv-court/30 after:bg-cv-chalk after:transition-all after:content-[''] peer-checked:bg-cv-accent peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cv-court/30"></div>
               </label>
             </div>
 
             {/* Team Count Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={fieldLabelClass}>
                 Number of Teams ({CONSTRAINTS.TEAMS_MIN}-{CONSTRAINTS.TEAMS_MAX})
               </label>
               <input
@@ -247,16 +261,16 @@ export function LobbyPage() {
                 max={CONSTRAINTS.TEAMS_MAX}
                 value={teamCount}
                 onChange={(e) => setTeamCount(Number(e.target.value))}
-                className="w-full"
+                className="w-full accent-cv-accent"
               />
-              <div className="text-center text-2xl font-bold text-primary-600 mt-2">
+              <div className="mt-2 text-center text-2xl font-semibold text-cv-accent">
                 {teamCount}
               </div>
             </div>
 
             {/* Roster Size Slider */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={fieldLabelClass}>
                 Roster Size ({CONSTRAINTS.ROSTER_MIN}-{CONSTRAINTS.ROSTER_MAX})
               </label>
               <input
@@ -265,22 +279,22 @@ export function LobbyPage() {
                 max={CONSTRAINTS.ROSTER_MAX}
                 value={rosterSize}
                 onChange={(e) => setRosterSize(Number(e.target.value))}
-                className="w-full"
+                className="w-full accent-cv-accent"
               />
-              <div className="text-center text-2xl font-bold text-primary-600 mt-2">
+              <div className="mt-2 text-center text-2xl font-semibold text-cv-accent">
                 {rosterSize}
               </div>
             </div>
 
             {/* Pick Timer Dropdown */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={fieldLabelClass}>
                 Pick Timer
               </label>
               <select
                 value={pickTimer}
                 onChange={(e) => setPickTimer(Number(e.target.value) as 60 | 120 | 300)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={nativeFieldClass}
               >
                 <option value={60}>1 minute</option>
                 <option value={120}>2 minutes</option>
@@ -290,19 +304,19 @@ export function LobbyPage() {
 
             {/* Season Format Dropdown - V3 UPDATED */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={fieldLabelClass}>
                 Season Format
               </label>
               <select
                 value={seasonFormat}
                 onChange={(e) => setSeasonFormat(e.target.value as SeasonFormat)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={nativeFieldClass}
               >
                 <option value="double_round_robin">Double Round Robin (Full Season)</option>
                 <option value="single_round_robin">Single Round Robin (Half Season)</option>
                 <option value="quick_sim">Quick Sim (No Coaching Breaks)</option>
               </select>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="mt-2 text-xs text-cv-chalk/60">
                 {getSeasonFormatDescription(seasonFormat)}
               </p>
             </div>
@@ -325,24 +339,25 @@ export function LobbyPage() {
 
   // Join mode
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full" padding="lg">
-        <div className="mb-6">
-          <button
-            onClick={() => setMode('select')}
-            className="text-primary-600 hover:text-primary-700 flex items-center gap-2"
-          >
-            ← Back
-          </button>
-        </div>
+    <div className={shellClass}>
+      <Card className={`${panelClass} max-w-md border-cv-court/30 bg-cv-steel/90`} padding="lg">
+        <button
+          onClick={() => setMode('select')}
+          className={backButtonClass}
+        >
+          Back to lobby options
+        </button>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <h2 className="mb-2 text-2xl font-semibold text-cv-chalk">
           Join Lobby
         </h2>
+        <p className="mb-6 text-sm leading-6 text-cv-chalk/70">
+          Enter the invite code and team name from your commissioner.
+        </p>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
+        {visibleError && (
+          <div className={errorClass}>
+            {visibleError}
           </div>
         )}
 

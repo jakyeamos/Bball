@@ -15,6 +15,7 @@ import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { apiService } from '../services/api';
 import { Button } from '../components/Button';
+import { RouteStateNotice } from '../components/RouteStateNotice';
 import { TeamAnalysis } from '../components/TeamAnalysis';
 import { PlayerCard } from '../components/PlayerCard';
 import { TradePanel } from '../components/TradePanel';
@@ -33,13 +34,6 @@ export function DraftRecapPage() {
     queryFn: () => apiService.getLessons(),
     enabled: featureFlags.draftCapstoneEnabled,
   });
-
-  // Redirect if no draft
-  useEffect(() => {
-    if (!draft || !league) {
-      navigate('/');
-    }
-  }, [draft, league, navigate]);
 
   // Redirect when season starts
   useEffect(() => {
@@ -73,7 +67,7 @@ export function DraftRecapPage() {
                 [team.teamId]: aggregation,
               }));
             })
-            .catch(console.error);
+            .catch(() => undefined);
         }
       });
     }
@@ -137,7 +131,7 @@ export function DraftRecapPage() {
   }, [draft, userId]);
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner && u.userId === userId) || false;
-  const myTeam = draft.teams.find((team) => team.userId === userId) ?? draft.teams[0];
+  const myTeam = draft?.teams.find((team) => team.userId === userId) ?? draft?.teams[0];
   const myInsights = buildDraftInsights(
     (myTeam?.roster ?? [])
       .map((playerId) => allPlayers.find((player) => player.playerId === playerId))
@@ -151,7 +145,19 @@ export function DraftRecapPage() {
     wsService.startRegularSeason();
   };
 
-  if (!draft || !league) return null;
+  if (!draft || !league) {
+    return (
+      <RouteStateNotice
+        eyebrow="Draft recap unavailable"
+        title="Finish a draft before viewing the recap"
+        description="The recap depends on an active league and completed draft. Start from the Draft Sim lobby to create or rejoin a room."
+        actions={[
+          { label: 'Go to Draft Sim', to: '/draft-sim' },
+          { label: 'Create or join a lobby', to: '/lobby', variant: 'secondary' },
+        ]}
+      />
+    );
+  }
 
   const leagueSettings = `${draft.teams.length} team sim, ${draft.config.rosterSize} man rosters`;
 
@@ -287,7 +293,6 @@ export function DraftRecapPage() {
                 tradeProposals={league.tradeProposals}
                 currentUserId={userId}
                 onTrade={(t1, t2, p1s, p2s) => {
-                  console.log('🔄 Executing trade from Panel:', { t1, t2, p1s, p2s });
                   wsService.executeTrade(t1, t2, p1s, p2s);
                 }}
               />

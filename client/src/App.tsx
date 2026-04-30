@@ -4,12 +4,13 @@
  */
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { HomePage } from './pages/HomePage';
 import { LobbyPage } from './pages/LobbyPage';
 import { WaitingRoomPage } from './pages/WaitingRoomPage';
 import { DraftPage } from './pages/DraftPage';
+import { DraftSimEntryPage } from './pages/DraftSimEntryPage';
 import { DraftRecapPage } from './pages/DraftRecapPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { LobbyBrowserPage } from './pages/LobbyBrowserPage';
@@ -20,6 +21,7 @@ import { DebugOverlay } from './components/DebugOverlay';
 import { GameTimer } from './components/GameTimer';
 import { ScoutingReportPage } from './pages/ScoutingReportPage';
 import { NavBar } from './components/NavBar';
+import { RouteStateNotice } from './components/RouteStateNotice';
 import { LessonPage } from './pages/LessonPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { RecapPage } from './pages/RecapPage';
@@ -50,20 +52,9 @@ const GameRouting = () => {
   useEffect(() => {
     if (!league) return;
 
-    // Debug logging
-    console.log('[RoutingDebug] Sync Check:', {
-      path: location.pathname,
-      leaguePhase: league.phase,
-      roundPhase: league.roundState?.phase,
-      liveGamePhase: league.liveGame?.phase,
-      liveGameId: league.liveGame?.gameId,
-      timestamp: new Date().toISOString()
-    });
-
     // 0. Scouting Phase -> Go to Scouting Page
     if (league.roundState?.phase === 'scouting' && !league.liveGame) {
       if (location.pathname !== '/scouting-report') {
-        console.log('🔄 [RoutingDebug] SCOUTING PHASE FOUND -> Redirecting to /scouting-report');
         navigate('/scouting-report');
       }
     }
@@ -71,7 +62,6 @@ const GameRouting = () => {
     // 1. Live Game Active -> Go to Quarter Coaching
     else if (league.liveGame && league.liveGame.phase !== 'final') {
       if (location.pathname !== '/quarter-coaching') {
-        console.log('🔄 [RoutingDebug] LIVE GAME FOUND -> Redirecting to /quarter-coaching');
         navigate('/quarter-coaching');
       }
     }
@@ -79,7 +69,6 @@ const GameRouting = () => {
     // 2. Coaching Window Active (Pre-Game) -> Go to Coaching Dashboard
     else if (league.roundState?.phase === 'coaching_window' && !league.liveGame) {
       if (location.pathname !== '/coaching') {
-        console.log('🔄 [RoutingDebug] COACHING WINDOW FOUND -> Redirecting to /coaching');
         navigate('/coaching');
       }
     }
@@ -123,6 +112,7 @@ function App() {
             <Route path="/coaching" element={<CoachingDecisionsPage />} />
             <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
             <Route path="/waiting-room" element={<WaitingRoomPage />} />
+            <Route path="/draft-sim" element={<DraftSimEntryPage />} />
             <Route path="/draft" element={<DraftPage />} />
             <Route path="/draft-recap" element={<DraftRecapPage />} />
             <Route path="/results" element={<ResultsPage />} />
@@ -130,7 +120,20 @@ function App() {
             <Route path="/admin/lessons" element={<AdminLessonsPage />} />
             <Route path="/admin/daily-challenge" element={<AdminDailyChallengePage />} />
             <Route path="/admin/tags" element={<AdminTagsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="*"
+              element={
+                <RouteStateNotice
+                  eyebrow="Route not found"
+                  title="This Court Vision page does not exist"
+                  description="Use the main navigation to return to a stable entry point."
+                  actions={[
+                    { label: 'Go home', to: '/' },
+                    { label: 'Browse library', to: '/library', variant: 'secondary' },
+                  ]}
+                />
+              }
+            />
           </Routes>
         </div>
       </BrowserRouter>

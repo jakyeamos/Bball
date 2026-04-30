@@ -40,7 +40,7 @@ export function TrackPageLayout({
           <p className="text-sm leading-6 text-cv-chalk/75 mb-4">
             You have enough lesson completions to use the draft simulator as a learning capstone.
           </p>
-          <Link to="/draft" className="inline-flex rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white">
+          <Link to="/draft-sim" className="inline-flex rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white">
             Open draft capstone
           </Link>
         </div>

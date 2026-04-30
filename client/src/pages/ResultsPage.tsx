@@ -11,10 +11,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
-import { RegularSeasonGame, TeamRecord } from '@nba-draft-sim/shared';
+import { RegularSeasonGame } from '@nba-draft-sim/shared';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PlayoffsDisplay } from '../components/PlayoffsDisplay';
+import { RouteStateNotice } from '../components/RouteStateNotice';
 
 /**
  * V3: Generate realistic NBA game scores with SCORE GUARD
@@ -47,7 +48,7 @@ function generateGameScore(
 
   // Add variance
   const variance = (pseudoRandom(seed + 2) - 0.5) * 10;
-  let spread = Math.max(1, baseSpread + variance);
+  const spread = Math.max(1, baseSpread + variance);
 
   // Calculate scores with winner having higher score
   let scoreA: number;
@@ -96,15 +97,9 @@ export function ResultsPage() {
 
   const isCommissioner = lobby?.users?.some(u => u.isCommissioner) || false;
 
-  // Redirect if no league
-  useEffect(() => {
-    if (!league) navigate('/');
-  }, [league, navigate]);
-
   // Initialize animation
   useEffect(() => {
     if (regularSeasonResults && !playoffResults && !hasInitialized.current) {
-      console.log('🔵 Initializing regular season animation with', regularSeasonResults.games.length, 'games');
       hasInitialized.current = true;
       setPlaybackQueue(regularSeasonResults.games);
       setDisplayedGames([]);
@@ -183,12 +178,25 @@ export function ResultsPage() {
   // Handle Coaching Window phase
   useEffect(() => {
     if (league?.phase === 'regular_season' && league?.roundState?.phase === 'coaching_window') {
-      console.log('📋 Coaching window active, redirecting to coaching page');
       navigate('/coaching');
     }
   }, [league, navigate]);
 
-  if (!league || (!regularSeasonResults && league.roundState?.phase !== 'coaching_window')) {
+  if (!league) {
+    return (
+      <RouteStateNotice
+        eyebrow="Season results unavailable"
+        title="Draft a team before viewing results"
+        description="Season results depend on a completed draft and active league. Start from the Draft Sim entry page to create or rejoin a room."
+        actions={[
+          { label: 'Go to Draft Sim', to: '/draft-sim' },
+          { label: 'Create or join a lobby', to: '/lobby', variant: 'secondary' },
+        ]}
+      />
+    );
+  }
+
+  if (!regularSeasonResults && league.roundState?.phase !== 'coaching_window') {
     // If we are in regular season but clearly waiting for simulation/results (not coaching)
     const isSimulating = league?.roundState?.phase === 'simulating';
 

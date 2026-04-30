@@ -9,32 +9,22 @@ import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { RouteStateNotice } from '../components/RouteStateNotice';
 
 export function WaitingRoomPage() {
   const navigate = useNavigate();
-  const { lobby, draft, league } = useApp();
+  const { lobby, draft } = useApp();
 
   // Redirect when draft starts
   React.useEffect(() => {
     if (draft) {
-      console.log('🟢 Draft detected, navigating to /draft');
       navigate('/draft');
     }
   }, [draft, navigate]);
 
-  // Redirect if no lobby
-  React.useEffect(() => {
-    if (!lobby) {
-      console.log('🔴 No lobby detected, navigating to /');
-      navigate('/');
-    }
-  }, [lobby, navigate]);
-
-  if (!lobby) return null;
-
   // Calculate season details
   const seasonDetails = React.useMemo(() => {
-    if (!lobby.config) {
+    if (!lobby?.config) {
       return { format: 'N/A', matchups: 0, runtime: 'N/A' };
     }
 
@@ -64,7 +54,21 @@ export function WaitingRoomPage() {
     }
 
     return { format: formatText, matchups };
-  }, [lobby.config]);
+  }, [lobby?.config]);
+
+  if (!lobby) {
+    return (
+      <RouteStateNotice
+        eyebrow="Waiting room unavailable"
+        title="Join a lobby before waiting for the draft"
+        description="The waiting room needs lobby state from a created or joined room. Start from the Draft Sim entry page to create a lobby, browse public lobbies, or join with an invite code."
+        actions={[
+          { label: 'Go to Draft Sim', to: '/draft-sim' },
+          { label: 'Create or join a lobby', to: '/lobby', variant: 'secondary' },
+        ]}
+      />
+    );
+  }
 
   // Safe access with optional chaining
   const isCommissioner = lobby?.users?.some(
@@ -98,7 +102,7 @@ export function WaitingRoomPage() {
               Players ({lobby.users?.length || 0}/{lobby.config?.teamCount || 0})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(lobby.users || []).map((user, index) => (
+              {(lobby.users || []).map((user) => (
                 <div
                   key={user.userId}
                   className={`

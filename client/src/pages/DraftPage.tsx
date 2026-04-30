@@ -13,6 +13,7 @@ import { wsService } from '../services/websocket';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { RouteStateNotice } from '../components/RouteStateNotice';
 import { getTopArchetypes, getArchetypeColor, formatArchetypeName } from '../archetypes';
 import { featureFlags, Player } from '@nba-draft-sim/shared';
 import { TeamIdentityUI } from '../features/team-composition/components/TeamIdentityUI';
@@ -25,7 +26,7 @@ type SortDirection = 'asc' | 'desc';
 export function DraftPage() {
   const navigate = useNavigate();
   // 🆕 Get userId from context
-  const { draft, allPlayers, timeRemaining, league, lobby, userId } = useApp();
+  const { draft, allPlayers, timeRemaining, league, userId } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('pts');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -39,32 +40,19 @@ export function DraftPage() {
   });
 
   React.useEffect(() => {
-    if (!draft) {
-      navigate('/');
-    }
-  }, [draft, navigate]);
-
-  React.useEffect(() => {
     if (draft?.status === 'completed' && league?.phase === 'draft_recap') {
       navigate('/draft-recap');
     }
   }, [draft, league, navigate]);
-
-  const isCommissioner = useMemo(() => {
-    if (!lobby || !draft) return false;
-    return lobby.users?.some(u => u.isCommissioner) || false;
-  }, [lobby, draft]);
 
   // ════════════════════════════════════════════════════════════════════════
   // 🆕 FIX: Find MY team by matching userId, not by taking teams[0]
   // ════════════════════════════════════════════════════════════════════════
   const myTeam = useMemo(() => {
     if (!draft || !userId) {
-      console.log('⚠️ myTeam: draft or userId is null', { draft: !!draft, userId });
       return null;
     }
     const team = draft.teams.find(t => t.userId === userId);
-    console.log('🏀 myTeam found:', team?.displayName, 'for userId:', userId);
     return team || null;
   }, [draft, userId]);
   // ════════════════════════════════════════════════════════════════════════
@@ -78,23 +66,6 @@ export function DraftPage() {
       return player;
     }).filter(Boolean) as Player[];
   }, [draft, myTeam, allPlayers]);
-
-  const teamComposition = useMemo(() => {
-    if (myRoster.length < 4) return null;
-
-    const archetypeCounts: Record<string, number> = {};
-    let totalPercentage = 0;
-
-    myRoster.forEach(player => {
-      Object.entries(player.archetypes).forEach(([archetype, percentage]) => {
-        const pct = percentage ?? 0;
-        archetypeCounts[archetype] = (archetypeCounts[archetype] || 0) + pct;
-        totalPercentage += pct;
-      });
-    });
-
-    return null;
-  }, [myRoster]);
 
   const availablePlayers = useMemo(() => {
     if (!draft || !allPlayers) return [];
@@ -197,13 +168,10 @@ export function DraftPage() {
   // ════════════════════════════════════════════════════════════════════════
   const isMyPick = useMemo(() => {
     if (!draft || !userId || !currentPick) {
-      console.log('⚠️ isMyPick: missing data', { draft: !!draft, userId, currentPick: !!currentPick });
       return false;
     }
     const pickingTeam = draft.teams.find(t => t.teamId === currentPick.teamId);
-    const result = pickingTeam?.userId === userId;
-    console.log('🎯 isMyPick:', result, '| pickingTeam.userId:', pickingTeam?.userId, '| my userId:', userId);
-    return result;
+    return pickingTeam?.userId === userId;
   }, [draft, userId, currentPick]);
   // ════════════════════════════════════════════════════════════════════════
 
@@ -254,9 +222,15 @@ export function DraftPage() {
 
   if (!draft) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading draft...</div>
-      </div>
+      <RouteStateNotice
+        eyebrow="Draft room inactive"
+        title="Start from the Draft Sim lobby"
+        description="The active draft room only opens after a lobby starts its draft. Create a lobby, join with a code, or browse public rooms to enter the draft board."
+        actions={[
+          { label: 'Go to Draft Sim', to: '/draft-sim' },
+          { label: 'Create or join a lobby', to: '/lobby', variant: 'secondary' },
+        ]}
+      />
     );
   }
 

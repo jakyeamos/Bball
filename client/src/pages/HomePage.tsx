@@ -77,7 +77,7 @@ export function HomePage() {
           lessons={gmLessons}
           route="/gm-iq"
           secondaryAction={
-            <Link to="/draft" className="rounded-cv border border-cv-accent/40 px-4 py-2 text-sm font-semibold text-cv-chalk">
+            <Link to="/draft-sim" className="rounded-cv border border-cv-accent/40 px-4 py-2 text-sm font-semibold text-cv-chalk">
               Open draft simulator
             </Link>
           }

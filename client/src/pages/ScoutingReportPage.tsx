@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/Card';
-import { Player } from '@nba-draft-sim/shared';
+import { RouteStateNotice } from '../components/RouteStateNotice';
 
 export function ScoutingReportPage() {
     const { league, timeRemaining } = useApp();
@@ -27,6 +27,20 @@ export function ScoutingReportPage() {
             if (reports.length > 0) setScoutingReport(reports[0]);
         } */
     }, [league]);
+
+    if (!league) {
+        return (
+            <RouteStateNotice
+                eyebrow="Scouting report unavailable"
+                title="Enter a league before scouting a matchup"
+                description="Scouting reports are generated from an active league round. Start from the Draft Sim lobby, complete the draft, and advance into the season loop."
+                actions={[
+                    { label: 'Go to Draft Sim', to: '/draft-sim' },
+                    { label: 'Create or join a lobby', to: '/lobby', variant: 'secondary' },
+                ]}
+            />
+        );
+    }
 
     if (!scoutingReport) {
         return (
