@@ -5,13 +5,13 @@
 
 import { io, Socket } from 'socket.io-client';
 import {
-  ClientMessage,
-  ServerMessage,
   LobbyConfig,
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
+import { getSocketUrl } from '../lib/runtimeConfig';
+import { createLogger } from '../lib/logger';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const logger = createLogger('websocket');
 
 class WebSocketService {
   socket: Socket | null = null;
@@ -27,7 +27,7 @@ class WebSocketService {
         return;
       }
 
-      this.socket = io(SERVER_URL, {
+      this.socket = io(getSocketUrl(), {
         withCredentials: true,
         auth: {
           displayName,
@@ -35,7 +35,7 @@ class WebSocketService {
       });
 
       this.socket.on(WS_EVENTS.CONNECT, () => {
-        console.log('✅ Connected to server');
+        logger.debug('connected');
 
         // Register all event handlers
         this.registerEventHandlers();
@@ -44,7 +44,7 @@ class WebSocketService {
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('❌ Connection error:', error);
+        logger.debug('connect_error', error.message);
         reject(error);
       });
     });
@@ -102,7 +102,7 @@ class WebSocketService {
     if (!this.socket) {
       throw new Error('Socket not connected');
     }
-      console.log('📤 Emitting to server:', event, data);
+    logger.debug(`emit:${event}`, data);
     this.socket.emit(event, data);
   }
 
@@ -110,7 +110,6 @@ class WebSocketService {
    * Create a lobby
    */
   createLobby(config: LobbyConfig) {
-    console.log('🔵 WS_EVENTS.CREATE_LOBBY value:', WS_EVENTS.CREATE_LOBBY);
     this.emit(WS_EVENTS.CREATE_LOBBY, { config });
   }
 
@@ -172,7 +171,7 @@ class WebSocketService {
     playerAIds: string[],
     playerBIds: string[]
   ) {
-    console.log('📤 Executing trade via WebSocket:', {
+    logger.debug('execute_trade', {
       event: WS_EVENTS.EXECUTE_TRADE,
       teamAId,
       teamBId,

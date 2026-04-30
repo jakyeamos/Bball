@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { wsService } from '../services/websocket';
+import { buildApiUrl } from '../lib/runtimeConfig';
 import {
   Player,
   LobbyState,
@@ -17,7 +18,6 @@ import {
   LeagueState,
   RegularSeasonResults,
   PlayoffResults,
-  RoundState,
   ScoutingReport,
 } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
@@ -102,24 +102,20 @@ export function AppProvider({ children }: AppProviderProps) {
     // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.SESSION_INFO, (data: any) => {
-        console.log('🔵 SESSION_INFO received:', data);
         const userId = data.payload?.userId || data.userId;
         setState((prev) => ({ ...prev, userId }));
-        console.log('✅ userId set to:', userId);
       })
     );
 
     // Lobby events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_CREATED, (data: any) => {
-        console.log('🔵 LOBBY_CREATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.LOBBY_UPDATED, (data: any) => {
-        console.log('🔵 LOBBY_UPDATED event received:', data);
         setState((prev) => ({ ...prev, lobby: data.payload }));
         const user = data.payload.users.find((u: any) => u.userId === wsService.socket?.id);
         if (user) {
@@ -131,7 +127,6 @@ export function AppProvider({ children }: AppProviderProps) {
     // Draft events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_STARTED, (data: any) => {
-        console.log('🔵 DRAFT_STARTED event received:', data);
         setState((prev) => ({
           ...prev,
           draft: data.payload,
@@ -142,7 +137,6 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_UPDATED, (data: any) => {
-        console.log('🔵 DRAFT_UPDATED event received:', data);
         setState((prev) => ({
           ...prev,
           draft: data.payload,
@@ -151,8 +145,7 @@ export function AppProvider({ children }: AppProviderProps) {
     );
 
     unsubscribers.push(
-      wsService.on(WS_EVENTS.PICK_MADE, (data: any) => {
-        console.log('🔵 PICK_MADE event received:', data);
+      wsService.on(WS_EVENTS.PICK_MADE, () => {
         // Pick is already in draft state, just trigger re-render
         setState((prev) => ({ ...prev }));
       })
@@ -169,7 +162,6 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.DRAFT_COMPLETED, (data: any) => {
-        console.log('🔵 DRAFT_COMPLETED event received:', data);
         setState((prev) => ({ ...prev, draft: data.payload }));
       })
     );
@@ -179,7 +171,6 @@ export function AppProvider({ children }: AppProviderProps) {
     // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.TRADE_EXECUTED, (data: any) => {
-        console.log('🔵 TRADE_EXECUTED event received:', data);
         const updatedLeague = data.payload as LeagueState;
         
         // Update both league AND draft state (draft contains team rosters)
@@ -189,7 +180,6 @@ export function AppProvider({ children }: AppProviderProps) {
           // 🆕 CRITICAL: Sync draft state from league.draftState
           draft: updatedLeague.draftState || prev.draft,
         }));
-        console.log('✅ Trade executed - draft and league state synced');
       })
     );
 
@@ -198,7 +188,6 @@ export function AppProvider({ children }: AppProviderProps) {
     // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.LEAGUE_UPDATED, (data: any) => {
-        console.log('🔵 LEAGUE_UPDATED event received:', data);
         const updatedLeague = data.payload as LeagueState;
         
         setState((prev) => ({
@@ -213,21 +202,18 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.REGULAR_SEASON_STARTED, (data: any) => {
-        console.log('🔵 REGULAR_SEASON_STARTED event received:', data);
         setState((prev) => ({ ...prev, regularSeasonResults: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.PLAYOFFS_STARTED, (data: any) => {
-        console.log('🔵 PLAYOFFS_STARTED event received:', data);
         setState((prev) => ({ ...prev, playoffResults: data.payload }));
       })
     );
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.GAME_START, (data: any) => {
-        console.log('🔵 GAME_START event received:', data);
         const { gameState } = data.payload;
         setState((prev) => ({
           ...prev,
@@ -244,8 +230,7 @@ export function AppProvider({ children }: AppProviderProps) {
     // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.ROUND_STARTED, (data: any) => {
-        console.log('🔵 ROUND_STARTED event received:', data);
-        const { roundNumber, matchups, roundState } = data.payload;
+        const { roundNumber, roundState } = data.payload;
 
         setState((prev) => ({
           ...prev,
@@ -260,7 +245,6 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.GAME_SCOUTING_REPORT, (data: any) => {
-        console.log('🔵 GAME_SCOUTING_REPORT event received:', data);
         const { scoutingReport } = data.payload;
 
         setState((prev) => ({
@@ -275,7 +259,6 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.ROUND_SIMULATED, (data: any) => {
-        console.log('🔵 ROUND_SIMULATED event received:', data);
         const roundResults = data.payload.roundResults;
 
         setState((prev) => ({
@@ -294,7 +277,6 @@ export function AppProvider({ children }: AppProviderProps) {
 
     unsubscribers.push(
       wsService.on(WS_EVENTS.ROUND_COMPLETED, (data: any) => {
-        console.log('🔵 ROUND_COMPLETED event received:', data);
         setState((prev) => ({
           ...prev,
           league: prev.league ? {
@@ -310,7 +292,6 @@ export function AppProvider({ children }: AppProviderProps) {
     // ═══════════════════════════════════════════════════════════════════════
     unsubscribers.push(
       wsService.on(WS_EVENTS.LEAGUE_COMPLETED, (data: any) => {
-        console.log('🔵 LEAGUE_COMPLETED event received:', data);
         const updatedLeague = data.payload as LeagueState;
         setState((prev) => ({
           ...prev,
@@ -323,7 +304,6 @@ export function AppProvider({ children }: AppProviderProps) {
     // Error events - EXTRACT PAYLOAD
     unsubscribers.push(
       wsService.on(WS_EVENTS.ERROR, (data: any) => {
-        console.log('🔴 ERROR event received:', data);
         setState((prev) => ({ ...prev, error: data.payload.message }));
       })
     );
@@ -337,7 +317,7 @@ export function AppProvider({ children }: AppProviderProps) {
 
   // Fetch players on mount
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/players`)
+    fetch(buildApiUrl('/api/players'))
       .then((res) => res.json())
       .then((data) => {
         setState((prev) => ({ ...prev, allPlayers: data.players }));

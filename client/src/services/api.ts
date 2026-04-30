@@ -26,8 +26,7 @@ import {
 } from '@nba-draft-sim/shared';
 import supabase from '../lib/supabaseClient';
 import { getGuestUserId } from '../lib/userIdentity';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { buildApiUrl } from '../lib/runtimeConfig';
 
 export class ApiError extends Error {
   constructor(
@@ -82,7 +81,7 @@ async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(buildApiUrl(endpoint), {
     ...options,
     headers: await buildRequestHeaders(options.headers),
   });

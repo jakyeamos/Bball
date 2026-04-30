@@ -3,11 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import supabase, { isSupabaseConfigured } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { buildApiUrl } from '../lib/runtimeConfig';
 
 export function AccountUpgradePage() {
   const { user, authMode } = useAuth();
+  const supabaseClient = isSupabaseConfigured ? supabase : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function AccountUpgradePage() {
         Upgrade is optional. If Supabase is configured, the anonymous user id stays the same and your progress remains attached to that account.
       </p>
 
-      {!isSupabaseConfigured || !supabase || authMode === 'guest' || !user ? (
+      {!supabaseClient || authMode === 'guest' || !user ? (
         <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-5 text-sm leading-6 text-cv-chalk/70">
           Account upgrade is unavailable in guest-only mode. Configure Supabase and use an anonymous Supabase session to test the continuity flow.
         </div>
@@ -48,7 +48,7 @@ export function AccountUpgradePage() {
             <button
               type="button"
               onClick={async () => {
-                const session = await supabase.auth.getSession();
+                const session = await supabaseClient.auth.getSession();
                 const token = session.data.session?.access_token;
 
                 if (!token || !user) {
@@ -56,7 +56,7 @@ export function AccountUpgradePage() {
                   return;
                 }
 
-                const response = await fetch(`${API_URL}/internal/account-upgrade`, {
+                const response = await fetch(buildApiUrl('/internal/account-upgrade'), {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
