@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 export const DebugOverlay = () => {
     const { league, timeRemaining, isConnected } = useApp();
 
-    if (process.env.NODE_ENV === 'production' && !window.location.search.includes('debug')) {
+    if (!window.location.search.includes('debug')) {
         return null;
     }
 

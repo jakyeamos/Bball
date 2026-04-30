@@ -40,6 +40,7 @@ import { stopTradeWindowTimer, stopAllTradeTimers } from './tradeTimerManager';
 import { rejoinManager } from './rejoinManager';
 import { lobbies, drafts } from '../services/handlers';
 import { getLeague } from '../managers/leagueManager';
+import { isAllowedCorsOrigin } from '../utils/corsOrigins';
 
 /**
  * Initialize Socket.io server
@@ -53,14 +54,7 @@ export function initializeSocketServer(
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
 
-        const allowedOrigins = [
-          'http://localhost:3000',
-          'https://bball-client.vercel.app',
-        ];
-
-        const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
-
-        if (allowedOrigins.includes(origin) || isVercelPreview) {
+        if (isAllowedCorsOrigin(origin)) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));

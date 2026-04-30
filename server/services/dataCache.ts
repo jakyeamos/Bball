@@ -29,7 +29,7 @@ export interface CoachesSeedFile {
   coaches: CoachProfile[];
 }
 
-function serverDataDir(): string {
+function resolveDataFile(file: string): string {
   const candidates = [
     path.join(__dirname, '..', 'data'),
     path.join(__dirname, '..', '..', '..', 'data'),
@@ -37,12 +37,15 @@ function serverDataDir(): string {
     path.join(process.cwd(), 'server', 'data'),
   ];
 
-  const resolved = candidates.find((candidate) => fsSync.existsSync(candidate));
-  return resolved ?? candidates[0];
+  const resolved = candidates
+    .map((candidate) => path.join(candidate, file))
+    .find((candidate) => fsSync.existsSync(candidate));
+
+  return resolved ?? path.join(candidates[0], file);
 }
 
 async function readJson<T>(file: string): Promise<T> {
-  const full = path.join(serverDataDir(), file);
+  const full = resolveDataFile(file);
   const raw = await fs.readFile(full, 'utf-8');
   return JSON.parse(raw) as T;
 }

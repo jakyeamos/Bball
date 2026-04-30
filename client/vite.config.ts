@@ -8,10 +8,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@nba-draft-sim/shared': path.resolve(__dirname, '../shared/index.ts'),
     },
   },
   optimizeDeps: {
-    include: ['@nba-draft-sim/shared']
+    exclude: ['@nba-draft-sim/shared']
   },
   build: {
     commonjsOptions: {

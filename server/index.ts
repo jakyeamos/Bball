@@ -33,6 +33,7 @@ import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
 import { getNbaDataCache } from './services/dataCache';
+import { isAllowedCorsOrigin } from './utils/corsOrigins';
 
 // Load environment variables
 dotenv.config();
@@ -57,16 +58,7 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, Postman, etc)
     if (!origin) return callback(null, true);
 
-    // Allowed origins
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'https://bball-client.vercel.app',
-    ];
-
-    // Also allow any Vercel preview deployment
-    const isVercelPreview = /^https:\/\/bball-client-.*\.vercel\.app$/.test(origin);
-
-    if (allowedOrigins.includes(origin) || isVercelPreview) {
+    if (isAllowedCorsOrigin(origin)) {
       callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));

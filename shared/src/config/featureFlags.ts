@@ -10,22 +10,12 @@ const getEnvVar = (key: string): string | undefined => {
   if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
     return process.env[key];
   }
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key] !== undefined) {
-    // @ts-ignore
-    return import.meta.env[key];
-  }
   return undefined;
 };
 
 const isDev = (): boolean => {
   if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV) {
     return process.env.NODE_ENV !== 'production';
-  }
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-ignore
-    return import.meta.env.DEV;
   }
   return true;
 };
