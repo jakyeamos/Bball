@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
-import { getUserDailyResults, updateStore } from '../lib/courtVisionStore';
+import { featureFlags } from '@nba-draft-sim/shared';
+import { updateStore } from '../lib/courtVisionStore';
 import { getRequestUserId } from '../lib/requestIdentity';
 
 const router = Router();
@@ -10,6 +11,11 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       ? req.query.date
       : new Date().toISOString().slice(0, 10);
   const userId = getRequestUserId(req);
+
+  if (!featureFlags.demoSocialEnabled) {
+    res.json({ friends: [] });
+    return;
+  }
 
   const friends = await updateStore((store) => {
     const friendList = store.friends_by_user[userId] ?? [

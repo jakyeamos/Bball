@@ -47,6 +47,7 @@ export const featureFlags = {
   dailyChallengeEnabled: readBooleanFlag('VITE_ENABLE_DAILY_CHALLENGE', defaultOn),
   dailyShareEnabled: readBooleanFlag('VITE_ENABLE_DAILY_SHARE', defaultOn),
   dailyLeaderboardEnabled: readBooleanFlag('VITE_ENABLE_DAILY_LEADERBOARD', defaultOn),
+  demoSocialEnabled: readBooleanFlag('VITE_ENABLE_DEMO_SOCIAL', false),
   draftTeachingLayerEnabled: readBooleanFlag('VITE_ENABLE_DRAFT_TEACHING', defaultOn),
   draftCapstoneEnabled: readBooleanFlag('VITE_ENABLE_DRAFT_CAPSTONE', defaultOn),
   profileDashboardEnabled: readBooleanFlag('VITE_ENABLE_PROFILE_DASHBOARD', defaultOn),

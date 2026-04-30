@@ -30,9 +30,13 @@ export function DailyLeaderboard() {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-cv-chalk/60">
-          Add a few friends once you want light accountability. This board does not rank scores.
-        </p>
+        <div className="rounded-cv border border-dashed border-cv-court/30 bg-cv-navy/25 p-4">
+          <p className="text-sm font-semibold text-cv-chalk">No friends connected yet</p>
+          <p className="mt-2 text-sm leading-6 text-cv-chalk/60">
+            Invite and friend tools are not live yet. When they are, this space will show daily
+            completion status only, never a ranked score ladder.
+          </p>
+        </div>
       )}
     </div>
   );
