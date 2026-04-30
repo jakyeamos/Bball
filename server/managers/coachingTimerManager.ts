@@ -1,6 +1,6 @@
 import { Server as SocketServer } from 'socket.io';
-import { WS_EVENTS, DraftTeam, DRAFT_CONSTRAINTS } from '@nba-draft-sim/shared';
-import { getLeague, leagueStore } from '../stores/leagueStore';
+import { WS_EVENTS, DRAFT_CONSTRAINTS } from '@nba-draft-sim/shared';
+import { getLeague } from '../stores/leagueStore';
 import { getCoachingTimeRemaining } from './roundManager';
 import { handleSubmitCoaching, getDefaultCoachingDecision } from '../services/handlers-v2';
 

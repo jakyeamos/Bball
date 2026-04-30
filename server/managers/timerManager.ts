@@ -6,9 +6,8 @@
 import { Server as SocketServer } from 'socket.io';
 import { Player } from '@nba-draft-sim/shared';
 import { WS_EVENTS } from '@nba-draft-sim/shared';
-import { updateTimer, isTimerExpired, resetTimer } from '../services/draftState';
+import { updateTimer, isTimerExpired } from '../services/draftState';
 import { drafts, handleAutoPick } from '../services/handlers';
-import { clearInterval as clearIntervalNode } from 'timers';
 
 
 /**
@@ -80,7 +79,7 @@ export function stopDraftTimer(lobbyId: string) {
  * Pause draft timer (keeps interval running but won't decrement)
  * Handled by draft status check in the interval
  */
-export function pauseDraftTimer(lobbyId: string) {
+export function pauseDraftTimer(_lobbyId: string) {
   // Timer will automatically pause when status is 'paused'
   // No action needed here - handled by status check in interval
 }
@@ -88,7 +87,7 @@ export function pauseDraftTimer(lobbyId: string) {
 /**
  * Resume draft timer
  */
-export function resumeDraftTimer(lobbyId: string) {
+export function resumeDraftTimer(_lobbyId: string) {
   // Timer will automatically resume when status is 'active'
   // No action needed here - handled by status check in interval
 }
@@ -97,7 +96,7 @@ export function resumeDraftTimer(lobbyId: string) {
  * Stop all timers (cleanup on server shutdown)
  */
 export function stopAllTimers() {
-  for (const [lobbyId, interval] of activeTimers.entries()) {
+  for (const interval of activeTimers.values()) {
     clearInterval(interval);
   }
   activeTimers.clear();

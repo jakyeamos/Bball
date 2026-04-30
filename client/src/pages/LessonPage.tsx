@@ -6,6 +6,7 @@ import { useLessonProgress } from '../features/progress/useLessonProgress';
 import { ApiError } from '../services/api';
 import { LessonCard } from '../components/lesson/LessonCard';
 import { FilmBreakdown } from '../components/lesson/FilmBreakdown';
+import type { FilmBreakdownRef } from '../components/lesson/FilmBreakdown';
 import { AnnotationRail } from '../components/lesson/AnnotationRail';
 import { PausePredict } from '../components/lesson/PausePredict';
 import { ScenarioSimulation } from '../components/lesson/ScenarioSimulation';
@@ -20,7 +21,7 @@ export function LessonPage() {
   const { data: lesson, isLoading, error } = useLesson(lessonId);
   const { progress, markComplete, isSaving } = useLessonProgress(lessonId);
   const [currentTime, setCurrentTime] = React.useState(0);
-  const filmRef = React.useRef<{ seekTo: (time: number) => void } | null>(null);
+  const filmRef = React.useRef<FilmBreakdownRef | null>(null);
 
   const completionLabel = useMemo(() => {
     if (!progress?.completed) return 'Mark lesson complete';

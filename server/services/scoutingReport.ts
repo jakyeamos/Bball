@@ -12,9 +12,6 @@ import {
   RoundMatchup,
   ArchetypeProfile,
   CoachingDecision,
-  LineupStrategy,
-  DefensiveStrategy,
-  OffensiveStrategy,
 } from '@nba-draft-sim/shared';
 
 interface TeamAnalysis {

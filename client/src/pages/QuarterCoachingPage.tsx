@@ -98,7 +98,7 @@ export function QuarterCoachingPage() {
 
   // Listen for game final
   useEffect(() => {
-    const unsubscribe = wsService.on('game:final', (data: any) => {
+    const unsubscribe = wsService.on('game:final', () => {
       // Game is over, navigate to results page
       setTimeout(() => {
         navigate('/round-results');

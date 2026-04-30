@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useFreeAgency } from '../../features/offseason/useFreeAgency';
@@ -72,14 +72,11 @@ export function FreeAgencyPage(): JSX.Element {
 
   const targets = targetsQuery.data ?? [];
   const selectedTarget = targets.find((target) => target.player_id === selectedPlayerId);
-  const canSubmit = useMemo(
-    () =>
-      selectedPlayerId !== null &&
-      contractMillions > 0 &&
-      !submitOffer.isPending &&
-      contractMillions <= run.free_agency.cap_space_millions,
-    [contractMillions, run.free_agency.cap_space_millions, selectedPlayerId, submitOffer.isPending]
-  );
+  const canSubmit =
+    selectedPlayerId !== null &&
+    contractMillions > 0 &&
+    !submitOffer.isPending &&
+    contractMillions <= run.free_agency.cap_space_millions;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">

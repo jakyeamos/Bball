@@ -11,7 +11,6 @@ import {
   TeamRecord,
   TeamAggregation,
   SeasonFormat,
-  DraftOrder,
 } from '@nba-draft-sim/shared';
 import { simulateMatchup } from './simulation';
 import { generateGameEditorial, generateSeasonSummary } from './editorial';

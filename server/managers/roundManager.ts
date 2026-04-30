@@ -11,7 +11,6 @@ import {
   RoundResult,
   CoachingDecision,
   TeamAggregation,
-  Player,
   SeasonFormat,
   RegularSeasonGame,
   TeamRecord,

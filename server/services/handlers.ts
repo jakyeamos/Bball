@@ -19,7 +19,6 @@ import {
   createLobby,
   addUserToLobby,
   createDraftTeamsFromLobby,
-  updateUserConnection,
 } from '../managers/lobbyManager';
 import {
   createDraftState,
@@ -40,7 +39,7 @@ import {
   completeLeague,
   getLeague,
 } from '../managers/leagueManager';
-import { startTradeWindowTimer, stopTradeWindowTimer } from '../managers/tradeTimerManager';
+import { stopTradeWindowTimer } from '../managers/tradeTimerManager';
 import { rejoinManager } from '../managers/rejoinManager';
 import { handleStartRound } from './handlers-v2';
 import { PlayoffGameStartPayload } from '../services/playoffs';

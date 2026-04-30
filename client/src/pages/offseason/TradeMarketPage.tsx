@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useTradeMarket } from '../../features/offseason/useTradeMarket';
@@ -75,20 +75,12 @@ export function TradeMarketPage(): JSX.Element {
   const requestedPlayers = run.scouting_pre_draft.prospects;
   const latestProposal = submitTradeProposal.data;
 
-  const canSubmit = useMemo(() => {
-    const hasAssets =
-      offeredPlayerId !== null ||
-      requestedPlayerId !== null ||
-      includeOutgoingPick ||
-      includeIncomingPick;
-    return hasAssets && !submitTradeProposal.isPending;
-  }, [
-    includeIncomingPick,
-    includeOutgoingPick,
-    offeredPlayerId,
-    requestedPlayerId,
-    submitTradeProposal.isPending,
-  ]);
+  const hasAssets =
+    offeredPlayerId !== null ||
+    requestedPlayerId !== null ||
+    includeOutgoingPick ||
+    includeIncomingPick;
+  const canSubmit = hasAssets && !submitTradeProposal.isPending;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">

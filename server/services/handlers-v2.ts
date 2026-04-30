@@ -6,14 +6,13 @@
  */
 
 import { Server as SocketServer, Socket } from 'socket.io';
-import { WS_EVENTS, Player, CoachingDecision, QuarterResult, TeamAggregation } from '@nba-draft-sim/shared';
+import { WS_EVENTS, Player, CoachingDecision, TeamAggregation } from '@nba-draft-sim/shared';
 import {
   createRoundState,
   generateRoundSchedule,
   submitCoachingDecision,
   allDecisionsSubmitted,
   simulateRound,
-  transitionRoundPhase,
   calculateTotalRounds,
 } from '../managers/roundManager';
 import {
@@ -570,7 +569,7 @@ export function handleSubmitQuarterCoaching(
   io: SocketServer,
   socket: Socket,
   payload: { lobbyId: string; teamId: string; decision: CoachingDecision },
-  userId: string
+  _userId: string
 ): void {
   try {
     const { lobbyId, teamId, decision } = payload;

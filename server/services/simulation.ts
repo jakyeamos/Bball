@@ -584,7 +584,7 @@ function resolveOffense(
   summary.foulTrips = sampleCount(livePossessions, foulTripRate);
   summary.points += Math.round(summary.foulTrips * (1.35 + offense.ftPct * 0.55));
 
-  let shotPossessions = Math.max(0, livePossessions - summary.foulTrips);
+  const shotPossessions = Math.max(0, livePossessions - summary.foulTrips);
   const transitionPossessions = sampleCount(
     shotPossessions,
     clamp(

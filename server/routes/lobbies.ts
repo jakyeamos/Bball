@@ -17,7 +17,7 @@ router.get('/lobbies', (req, res) => {
   try {
     const publicLobbies: PublicLobbyInfo[] = [];
 
-    for (const [lobbyId, lobby] of lobbies.entries()) {
+    for (const lobby of lobbies.values()) {
       // Only include public lobbies that haven't started drafting yet
       if (lobby.isPublic && !lobby.draftStarted) {
         publicLobbies.push({

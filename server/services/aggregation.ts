@@ -94,7 +94,7 @@ function buildRotationWeights(rotation: Player[]): number[] {
   return rawWeights.map((value) => value / Math.max(total, 1));
 }
 
-function weightedAverage<T>(rotation: Player[], weights: number[], selector: (player: Player) => number): number {
+function weightedAverage(rotation: Player[], weights: number[], selector: (player: Player) => number): number {
   return rotation.reduce((sum, player, index) => sum + selector(player) * weights[index], 0);
 }
 

@@ -2,11 +2,10 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { useNavigate } from 'react-router-dom';
 
 export function RoundResultsPage() {
-  const { league, isCommissioner } = useApp();
-  const navigate = useNavigate();
+  const { league, lobby, userId } = useApp();
+  const isCommissioner = lobby?.users?.some((user) => user.userId === userId && user.isCommissioner) ?? false;
 
   const handleNextRound = () => {
     // Logic to start the next round will be added here
@@ -21,6 +20,13 @@ export function RoundResultsPage() {
   }
 
   const { roundResults } = league.roundState;
+  if (!roundResults) {
+    return (
+      <div className="min-h-screen bg-cv-navy p-8 flex items-center justify-center">
+        <p className="text-cv-chalk/70">Waiting for round results...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">

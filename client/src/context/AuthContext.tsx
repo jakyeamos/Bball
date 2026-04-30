@@ -51,11 +51,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
+    const supabaseClient = supabase;
     let didUnmount = false;
 
     async function bootstrapAuth() {
       try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
 
         if (sessionError) {
           throw sessionError;
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        const { data: signInData, error: signInError } = await supabase.auth.signInAnonymously();
+        const { data: signInData, error: signInError } = await supabaseClient.auth.signInAnonymously();
 
         if (signInError) {
           throw signInError;
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     bootstrapAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
         if (didUnmount) return;
 

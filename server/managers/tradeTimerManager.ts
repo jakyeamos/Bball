@@ -118,7 +118,7 @@ export function resumeTradeWindowTimer(
  * Stop all timers (cleanup on server shutdown)
  */
 export function stopAllTradeTimers() {
-  for (const [lobbyId, interval] of tradeTimers.entries()) {
+  for (const interval of tradeTimers.values()) {
     clearInterval(interval);
   }
   tradeTimers.clear();

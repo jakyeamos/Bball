@@ -13,9 +13,14 @@ module.exports = {
     es2021: true,
   },
   rules: {
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': [
-      'warn',
-      { 'argsIgnorePattern': '^_' }
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }
     ],
   },
 };

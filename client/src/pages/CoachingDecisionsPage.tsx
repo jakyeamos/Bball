@@ -9,7 +9,6 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { wsService } from '../services/websocket';
 import {
@@ -119,7 +118,6 @@ const OFFENSIVE_STRATEGY_INFO: Record<OffensiveStrategy, { label: string; descri
 };
 
 export function CoachingDecisionsPage() {
-  const navigate = useNavigate();
   const { draft, league, allPlayers, userId } = useApp();
 
   // Core state
@@ -243,6 +241,12 @@ export function CoachingDecisionsPage() {
   const isRotationComplete = selectedRotation.length === rotationDepth;
   const canSubmit = isRotationComplete && myTeam && league?.currentRound;
 
+  // Determine max rotation depth from config
+  const maxRotationDepth = useMemo(() => {
+    const configRosterSize = (draft?.config?.rosterSize) || (league?.draftState?.config?.rosterSize) || CONSTRAINTS.ROSTER_MAX;
+    return configRosterSize;
+  }, [draft, league]);
+
   if (!draft || !myTeam) {
     return (
       <div className="min-h-screen bg-gray-100 p-8">
@@ -252,13 +256,6 @@ export function CoachingDecisionsPage() {
       </div>
     );
   }
-
-  // Determine max rotation depth from config
-  const maxRotationDepth = useMemo(() => {
-    // Try to get from lobby config or draft config
-    const configRosterSize = (draft?.config?.rosterSize) || (league?.draftState?.config?.rosterSize) || CONSTRAINTS.ROSTER_MAX;
-    return configRosterSize;
-  }, [draft, league]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col relative">

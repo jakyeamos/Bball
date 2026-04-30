@@ -159,10 +159,6 @@ interface MatchupSensitivitySpec {
   strongOpponentKey: string;
 }
 
-function clamp(min: number, max: number, value: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 function average(values: number[]): number {
   const finite = values.filter(Number.isFinite);
   if (finite.length === 0) return 0;

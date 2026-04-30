@@ -581,7 +581,6 @@ export function buildPlayerFeatures(
   const profile = advancedProfile ?? buildPlayerAdvancedProfile(rawStats);
   const reliability = profile.reliability;
   const gp = Math.max(1, rawStats.GP);
-  const mp = Math.max(1, rawStats.MP_TOTAL);
   const possessions = estimatePossessions(rawStats);
   const rawFgm = rawStats.TWO_PM + rawStats.THREE_PM;
   const rawEfg = rawStats.FGA > 0 ? (rawFgm + 0.5 * rawStats.THREE_PM) / rawStats.FGA : 0;
