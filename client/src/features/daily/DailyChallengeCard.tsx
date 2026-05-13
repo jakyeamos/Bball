@@ -19,15 +19,15 @@ export function DailyChallengeCard({
   const [shareState, setShareState] = useState<'idle' | 'copied'>('idle');
 
   return (
-    <div className="rounded-cv border border-cv-court/30 bg-cv-steel p-6">
+    <div className="cv-surface rounded-cv p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-cv-accent">Daily Challenge</p>
           <h3 className="text-2xl font-semibold text-cv-chalk">{challenge.title}</h3>
         </div>
-        <span className="text-xs text-cv-chalk/50">{challenge.challenge_date}</span>
+        <span className="text-xs text-cv-chalk/45">{challenge.challenge_date}</span>
       </div>
-      <p className="text-sm leading-6 text-cv-chalk/75 mb-4">{challenge.prompt}</p>
+      <p className="mb-4 text-sm leading-6 text-cv-chalk/75">{challenge.prompt}</p>
       <div className="space-y-3">
         {challenge.choices.map((choice) => {
           const active = selectedChoiceId === choice.id;
@@ -40,7 +40,7 @@ export function DailyChallengeCard({
               className={`w-full rounded-cv border px-4 py-3 text-left transition-colors ${
                 active
                   ? 'border-cv-accent bg-cv-navy text-cv-chalk'
-                  : 'border-cv-court/20 bg-cv-navy/30 text-cv-chalk/80 hover:border-cv-court/50'
+                  : 'border-cv-court/40 bg-white text-cv-chalk/80 hover:border-cv-court'
               }`}
             >
               {choice.label}
@@ -58,12 +58,12 @@ export function DailyChallengeCard({
               selected_choice_id: selectedChoiceId,
             })
           }
-          className="mt-4 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-4 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(249,115,22,0.2)] disabled:opacity-50"
         >
           {isSubmitting ? 'Checking...' : 'Submit Daily Answer'}
         </button>
       ) : (
-        <div className="mt-4 rounded-cv border border-cv-court/20 bg-cv-navy/30 p-4">
+        <div className="mt-4 rounded-cv border border-cv-court/60 bg-cv-navy/60 p-4">
           <p className="font-semibold text-cv-chalk mb-2">
             {result.correct ? 'Correct' : 'Keep the explanation and try again tomorrow'}
           </p>
@@ -79,7 +79,7 @@ export function DailyChallengeCard({
               await shareResultCard(challenge, result);
               setShareState('copied');
             }}
-            className="mt-4 rounded-cv border border-cv-accent/40 px-4 py-2 text-sm font-semibold text-cv-chalk"
+            className="mt-4 rounded-cv border border-cv-accent/40 bg-white px-4 py-2 text-sm font-semibold text-cv-chalk"
           >
             {shareState === 'copied' ? 'Shared / Copied' : 'Share Result'}
           </button>

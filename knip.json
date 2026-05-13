@@ -1,0 +1,42 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema-json",
+  "ignore": [
+    "client/dist/**",
+    "server/dist/**",
+    "shared/dist/**"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "playwright.config.ts",
+        "tests/smoke/**/*.ts"
+      ]
+    },
+    "client": {
+      "entry": [
+        "src/index.tsx",
+        "vite.config.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}"
+      ]
+    },
+    "server": {
+      "entry": [
+        "index.ts",
+        "scripts/**/*.ts"
+      ],
+      "project": [
+        "**/*.ts"
+      ]
+    },
+    "shared": {
+      "entry": [
+        "index.ts"
+      ],
+      "project": [
+        "**/*.ts"
+      ]
+    }
+  }
+}

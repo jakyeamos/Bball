@@ -20,7 +20,7 @@ import { RoundResultsPage } from './pages/RoundResultsPage';
 import { DebugOverlay } from './components/DebugOverlay';
 import { GameTimer } from './components/GameTimer';
 import { ScoutingReportPage } from './pages/ScoutingReportPage';
-import { NavBar } from './components/NavBar';
+import { NavBar, SideNav } from './components/NavBar';
 import { RouteStateNotice } from './components/RouteStateNotice';
 import { LessonPage } from './pages/LessonPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -81,60 +81,65 @@ function App() {
   return (
     <AppProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <div className="min-h-screen bg-cv-navy">
+        <div className="min-h-screen bg-background text-foreground">
           <NavBar />
           <DebugOverlay />
           <GameTimer />
           <GameRouting />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/player-iq" element={<PlayerIqPage />} />
-            <Route path="/coach-iq" element={<CoachIqPage />} />
-            <Route path="/gm-iq" element={<GmIqPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/upgrade-account" element={<AccountUpgradePage />} />
-            <Route path="/offseason/team-context" element={<TeamContextPage />} />
-            <Route path="/offseason/coaching-market" element={<CoachingMarketPage />} />
-            <Route path="/offseason/scouting" element={<ScoutingPage />} />
-            <Route path="/offseason/trade-market" element={<TradeMarketPage />} />
-            <Route path="/offseason/draft-night" element={<DraftNightPage />} />
-            <Route path="/offseason/free-agency" element={<FreeAgencyPage />} />
-            <Route path="/offseason/recap" element={<OffseasonRecapPage />} />
-            <Route path="/lessons/:lessonId" element={<LessonPage />} />
-            <Route path="/lessons/:lessonId/discussion" element={<LessonDiscussionPage />} />
-            <Route path="/recaps/:recapId" element={<RecapPage />} />
-            <Route path="/lobby" element={<LobbyPage />} />
-            <Route path="/browse" element={<LobbyBrowserPage />} />
-            <Route path="/scouting-report" element={<ScoutingReportPage />} />
-            <Route path="/coaching" element={<CoachingDecisionsPage />} />
-            <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
-            <Route path="/waiting-room" element={<WaitingRoomPage />} />
-            <Route path="/draft-sim" element={<DraftSimEntryPage />} />
-            <Route path="/draft" element={<DraftPage />} />
-            <Route path="/draft-recap" element={<DraftRecapPage />} />
-            <Route path="/results" element={<ResultsPage />} />
-            <Route path="/round-results" element={<RoundResultsPage />} />
-            <Route path="/admin/lessons" element={<AdminLessonsPage />} />
-            <Route path="/admin/daily-challenge" element={<AdminDailyChallengePage />} />
-            <Route path="/admin/tags" element={<AdminTagsPage />} />
-            <Route
-              path="*"
-              element={
-                <RouteStateNotice
-                  eyebrow="Route not found"
-                  title="This Court Vision page does not exist"
-                  description="Use the main navigation to return to a stable entry point."
-                  actions={[
-                    { label: 'Go home', to: '/' },
-                    { label: 'Browse library', to: '/library', variant: 'secondary' },
-                  ]}
+          <div className="flex">
+            <SideNav />
+            <main className="min-w-0 flex-1">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/library" element={<LibraryPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/player-iq" element={<PlayerIqPage />} />
+                <Route path="/coach-iq" element={<CoachIqPage />} />
+                <Route path="/gm-iq" element={<GmIqPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/upgrade-account" element={<AccountUpgradePage />} />
+                <Route path="/offseason/team-context" element={<TeamContextPage />} />
+                <Route path="/offseason/coaching-market" element={<CoachingMarketPage />} />
+                <Route path="/offseason/scouting" element={<ScoutingPage />} />
+                <Route path="/offseason/trade-market" element={<TradeMarketPage />} />
+                <Route path="/offseason/draft-night" element={<DraftNightPage />} />
+                <Route path="/offseason/free-agency" element={<FreeAgencyPage />} />
+                <Route path="/offseason/recap" element={<OffseasonRecapPage />} />
+                <Route path="/lessons/:lessonId" element={<LessonPage />} />
+                <Route path="/lessons/:lessonId/discussion" element={<LessonDiscussionPage />} />
+                <Route path="/recaps/:recapId" element={<RecapPage />} />
+                <Route path="/lobby" element={<LobbyPage />} />
+                <Route path="/browse" element={<LobbyBrowserPage />} />
+                <Route path="/scouting-report" element={<ScoutingReportPage />} />
+                <Route path="/coaching" element={<CoachingDecisionsPage />} />
+                <Route path="/quarter-coaching" element={<QuarterCoachingPage />} />
+                <Route path="/waiting-room" element={<WaitingRoomPage />} />
+                <Route path="/draft-sim" element={<DraftSimEntryPage />} />
+                <Route path="/draft" element={<DraftPage />} />
+                <Route path="/draft-recap" element={<DraftRecapPage />} />
+                <Route path="/results" element={<ResultsPage />} />
+                <Route path="/round-results" element={<RoundResultsPage />} />
+                <Route path="/admin/lessons" element={<AdminLessonsPage />} />
+                <Route path="/admin/daily-challenge" element={<AdminDailyChallengePage />} />
+                <Route path="/admin/tags" element={<AdminTagsPage />} />
+                <Route
+                  path="*"
+                  element={
+                    <RouteStateNotice
+                      eyebrow="Route not found"
+                      title="This Court Vision page does not exist"
+                      description="Use the main navigation to return to a stable entry point."
+                      actions={[
+                        { label: 'Go home', to: '/' },
+                        { label: 'Browse library', to: '/library', variant: 'secondary' },
+                      ]}
+                    />
+                  }
                 />
-              }
-            />
-          </Routes>
+              </Routes>
+            </main>
+          </div>
         </div>
       </BrowserRouter>
     </AppProvider>

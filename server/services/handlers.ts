@@ -89,13 +89,14 @@ function buildPlayoffScoutingReport(payload: PlayoffGameStartPayload): ScoutingR
 export function handleCreateLobby(
   io: SocketServer,
   socket: Socket,
-  payload: { config: LobbyConfig; isPublic?: boolean },
+  payload: { config: LobbyConfig; isPublic?: boolean; displayName?: string },
   userId: string,
   displayName: string
 ) {
   console.log('🟢 handleCreateLobby called!', { userId, displayName, config: payload.config });
   try {
-    const lobby = createLobby(userId, displayName, payload.config, payload.isPublic);
+    const teamName = payload.displayName?.trim() || displayName;
+    const lobby = createLobby(userId, teamName, payload.config, payload.isPublic);
 
     // Store lobby
     lobbies.set(lobby.lobbyId, lobby);

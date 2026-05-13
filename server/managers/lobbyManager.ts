@@ -43,8 +43,8 @@ export function createLobby(
     isConnected: true,
   };
 
-  const users = [commissioner];
-  const canStart = users.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
+  const users = config.teamCount === 1 ? assignTeamsToUsers([commissioner]) : [commissioner];
+  const canStart = users.length === config.teamCount;
 
   return {
     lobbyId,
@@ -82,7 +82,7 @@ export function addUserToLobby(
 
   const newUsers = [...lobby.users, newUser];
   const isFull = newUsers.length === lobby.config.teamCount;
-  const canStart = newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
+  const canStart = newUsers.length === lobby.config.teamCount;
 
   let usersWithTeams = newUsers;
   if (isFull) {
@@ -113,7 +113,7 @@ export function removeUserFromLobby(
 
   const newUsers = lobby.users.filter(u => u.userId !== userId);
   const wasFull = lobby.users.length === lobby.config.teamCount;
-  const canStart = newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN;
+  const canStart = newUsers.length === lobby.config.teamCount;
 
   let usersWithTeams = newUsers;
   if (wasFull && !canStart) {
@@ -146,12 +146,20 @@ export function createDraftTeamsFromLobby(lobby: LobbyState): DraftTeam[] {
   }
 
   return lobby.users.map(user => ({
-    teamId: user.teamId!,
+    teamId: requireTeamId(user),
     userId: user.userId,
     displayName: user.displayName,
     roster: [],
     queue: [],
   }));
+}
+
+function requireTeamId(user: LobbyUser): string {
+  if (!user.teamId) {
+    throw new Error(`Lobby user ${user.displayName} does not have a draft team assigned`);
+  }
+
+  return user.teamId;
 }
 
 /**
@@ -180,7 +188,7 @@ function validateLobbyConfig(config: LobbyConfig): void {
   }
 
   // Phase 1A: Validate season format
-  const validFormats = ['single_round_robin', 'double_round_robin', 'playoffs_only'];
+  const validFormats: LobbyConfig['seasonFormat'][] = ['single_round_robin', 'double_round_robin', 'quick_sim'];
   if (!validFormats.includes(config.seasonFormat)) {
     errors.push(`Season format must be one of: ${validFormats.join(', ')}`);
   }
@@ -220,6 +228,6 @@ export function updateLobbyConfig(
     ...lobby,
     config: newConfig,
     users: newUsers,
-    canStart: newUsers.length >= DRAFT_CONSTRAINTS.TEAMS_MIN,
+    canStart: newUsers.length === newConfig.teamCount,
   };
 }

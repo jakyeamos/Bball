@@ -20,13 +20,13 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-cv-navy';
+  const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-cv-navy';
 
   const variantStyles = {
-    primary: 'bg-cv-accent text-white hover:bg-orange-500 focus:ring-cv-accent disabled:bg-cv-accent/50',
-    secondary: 'bg-cv-steel text-cv-chalk hover:bg-slate-700 focus:ring-cv-court disabled:bg-cv-steel/60',
+    primary: 'bg-cv-accent text-white shadow-[0_12px_28px_rgba(255,107,53,0.3)] hover:-translate-y-0.5 hover:bg-orange-500 focus:ring-cv-accent disabled:bg-cv-accent/50',
+    secondary: 'cv-chip text-cv-chalk hover:border-cv-accent/35 hover:bg-cv-steel focus:ring-cv-court disabled:bg-cv-steel/60',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
-    ghost: 'bg-transparent text-cv-chalk/80 hover:bg-cv-steel/60 focus:ring-cv-court',
+    ghost: 'bg-transparent text-cv-chalk/70 hover:bg-cv-steel/70 hover:text-cv-chalk focus:ring-cv-court',
   };
 
   const sizeStyles = {

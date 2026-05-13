@@ -7,13 +7,14 @@
     "shared"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=client",
-    "build": "npm run build --workspace=shared && npm run build --workspace=client && npm run build --workspace=server",
-    "start": "npm run start --workspace=server",
-    "lint": "npm run lint --workspace=client && npm run lint --workspace=server",
-    "typecheck": "npm run typecheck --workspace=shared && npm run build --workspace=shared && npm run typecheck --workspace=client && npm run typecheck --workspace=server",
-    "test": "npm run test --workspace=shared -- --run && npm run test --workspace=server",
-    "smoke": "playwright test"
+    "dev": "pnpm --parallel --filter nba-draft-sim-client --filter nba-draft-sim-server dev",
+    "build": "pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build && pnpm --filter nba-draft-sim-server build",
+    "start": "pnpm --filter nba-draft-sim-server start",
+    "lint": "pnpm --filter nba-draft-sim-client lint && pnpm --filter nba-draft-sim-server lint",
+    "typecheck": "pnpm --filter @nba-draft-sim/shared typecheck && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client typecheck && pnpm --filter nba-draft-sim-server typecheck",
+    "test": "pnpm --filter @nba-draft-sim/shared test -- --run && pnpm --filter nba-draft-sim-server test",
+    "smoke": "pnpm exec playwright test",
+    "audit:dead-code": "knip"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -23,6 +24,7 @@
     "@types/node": "^25.0.3",
     "@types/uuid": "^10.0.0",
     "eslint-plugin-anti-slop": "file:../eslint-plugin-anti-slop",
+    "knip": "^6.9.0",
     "socket.io-client": "^4.8.3"
   },
   "dependencies": {
