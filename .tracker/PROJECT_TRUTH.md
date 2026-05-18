@@ -5,7 +5,7 @@ statusLabel: "stabilizing"
 nextStep: "Plan and implement the front-office transaction graph on top of the completed shared domain, CBA constants/citations, and strict dataset validator foundation."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
-lastUpdated: "2026-05-14"
+lastUpdated: "2026-05-18"
 quality:
   format: unknown
   lint: pass
@@ -40,3 +40,7 @@ For the corrected visual refresh slice, `pnpm lint`, `pnpm typecheck`, `pnpm bui
 On 2026-05-14, the near-real front-office offseason simulator design and first foundation implementation plan were committed. No code execution was required for the plan-only update.
 
 On 2026-05-14, the front-office foundation slice was implemented with shared domain types, versioned CBA constants/citations, validation helpers, a complete 30-team fixture builder, and strict dataset validation. Focused shared/server CBA tests passed, plus `pnpm typecheck` and `pnpm build`; the build still reports the existing Vite chunk-size warning.
+
+## Recent Documentation Updates
+
+- 2026-05-18: Added or expanded README coverage for project and subproject roots so workspace documentation inventory is complete.

@@ -1,11 +1,34 @@
+# Basketball IQ Training Platform UI Refresh
 
-  # Basketball IQ Training Platform
+Standalone Vite/React UI refresh prototype for Bballedu. It contains the imported design implementation, UI component dependencies, and local Vite build configuration used to evaluate the refreshed basketball IQ training experience.
 
-  This is a code bundle for Basketball IQ Training Platform. The original project is available at https://www.figma.com/design/wqmbYbos7XxbRyiiqHA9DO/Basketball-IQ-Training-Platform.
+## Scope
 
-  ## Running the code
+This README documents the UI refresh prototype under `Bballedu/UI-Refresh`. Treat it as a design implementation workspace, not the canonical Bballedu client package.
 
-  Run `npm i` to install the dependencies.
+The package is marked private in `package.json`, so it is intended for local workspace use rather than package publishing.
 
-  Run `npm run dev` to start the development server.
-  
+## Repository Layout
+
+- `ATTRIBUTIONS.md` - project file.
+- `default_shadcn_theme.css` - project file.
+- `index.html` - project file.
+- `package.json` - package metadata and scripts.
+- `pnpm-workspace.yaml` - project file.
+- `postcss.config.mjs` - project file.
+- `src/` - source code and React app internals.
+- `vite.config.ts` - Vite configuration.
+
+## Common Commands
+
+- `pnpm build` - `vite build`
+- `pnpm dev` - `vite`
+
+## Development Notes
+
+Key runtime dependencies include `@emotion/react`, `@emotion/styled`, `@mui/icons-material`, `@mui/material`, `@popperjs/core`, `@radix-ui/react-accordion`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-aspect-ratio`, `@radix-ui/react-avatar`, `@radix-ui/react-checkbox`, and others.
+Use `pnpm` from this directory or the containing workspace to install dependencies and run scripts.
+
+## Verification
+
+Run `pnpm build` before treating UI changes as ready.
