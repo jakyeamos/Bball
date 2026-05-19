@@ -75,10 +75,10 @@ VITE_SERVER_URL=https://your-backend-url.com
    - Import your GitHub repo
    - Configure:
      - **Framework Preset**: Vite
-     - **Root Directory**: `client`
-     - **Build Command**: `cd ../shared && npm install && npm run build && cd ../client && npm install && npm run build`
+     - **Root Directory**: repo root
+     - **Build Command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build`
      - **Output Directory**: `client/dist`
-     - **Install Command**: `npm install`
+     - **Install Command**: `pnpm install --frozen-lockfile`
    - **Environment Variables**:
      - `VITE_SERVER_URL`: `https://your-backend-url.railway.app`
    - Click "Deploy"
@@ -131,9 +131,9 @@ VITE_SERVER_URL=https://your-backend-url.com
      - **Environment**: Node
      - **Region**: Choose closest to users
      - **Branch**: main
-     - **Root Directory**: `server`
-     - **Build Command**: `cd ../shared && npm install && npm run build && cd ../server && npm install && npm run build`
-     - **Start Command**: `node dist/index.js`
+     - **Root Directory**: repo root
+     - **Build Command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-server build`
+     - **Start Command**: `pnpm --filter nba-draft-sim-server start`
    - **Environment Variables**: Same as Railway
    - Click "Create Web Service"
 
@@ -148,8 +148,8 @@ VITE_SERVER_URL=https://your-backend-url.com
    - New site from Git → GitHub
    - Select repo
    - Configure:
-     - **Base directory**: `client`
-     - **Build command**: `cd ../shared && npm install && npm run build && cd ../client && npm install && npm run build`
+     - **Base directory**: repo root
+     - **Build command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build`
      - **Publish directory**: `client/dist`
    - **Environment Variables**:
      - `VITE_SERVER_URL`: Your backend URL
@@ -240,7 +240,7 @@ sudo apt install -y nodejs
 sudo apt install -y nginx
 
 # Install PM2 globally
-sudo npm install -g pm2
+pnpm add -g pm2
 
 # Optional: Install Python for stats scraper
 sudo apt install -y python3 python3-pip
@@ -252,23 +252,16 @@ sudo apt install -y python3 python3-pip
 git clone https://github.com/yourusername/nba-draft-sim.git
 cd nba-draft-sim
 
-# Build shared types
-cd shared
-npm install
-npm run build
-
-# Build backend
-cd ../server
-npm install
-npm run build
+# Install dependencies and build shared types/backend
+pnpm install --frozen-lockfile
+pnpm --filter @nba-draft-sim/shared build
+pnpm --filter nba-draft-sim-server build
 
 # Optional: Install Python dependencies
 pip3 install -r requirements.txt
 
 # Build frontend
-cd ../client
-npm install
-npm run build
+pnpm --filter nba-draft-sim-client build
 ```
 
 ### **3. Configure Environment**
@@ -466,7 +459,7 @@ tail -f /var/log/nginx/error.log
 
 1. **Always use HTTPS in production**
 2. **Generate strong SESSION_SECRET** (32+ random chars)
-3. **Keep dependencies updated**: `npm audit fix`
+3. **Keep dependencies updated**: `pnpm audit`
 4. **Enable rate limiting** (add later if needed)
 5. **Monitor for attacks** (check logs regularly)
 6. **Backup configuration** (save .env securely)

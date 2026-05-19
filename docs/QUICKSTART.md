@@ -52,13 +52,13 @@ git push -u origin main
 3. Click **"New Project"** → Import your repository
 4. Configure:
    - **Framework Preset**: Vite
-   - **Root Directory**: `client`
+   - **Root Directory**: repo root
    - **Build Command**:
      ```
-     cd ../shared && npm install && npm run build && cd ../client && npm install && npm run build
+     pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build
      ```
    - **Output Directory**: `client/dist`
-   - **Install Command**: `npm install`
+   - **Install Command**: `pnpm install --frozen-lockfile`
 5. Add environment variable:
    - **Key**: `VITE_SERVER_URL`
    - **Value**: `https://YOUR-APP.railway.app` (your Railway URL from Step 2)

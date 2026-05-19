@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nba-draft-sim/shared": "file:../shared",
+    "@nba-draft-sim/shared": "workspace:*",
     "@supabase/supabase-js": "^2.100.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

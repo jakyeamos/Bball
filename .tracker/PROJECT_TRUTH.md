@@ -5,7 +5,7 @@ statusLabel: "stabilizing"
 nextStep: "Plan and implement the front-office transaction graph on top of the completed shared domain, CBA constants/citations, and strict dataset validator foundation."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
-lastUpdated: "2026-05-18"
+lastUpdated: "2026-05-19"
 quality:
   format: unknown
   lint: pass
@@ -44,3 +44,4 @@ On 2026-05-14, the front-office foundation slice was implemented with shared dom
 ## Recent Documentation Updates
 
 - 2026-05-18: Added or expanded README coverage for project and subproject roots so workspace documentation inventory is complete.
+- 2026-05-19: Converted workspace dependency management to pnpm-only: root workspace discovery now relies on `pnpm-workspace.yaml`, internal shared package links use `workspace:*`, `package-lock.json` was removed in favor of `pnpm-lock.yaml`, and setup/deployment/data runbooks now use pnpm commands. Verified `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.

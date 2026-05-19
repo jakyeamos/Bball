@@ -42,6 +42,8 @@ Most basketball products optimize for entertainment, hot takes, or fantasy outco
 
 ## Getting Started
 
+This repo is pnpm-only. Workspace membership is declared in `pnpm-workspace.yaml`, and `pnpm-lock.yaml` is the committed lockfile.
+
 ### 1) Install dependencies
 
 ```bash

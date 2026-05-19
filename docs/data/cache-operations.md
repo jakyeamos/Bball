@@ -2,7 +2,7 @@
 
 ## Components
 
-- **Seed artifacts:** `server/data/nba-seed.json`, `server/data/nba-seed.meta.json` — produced only by the seed script (`npm run seed:nba --workspace=server`). See [seeding-workflow.md](./seeding-workflow.md).
+- **Seed artifacts:** `server/data/nba-seed.json`, `server/data/nba-seed.meta.json` — produced only by the seed script (`pnpm --filter nba-draft-sim-server seed:nba`). See [seeding-workflow.md](./seeding-workflow.md).
 - **Coach editorial data:** `server/data/coaches-seed.json` — curated tendencies (pace, scheme, flags). Update by hand when coaching changes are material.
 - **Runtime loader:** `server/services/dataCache.ts` — warms an in-memory view on server startup. **No outbound stats.nba.com calls** during HTTP handling.
 
@@ -11,7 +11,7 @@
 1. Ensure Python has `nba-api` (see `server/scripts/requirements-nba.txt`), or use `seed:nba:offline` for a teams-only stub.
 2. Run:
    ```bash
-   npm run refresh:nba-cache --workspace=server
+   pnpm --filter nba-draft-sim-server refresh:nba-cache
    ```
    This shells to `seed:nba`, overwriting seed JSON files idempotently.
 3. Restart the API process so `getNbaDataCache().warmUp()` reloads from disk.

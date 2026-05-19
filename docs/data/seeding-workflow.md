@@ -4,7 +4,7 @@
 
 The build-time seed produces `server/data/nba-seed.json` plus `server/data/nba-seed.meta.json`. Runtime Express handlers **must not** call stats.nba.com; they read these artifacts via `server/services/dataCache.ts`.
 
-Identity data uses the same **Python `nba_api`** stack as the draft sim (`server/scripts/scrape_nba_stats.py`): `npm run seed:nba` shells to `server/scripts/seed_nba_identity.py`.
+Identity data uses the same **Python `nba_api`** stack as the draft sim (`server/scripts/scrape_nba_stats.py`): `pnpm --filter nba-draft-sim-server seed:nba` shells to `server/scripts/seed_nba_identity.py`.
 
 ## Prerequisites
 
@@ -19,8 +19,8 @@ Identity data uses the same **Python `nba_api`** stack as the draft sim (`server
 
 | Command | Purpose |
 |--------|---------|
-| `npm run seed:nba --workspace=server` | Fetch teams + roster players via nba_api, write artifacts (optional `--season 2025-26`) |
-| `npm run seed:nba:offline --workspace=server` | Deterministic **teams-only** stub (30 clubs, NBA stats team IDs, zero players) — CI / no Python |
+| `pnpm --filter nba-draft-sim-server seed:nba` | Fetch teams + roster players via nba_api, write artifacts (optional `--season 2025-26`) |
+| `pnpm --filter nba-draft-sim-server seed:nba:offline` | Deterministic **teams-only** stub (30 clubs, NBA stats team IDs, zero players) — CI / no Python |
 
 ## Expected output
 
@@ -37,7 +37,7 @@ After a live run you should see roughly 30 teams and hundreds of players (curren
 
 ## DATA-01 boundary (no runtime stats.nba.com)
 
-1. All stats.nba.com traffic for identity happens **only** inside `npm run seed:nba` (Python + TS driver).
+1. All stats.nba.com traffic for identity happens **only** inside `pnpm --filter nba-draft-sim-server seed:nba` (Python + TS driver).
 2. Request-path code loads `nba-seed.json` from disk via the data cache — **no** live fetches to NBA endpoints.
 3. If artifacts are missing, fix deployment / run the seed — do not add live API calls to request handlers.
 

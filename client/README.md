@@ -21,26 +21,24 @@ React frontend for the NBA Draft Simulator with real-time WebSocket communicatio
 ## Prerequisites
 
 - Node.js 18+
+- pnpm 10+
 - Running backend server (see ../server)
 
 ## Installation
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Install shared types
-cd ../shared
-npm install
-npm run build
-cd ../client
+pnpm --filter @nba-draft-sim/shared build
 ```
 
 ## Development
 
 ```bash
 # Start dev server
-npm run dev
+pnpm dev
 
 # Server will start on http://localhost:3000
 ```
@@ -51,10 +49,10 @@ Make sure the backend is running on `http://localhost:3001` before starting the 
 
 ```bash
 # Build for production
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
 ```
 
 ## Project Structure
@@ -140,10 +138,10 @@ Components use Tailwind utility classes directly.
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Lint code
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm preview` - Preview production build
+- `pnpm lint` - Lint code
 
 ## Troubleshooting
 
@@ -153,11 +151,11 @@ Components use Tailwind utility classes directly.
 - Verify `VITE_SERVER_URL` in `.env`
 
 **Types not found:**
-- Make sure `../shared` is built: `cd ../shared && npm run build`
+- Make sure `../shared` is built: `pnpm --filter @nba-draft-sim/shared build`
 - Check that `@nba-draft-sim/shared` is properly linked
 
 **Styles not loading:**
-- Run `npm install` to ensure PostCSS and Tailwind are installed
+- Run `pnpm install` to ensure PostCSS and Tailwind are installed
 - Check `tailwind.config.js` content paths
 
 ## License

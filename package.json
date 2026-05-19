@@ -1,13 +1,9 @@
 {
   "name": "nba-draft-sim",
   "private": true,
-  "workspaces": [
-    "client",
-    "server",
-    "shared"
-  ],
+  "packageManager": "pnpm@10.26.0",
   "scripts": {
-    "dev": "pnpm --parallel --filter nba-draft-sim-client --filter nba-draft-sim-server dev",
+    "dev": "pnpm -r --parallel --filter nba-draft-sim-client --filter nba-draft-sim-server dev",
     "build": "pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build && pnpm --filter nba-draft-sim-server build",
     "start": "pnpm --filter nba-draft-sim-server start",
     "lint": "pnpm --filter nba-draft-sim-client lint && pnpm --filter nba-draft-sim-server lint",
