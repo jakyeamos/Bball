@@ -2,7 +2,7 @@
 schemaVersion: 1
 healthScore: 82
 statusLabel: "stabilizing"
-nextStep: "Plan and implement the front-office transaction graph on top of the completed shared domain, CBA constants/citations, and strict dataset validator foundation."
+nextStep: "Continue the front-office transaction graph work after the live Court Vision shell refresh for draft and offseason entry paths."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
 lastUpdated: "2026-05-19"
@@ -27,7 +27,7 @@ Bballedu is the Court Vision monorepo, now moving from a simplified offseason si
 
 ## Context
 
-The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is `feat/organize-monorepo-17131035614459335105`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator.
+The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is `codex/live-ui-refresh-shell-port`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator. The live Court Vision UI refresh now includes the draft simulator entry flow and offseason simulator phase pages through a shared shell/token system.
 
 ## Risks
 
@@ -45,3 +45,4 @@ On 2026-05-14, the front-office foundation slice was implemented with shared dom
 
 - 2026-05-18: Added or expanded README coverage for project and subproject roots so workspace documentation inventory is complete.
 - 2026-05-19: Converted workspace dependency management to pnpm-only: root workspace discovery now relies on `pnpm-workspace.yaml`, internal shared package links use `workspace:*`, `package-lock.json` was removed in favor of `pnpm-lock.yaml`, and setup/deployment/data runbooks now use pnpm commands. Verified `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
+- 2026-05-19: Ported the refreshed Court Vision shell and token-backed simulator panels into `/draft-sim` plus all offseason simulator phase pages, including shared notices, action styles, controls, and phase navigation. Verified `pnpm --dir client typecheck`, `pnpm --dir client lint`, `pnpm --dir client build`, and in-app browser smoke checks for `/draft-sim` and `/offseason/team-context`.

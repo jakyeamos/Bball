@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useFreeAgency } from '../../features/offseason/useFreeAgency';
+import {
+  SimulatorButton,
+  SimulatorPanel,
+  inputControlClassName,
+} from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 export function FreeAgencyPage(): JSX.Element {
   const navigate = useNavigate();
@@ -21,52 +27,35 @@ export function FreeAgencyPage(): JSX.Element {
 
   if (!freeAgencyEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Free Agency is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_FREE_AGENCY` to continue.
-          </p>
-          <Link
-            to="/offseason/draft-night"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Back to Draft Night
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Free Agency is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_FREE_AGENCY` to continue."
+        actionTo="/offseason/draft-night"
+        actionLabel="Back to Draft Night"
+        tone="warning"
+      />
     );
   }
 
   const run = activeRunQuery.data;
   if (!run) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-cv-chalk/75">No active offseason run found.</p>
-      </div>
+      <OffseasonNotice
+        title="No active offseason run found."
+        actionTo="/offseason/team-context"
+        actionLabel="Start from Team Context"
+      />
     );
   }
 
   if (run.phase !== 'free_agency') {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-2xl font-semibold text-cv-chalk mb-3">
-            Free Agency is not active.
-          </h1>
-          <p className="text-cv-chalk/70 mb-4">
-            Current phase: <span className="font-semibold">{run.phase}</span>
-          </p>
-          <Link
-            to="/offseason/draft-night"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Return to Draft Night
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Free Agency is not active."
+        description={`Current phase: ${run.phase}`}
+        actionTo="/offseason/draft-night"
+        actionLabel="Return to Draft Night"
+      />
     );
   }
 
@@ -79,20 +68,13 @@ export function FreeAgencyPage(): JSX.Element {
     contractMillions <= run.free_agency.cap_space_millions;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">Free Agency</h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Sign targets under simplified cap and roster constraints with explanation-first outcomes.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Free Agency"
+      description="Sign targets under simplified cap and roster constraints with explanation-first outcomes."
+      activePhase="Free Agency"
+    >
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">Offer Builder</h2>
+        <SimulatorPanel title="Offer Builder">
           <p className="mb-2 text-sm text-cv-chalk/75">
             Cap space: {run.free_agency.cap_space_millions.toFixed(1)}M /{' '}
             {run.free_agency.salary_cap_millions.toFixed(1)}M
@@ -104,7 +86,7 @@ export function FreeAgencyPage(): JSX.Element {
           <label className="mb-3 block text-sm text-cv-chalk/80">
             Target player
             <select
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
               value={selectedPlayerId ?? ''}
               onChange={(event) =>
                 setSelectedPlayerId(
@@ -132,14 +114,14 @@ export function FreeAgencyPage(): JSX.Element {
               onChange={(event) =>
                 setContractMillions(Number(event.target.value))
               }
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
             />
           </label>
 
           <label className="mb-4 block text-sm text-cv-chalk/80">
             Decision
             <select
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
               value={decision}
               onChange={(event) =>
                 setDecision(event.target.value as 'signed' | 'declined')
@@ -150,9 +132,8 @@ export function FreeAgencyPage(): JSX.Element {
             </select>
           </label>
 
-          <button
+          <SimulatorButton
             type="button"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             disabled={!canSubmit}
             onClick={() => {
               submitOffer.mutate({
@@ -164,17 +145,16 @@ export function FreeAgencyPage(): JSX.Element {
             }}
           >
             Process Offer
-          </button>
+          </SimulatorButton>
 
           {selectedTarget ? (
             <p className="mt-3 text-xs text-cv-chalk/65">
               Target ask: {selectedTarget.asking_price_millions.toFixed(1)}M
             </p>
           ) : null}
-        </section>
+        </SimulatorPanel>
 
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">Signing Outcomes</h2>
+        <SimulatorPanel title="Signing Outcomes">
           <div className="space-y-3">
             {run.free_agency.signings.slice().reverse().map((signing) => (
               <article
@@ -203,19 +183,19 @@ export function FreeAgencyPage(): JSX.Element {
             </p>
           ) : null}
 
-          <button
+          <SimulatorButton
             type="button"
             onClick={async () => {
               await continueToRecap.mutateAsync(run.run_id);
               navigate('/offseason/recap');
             }}
-            className="mt-6 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
+            className="mt-6"
             disabled={continueToRecap.isPending}
           >
             Continue to Recap
-          </button>
-        </section>
+          </SimulatorButton>
+        </SimulatorPanel>
       </div>
-    </div>
+    </OffseasonShell>
   );
 }

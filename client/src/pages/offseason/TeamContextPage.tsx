@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useTeamContext } from '../../features/offseason/useTeamContext';
+import { SimulatorButton, SimulatorPanel } from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 export function TeamContextPage(): JSX.Element {
   const navigate = useNavigate();
@@ -18,43 +20,35 @@ export function TeamContextPage(): JSX.Element {
 
   if (!offseasonEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-            Offseason Simulator
-          </p>
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Team Context is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_FOUNDATION` and `VITE_ENABLE_OFFSEASON_TEAM_CONTEXT` to access this flow.
-          </p>
-          <Link to="/gm-iq" className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white">
-            Back to GM IQ
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Team Context is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_FOUNDATION` and `VITE_ENABLE_OFFSEASON_TEAM_CONTEXT` to access this flow."
+        actionTo="/gm-iq"
+        actionLabel="Back to GM IQ"
+        tone="warning"
+      />
     );
   }
   const run = activeRunQuery.data;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">
-          Team Context
-        </h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Select a real NBA team to load roster context, draft capital, timeline pressure, and immediate needs before entering the decision loop.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Team Context"
+      description="Select a real NBA team to load roster context, draft capital, timeline pressure, and immediate needs before entering the decision loop."
+      activePhase="Team Context"
+      aside={
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cv-accent">
+            Resume-safe
+          </p>
+          <p className="mt-2 text-sm leading-6 text-cv-chalk/70">
+            Team selection writes the run state immediately, so users can leave and continue from the same phase.
+          </p>
+        </div>
+      }
+    >
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">Choose Team</h2>
+        <SimulatorPanel title="Choose Team">
           {teamsQuery.isLoading ? (
             <p className="text-sm text-cv-chalk/70">Loading NBA teams...</p>
           ) : null}
@@ -85,9 +79,9 @@ export function TeamContextPage(): JSX.Element {
               );
             })}
           </div>
-        </section>
+        </SimulatorPanel>
 
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
+        <SimulatorPanel>
           {run?.team_context.team ? (
             <>
               <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
@@ -140,7 +134,7 @@ export function TeamContextPage(): JSX.Element {
               </div>
 
               <div className="mt-5 flex gap-3">
-                <button
+                <SimulatorButton
                   type="button"
                   onClick={async () => {
                     const nextRun = await continueToCoachingMarket.mutateAsync();
@@ -148,11 +142,10 @@ export function TeamContextPage(): JSX.Element {
                       navigate('/offseason/coaching-market');
                     }
                   }}
-                  className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
                   disabled={!coachingMarketEnabled || continueToCoachingMarket.isPending}
                 >
                   Continue to Coaching Market
-                </button>
+                </SimulatorButton>
                 <span className="self-center text-xs text-cv-chalk/60">
                   Resume-safe: state is saved on every step.
                 </span>
@@ -176,8 +169,8 @@ export function TeamContextPage(): JSX.Element {
               Could not save Team Context: {selectTeam.error.message}
             </p>
           ) : null}
-        </section>
+        </SimulatorPanel>
       </div>
-    </div>
+    </OffseasonShell>
   );
 }

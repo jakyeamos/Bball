@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useDraftNight } from '../../features/offseason/useDraftNight';
+import { SimulatorButton, SimulatorPanel } from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 export function DraftNightPage(): JSX.Element {
   const navigate = useNavigate();
@@ -17,52 +19,35 @@ export function DraftNightPage(): JSX.Element {
 
   if (!draftEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Draft Night is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_DRAFT_NIGHT` to continue.
-          </p>
-          <Link
-            to="/offseason/trade-market"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Back to Trade Market
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Draft Night is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_DRAFT_NIGHT` to continue."
+        actionTo="/offseason/trade-market"
+        actionLabel="Back to Trade Market"
+        tone="warning"
+      />
     );
   }
 
   const run = activeRunQuery.data;
   if (!run) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-cv-chalk/75">No active offseason run found.</p>
-      </div>
+      <OffseasonNotice
+        title="No active offseason run found."
+        actionTo="/offseason/team-context"
+        actionLabel="Start from Team Context"
+      />
     );
   }
 
   if (run.phase !== 'draft_night') {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-2xl font-semibold text-cv-chalk mb-3">
-            Draft Night is not active.
-          </h1>
-          <p className="text-cv-chalk/70 mb-4">
-            Current phase: <span className="font-semibold">{run.phase}</span>
-          </p>
-          <Link
-            to="/offseason/trade-market"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Return to Trade Market
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Draft Night is not active."
+        description={`Current phase: ${run.phase}`}
+        actionTo="/offseason/trade-market"
+        actionLabel="Return to Trade Market"
+      />
     );
   }
 
@@ -72,20 +57,13 @@ export function DraftNightPage(): JSX.Element {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">Draft Night</h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Make picks from your scouting board and receive explanation-first grading for each decision.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Draft Night"
+      description="Make picks from your scouting board and receive explanation-first grading for each decision."
+      activePhase="Draft Night"
+    >
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">Available Prospects</h2>
+        <SimulatorPanel title="Available Prospects">
           <div className="space-y-3">
             {availableProspects.map((prospect) => (
               <article
@@ -115,10 +93,9 @@ export function DraftNightPage(): JSX.Element {
               </article>
             ))}
           </div>
-        </section>
+        </SimulatorPanel>
 
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">Pick Grades</h2>
+        <SimulatorPanel title="Pick Grades">
           <div className="space-y-3">
             {run.draft_night.picks.map((pick) => (
               <article
@@ -147,20 +124,19 @@ export function DraftNightPage(): JSX.Element {
             </p>
           ) : null}
 
-          <button
+          <SimulatorButton
             type="button"
             onClick={async () => {
               await continueToFreeAgency.mutateAsync(run.run_id);
               navigate('/offseason/free-agency');
             }}
-            className="mt-6 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
+            className="mt-6"
             disabled={continueToFreeAgency.isPending}
           >
             Continue to Free Agency
-          </button>
-        </section>
+          </SimulatorButton>
+        </SimulatorPanel>
       </div>
-    </div>
+    </OffseasonShell>
   );
 }
-

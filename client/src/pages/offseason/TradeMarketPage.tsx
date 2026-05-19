@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useTradeMarket } from '../../features/offseason/useTradeMarket';
+import {
+  SimulatorButton,
+  SimulatorPanel,
+  inputControlClassName,
+} from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 export function TradeMarketPage(): JSX.Element {
   const navigate = useNavigate();
@@ -22,52 +28,35 @@ export function TradeMarketPage(): JSX.Element {
 
   if (!tradeEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Trade Market is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_TRADE_MARKET` to continue.
-          </p>
-          <Link
-            to="/offseason/scouting"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Back to Scouting
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Trade Market is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_TRADE_MARKET` to continue."
+        actionTo="/offseason/scouting"
+        actionLabel="Back to Scouting"
+        tone="warning"
+      />
     );
   }
 
   const run = activeRunQuery.data;
   if (!run) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-cv-chalk/75">No active offseason run found.</p>
-      </div>
+      <OffseasonNotice
+        title="No active offseason run found."
+        actionTo="/offseason/team-context"
+        actionLabel="Start from Team Context"
+      />
     );
   }
 
   if (run.phase !== 'trade_market') {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-2xl font-semibold text-cv-chalk mb-3">
-            Trade Market is not active.
-          </h1>
-          <p className="text-cv-chalk/70 mb-4">
-            Current phase: <span className="font-semibold">{run.phase}</span>
-          </p>
-          <Link
-            to="/offseason/scouting"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Return to Scouting
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Trade Market is not active."
+        description={`Current phase: ${run.phase}`}
+        actionTo="/offseason/scouting"
+        actionLabel="Return to Scouting"
+      />
     );
   }
 
@@ -83,27 +72,18 @@ export function TradeMarketPage(): JSX.Element {
   const canSubmit = hasAssets && !submitTradeProposal.isPending;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">Trade Market</h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Build player-for-player or player-for-picks proposals and evaluate each move with fit-based rationale.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Trade Market"
+      description="Build player-for-player or player-for-picks proposals and evaluate each move with fit-based rationale."
+      activePhase="Trade Market"
+    >
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">
-            Proposal Builder
-          </h2>
+        <SimulatorPanel title="Proposal Builder">
 
           <label className="mb-3 block text-sm text-cv-chalk/80">
             Outgoing player
             <select
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
               value={offeredPlayerId ?? ''}
               onChange={(event) =>
                 setOfferedPlayerId(
@@ -123,7 +103,7 @@ export function TradeMarketPage(): JSX.Element {
           <label className="mb-3 block text-sm text-cv-chalk/80">
             Incoming player target
             <select
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
               value={requestedPlayerId ?? ''}
               onChange={(event) =>
                 setRequestedPlayerId(
@@ -163,7 +143,7 @@ export function TradeMarketPage(): JSX.Element {
           <label className="mb-4 block text-sm text-cv-chalk/80">
             Front office decision
             <select
-              className="mt-1 w-full rounded-cv border border-cv-court/20 bg-cv-navy/50 px-3 py-2 text-cv-chalk"
+              className={inputControlClassName()}
               value={decision}
               onChange={(event) =>
                 setDecision(event.target.value as 'accepted' | 'rejected')
@@ -174,9 +154,8 @@ export function TradeMarketPage(): JSX.Element {
             </select>
           </label>
 
-          <button
+          <SimulatorButton
             type="button"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             disabled={!canSubmit}
             onClick={() => {
               submitTradeProposal.mutate({
@@ -192,13 +171,10 @@ export function TradeMarketPage(): JSX.Element {
             }}
           >
             Evaluate Trade Fit
-          </button>
-        </section>
+          </SimulatorButton>
+        </SimulatorPanel>
 
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">
-            Fit Explanation
-          </h2>
+        <SimulatorPanel title="Fit Explanation">
           {latestProposal ? (
             <div className="rounded-cv border border-cv-court/20 bg-cv-navy/45 p-4">
               <p className="text-sm text-cv-chalk/80 mb-2">
@@ -245,19 +221,19 @@ export function TradeMarketPage(): JSX.Element {
             </ul>
           </div>
 
-          <button
+          <SimulatorButton
             type="button"
             onClick={async () => {
               await continueToDraftNight.mutateAsync(run.run_id);
               navigate('/offseason/draft-night');
             }}
-            className="mt-6 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
+            className="mt-6"
             disabled={continueToDraftNight.isPending}
           >
             Continue to Draft Night
-          </button>
-        </section>
+          </SimulatorButton>
+        </SimulatorPanel>
       </div>
-    </div>
+    </OffseasonShell>
   );
 }

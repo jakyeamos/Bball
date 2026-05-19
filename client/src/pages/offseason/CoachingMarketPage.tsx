@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useCoachingMarket } from '../../features/offseason/useCoachingMarket';
+import { SimulatorButton, SimulatorPanel } from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 export function CoachingMarketPage(): JSX.Element {
   const navigate = useNavigate();
@@ -14,43 +16,29 @@ export function CoachingMarketPage(): JSX.Element {
 
   if (!coachingEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-            Offseason Simulator
-          </p>
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Coaching Market is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_COACHING_MARKET` to continue this phase.
-          </p>
-          <Link
-            to="/offseason/team-context"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Back to Team Context
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Coaching Market is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_COACHING_MARKET` to continue this phase."
+        actionTo="/offseason/team-context"
+        actionLabel="Back to Team Context"
+        tone="warning"
+      />
     );
   }
 
   if (activeRunQuery.isLoading) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-cv-chalk/70">Loading active offseason run...</p>
-      </div>
-    );
+    return <OffseasonNotice title="Loading active offseason run..." actionTo="/offseason/team-context" actionLabel="Back to Team Context" />;
   }
 
   if (activeRunQuery.isError) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-red-300">
-          Failed to load offseason run: {activeRunQuery.error.message}
-        </p>
-      </div>
+      <OffseasonNotice
+        title="Failed to load offseason run."
+        description={activeRunQuery.error.message}
+        actionTo="/offseason/team-context"
+        actionLabel="Back to Team Context"
+        tone="warning"
+      />
     );
   }
 
@@ -58,57 +46,31 @@ export function CoachingMarketPage(): JSX.Element {
 
   if (!run) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <p className="text-sm text-cv-chalk/75 mb-4">
-            No active offseason run found.
-          </p>
-          <Link
-            to="/offseason/team-context"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Start from Team Context
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="No active offseason run found."
+        actionTo="/offseason/team-context"
+        actionLabel="Start from Team Context"
+      />
     );
   }
 
   if (run.phase !== 'coaching_market') {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-2xl font-semibold text-cv-chalk mb-3">
-            Coaching Market is not active yet.
-          </h1>
-          <p className="text-cv-chalk/70 mb-4">
-            Current phase: <span className="font-semibold">{run.phase}</span>
-          </p>
-          <Link
-            to="/offseason/team-context"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Return to Team Context
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Coaching Market is not active yet."
+        description={`Current phase: ${run.phase}`}
+        actionTo="/offseason/team-context"
+        actionLabel="Return to Team Context"
+      />
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">
-          Coaching Market
-        </h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Hire a coach and lock in the tendency profile that will shape scouting and grading through the rest of this run.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Coaching Market"
+      description="Hire a coach and lock in the tendency profile that will shape scouting and grading through the rest of this run."
+      activePhase="Coaching Market"
+    >
       {coachingMarketQuery.isError ? (
         <p className="mb-4 text-sm text-red-300">
           Failed to load coach pool: {coachingMarketQuery.error.message}
@@ -116,10 +78,7 @@ export function CoachingMarketPage(): JSX.Element {
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">
-            Coach Pool
-          </h2>
+        <SimulatorPanel title="Coach Pool">
           {coachingMarketQuery.isLoading ? (
             <p className="text-sm text-cv-chalk/70">Loading coaching options...</p>
           ) : null}
@@ -184,12 +143,9 @@ export function CoachingMarketPage(): JSX.Element {
               );
             })}
           </div>
-        </section>
+        </SimulatorPanel>
 
-        <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-          <h2 className="text-xl font-semibold text-cv-chalk mb-3">
-            Hire Impact
-          </h2>
+        <SimulatorPanel title="Hire Impact">
           {run.coaching_market.selected_coach ? (
             <>
               <p className="text-sm text-cv-chalk/75 mb-3">
@@ -208,17 +164,17 @@ export function CoachingMarketPage(): JSX.Element {
                   ))}
                 </ul>
               </div>
-              <button
+              <SimulatorButton
                 type="button"
                 onClick={async () => {
                   await continueToScouting.mutateAsync(run.run_id);
                   navigate('/offseason/scouting');
                 }}
-                className="mt-5 rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
+                className="mt-5"
                 disabled={continueToScouting.isPending}
               >
                 Continue to Scouting
-              </button>
+              </SimulatorButton>
             </>
           ) : (
             <p className="text-sm text-cv-chalk/72">
@@ -236,8 +192,8 @@ export function CoachingMarketPage(): JSX.Element {
               Unable to transition to scouting: {continueToScouting.error.message}
             </p>
           ) : null}
-        </section>
+        </SimulatorPanel>
       </div>
-    </div>
+    </OffseasonShell>
   );
 }

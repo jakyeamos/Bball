@@ -1,7 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { featureFlags } from '@nba-draft-sim/shared';
 import { useScoutingBoard } from '../../features/offseason/useScoutingBoard';
+import { SimulatorButton, SimulatorPanel } from '../../components/sim/SimulatorShell';
+import { OffseasonNotice, OffseasonShell } from './OffseasonShell';
 
 function uncertaintyToneClass(band: 'high' | 'medium' | 'low'): string {
   if (band === 'high') {
@@ -25,81 +27,53 @@ export function ScoutingPage(): JSX.Element {
 
   if (!scoutingEnabled) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-3xl font-semibold text-cv-chalk mb-3">
-            Scouting phase is not enabled in this environment.
-          </h1>
-          <p className="text-cv-chalk/70 mb-5">
-            Enable `VITE_ENABLE_OFFSEASON_SCOUTING` to continue.
-          </p>
-          <Link
-            to="/offseason/coaching-market"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Back to Coaching Market
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Scouting phase is not enabled in this environment."
+        description="Enable `VITE_ENABLE_OFFSEASON_SCOUTING` to continue."
+        actionTo="/offseason/coaching-market"
+        actionLabel="Back to Coaching Market"
+        tone="warning"
+      />
     );
   }
 
   const run = activeRunQuery.data;
   if (!run) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <p className="text-cv-chalk/75">No active offseason run found.</p>
-      </div>
+      <OffseasonNotice
+        title="No active offseason run found."
+        actionTo="/offseason/team-context"
+        actionLabel="Start from Team Context"
+      />
     );
   }
 
   if (run.phase !== 'scouting_pre_draft') {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-cv border border-cv-court/20 bg-cv-steel p-6">
-          <h1 className="text-2xl font-semibold text-cv-chalk mb-3">
-            Scouting board is not active.
-          </h1>
-          <p className="text-cv-chalk/70 mb-4">
-            Current phase: <span className="font-semibold">{run.phase}</span>
-          </p>
-          <Link
-            to="/offseason/coaching-market"
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
-          >
-            Return to Coaching Market
-          </Link>
-        </div>
-      </div>
+      <OffseasonNotice
+        title="Scouting board is not active."
+        description={`Current phase: ${run.phase}`}
+        actionTo="/offseason/coaching-market"
+        actionLabel="Return to Coaching Market"
+      />
     );
   }
 
   const prospects = boardQuery.data ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-cv-accent mb-2">
-          Offseason Simulator
-        </p>
-        <h1 className="text-4xl font-semibold text-cv-chalk mb-4">
-          Scouting Pre-Draft
-        </h1>
-        <p className="max-w-3xl text-cv-chalk/72">
-          Build your board with explicit uncertainty for every prospect. No pick is framed as guaranteed.
-        </p>
-      </div>
-
+    <OffseasonShell
+      title="Scouting Pre-Draft"
+      description="Build your board with explicit uncertainty for every prospect. No pick is framed as guaranteed."
+      activePhase="Scouting"
+    >
       {boardQuery.isError ? (
         <p className="mb-4 text-sm text-red-300">
           Failed to load scouting board: {boardQuery.error.message}
         </p>
       ) : null}
 
-      <section className="rounded-cv border border-cv-court/20 bg-cv-steel p-5">
-        <h2 className="text-xl font-semibold text-cv-chalk mb-3">
-          Prospect Board
-        </h2>
+      <SimulatorPanel title="Prospect Board">
         <div className="space-y-3">
           {prospects.map((prospect) => (
             <article
@@ -133,7 +107,7 @@ export function ScoutingPage(): JSX.Element {
                       rankedPlayerIds: orderedIds,
                     });
                   }}
-                  className="rounded-cv bg-cv-accent px-3 py-1.5 text-xs font-semibold text-white"
+                  className="rounded-cv bg-cv-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-orange-500 disabled:opacity-60"
                   disabled={updateBoardRanking.isPending}
                 >
                   Prioritize On Board
@@ -179,20 +153,18 @@ export function ScoutingPage(): JSX.Element {
         </div>
 
         <div className="mt-6">
-          <button
+          <SimulatorButton
             type="button"
             onClick={async () => {
               await continueToTradeMarket.mutateAsync(run.run_id);
               navigate('/offseason/trade-market');
             }}
-            className="rounded-cv bg-cv-accent px-4 py-2 text-sm font-semibold text-white"
             disabled={continueToTradeMarket.isPending || prospects.length === 0}
           >
             Continue to Trade Market
-          </button>
+          </SimulatorButton>
         </div>
-      </section>
-    </div>
+      </SimulatorPanel>
+    </OffseasonShell>
   );
 }
-

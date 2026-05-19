@@ -28,6 +28,8 @@ module.exports = {
         'cv-steel': 'var(--cv-steel)',
         'cv-navy': 'var(--cv-navy)',
         'cv-accent': 'var(--cv-accent)',
+        'cv-panel': 'var(--cv-panel)',
+        'cv-border': 'var(--cv-border)',
         'cv-accent-hover': '#ea6c00',
       },
       fontFamily: {
