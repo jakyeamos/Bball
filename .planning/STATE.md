@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Runtime hardening complete; awaiting Phase 10 human acceptance gate
-stopped_at: Fixed shared package browser/server boot regression and local runtime QA blockers
-last_updated: "2026-04-30T10:53:00.000-04:00"
+status: Solo draft lobby readiness hardening complete; awaiting Phase 10 human acceptance gate
+stopped_at: Verified one-team lobby creation, readiness, draft completion, and smoke coverage
+last_updated: "2026-06-11T02:00:00.000-04:00"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -30,6 +30,7 @@ Plan: 4 of 4
 Execution reality:
 
 - Runtime hardening on 2026-04-30 fixed the shared package format regression that caused `exports is not defined`, restored built-server startup against canonical NBA seed artifacts, and cleaned local browser QA startup on alternate Vite ports.
+- Solo draft lobby hardening on 2026-06-11 confirmed one-team lobbies start ready with assigned team IDs, normalized create/join display names, and Playwright smoke coverage through draft recap.
 - Implementation is landed through Phase 09.
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
 - Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
@@ -113,3 +114,10 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Centralized API/WebSocket CORS origin checks and allowed loopback localhost/127.0.0.1 dev ports for browser QA.
 - Hid the debug overlay by default; it remains available with `?debug`.
 - Verified `npm run build --workspace=client`, `npm run build --workspace=server`, `npm run test --workspace=server`, and browser reload at `http://localhost:3002/` with no fresh console errors/warnings.
+
+## Solo Draft Lobby Update (2026-06-11)
+
+- Finished one-team lobby readiness flow: shared/team-count metadata now reflects 1-12 teams, one-team lobbies keep `canStart=true`, and lobby users receive `team_1` before draft creation.
+- Normalized lobby display names consistently for create and join paths by trimming whitespace and falling back to `Team N` labels when needed.
+- Updated Playwright smoke startup to use pnpm and the reachable `http://localhost:3000` Vite host, then refreshed stale smoke route assertions to current accessible page copy.
+- Verified with `pnpm test`, package typechecks, focused lobby Vitest coverage, focused solo-draft Playwright coverage, and full `pnpm smoke`.
