@@ -37,7 +37,7 @@ export function createLobby(
 
   const commissioner: LobbyUser = {
     userId: commissionerId,
-    displayName: displayName || 'Team 1',
+    displayName: normalizeDisplayName(displayName, 'Team 1'),
     teamId: null,
     isCommissioner: true,
     isConnected: true,
@@ -74,7 +74,7 @@ export function addUserToLobby(
 
   const newUser: LobbyUser = {
     userId,
-    displayName: displayName || `Team ${lobby.users.length + 1}`,
+    displayName: normalizeDisplayName(displayName, `Team ${lobby.users.length + 1}`),
     teamId: null,
     isCommissioner: false,
     isConnected: true,
@@ -101,6 +101,10 @@ function assignTeamsToUsers(users: LobbyUser[]): LobbyUser[] {
     ...user,
     teamId: `team_${index + 1}`,
   }));
+}
+
+function normalizeDisplayName(displayName: string, fallback: string): string {
+  return displayName.trim() || fallback;
 }
 
 export function removeUserFromLobby(

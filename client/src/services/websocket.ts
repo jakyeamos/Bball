@@ -109,8 +109,8 @@ class WebSocketService {
   /**
    * Create a lobby
    */
-  createLobby(config: LobbyConfig) {
-    this.emit(WS_EVENTS.CREATE_LOBBY, { config });
+  createLobby(config: LobbyConfig, options: { isPublic?: boolean; displayName?: string } = {}) {
+    this.emit(WS_EVENTS.CREATE_LOBBY, { config, ...options });
   }
 
   /**

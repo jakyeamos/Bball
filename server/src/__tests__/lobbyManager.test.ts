@@ -42,6 +42,14 @@ describe('lobby manager draft readiness', () => {
     ]);
   });
 
+  it('normalizes the commissioner display name when creating a lobby', () => {
+    const trimmedLobby = createLobby('commissioner', '  Trimmed Team  ', makeConfig({ teamCount: 1 }));
+    const defaultedLobby = createLobby('commissioner', '   ', makeConfig({ teamCount: 1 }));
+
+    expect(trimmedLobby.users[0].displayName).toBe('Trimmed Team');
+    expect(defaultedLobby.users[0].displayName).toBe('Team 1');
+  });
+
   it('assigns team ids only once a multiplayer lobby is full', () => {
     let lobby = createLobby('commissioner', 'Team 1', makeConfig({ teamCount: 2 }));
 
@@ -52,5 +60,14 @@ describe('lobby manager draft readiness', () => {
 
     expect(lobby.canStart).toBe(true);
     expect(lobby.users.map((user) => user.teamId)).toEqual(['team_1', 'team_2']);
+  });
+
+  it('normalizes joined user display names with the same fallback pattern', () => {
+    let lobby = createLobby('commissioner', 'Team 1', makeConfig({ teamCount: 3 }));
+
+    lobby = addUserToLobby(lobby, 'user-2', '  Second Team  ');
+    lobby = addUserToLobby(lobby, 'user-3', '   ');
+
+    expect(lobby.users.map((user) => user.displayName)).toEqual(['Team 1', 'Second Team', 'Team 3']);
   });
 });

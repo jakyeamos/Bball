@@ -95,7 +95,7 @@ export function handleCreateLobby(
 ) {
   console.log('🟢 handleCreateLobby called!', { userId, displayName, config: payload.config });
   try {
-    const teamName = payload.displayName?.trim() || displayName;
+    const teamName = payload.displayName ?? displayName;
     const lobby = createLobby(userId, teamName, payload.config, payload.isPublic);
 
     // Store lobby
@@ -128,7 +128,7 @@ export function handleJoinLobby(
   userId: string
 ) {
   try {
-    const lobbyId = inviteCodeToLobby.get(payload.inviteCode);
+    const lobbyId = inviteCodeToLobby.get(payload.inviteCode.trim().toUpperCase());
     if (!lobbyId) {
       throw new Error('Invalid invite code');
     }

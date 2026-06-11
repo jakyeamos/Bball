@@ -274,7 +274,7 @@ export type SeasonFormat = 'single_round_robin' | 'double_round_robin' | 'quick_
 export type PickTimer = 60 | 120 | 300;
 
 export interface LobbyConfig {
-  teamCount: number;  // 4-12
+  teamCount: number;  // 1-12
   rosterSize: number;  // 10-15
   pickTimer: PickTimer;
   seasonFormat: SeasonFormat;

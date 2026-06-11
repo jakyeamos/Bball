@@ -18,7 +18,7 @@ import { Input } from '../components/Input';
 
 // Defensive fallback in case shared library import fails in production
 const CONSTRAINTS = DRAFT_CONSTRAINTS || {
-  TEAMS_MIN: 4,
+  TEAMS_MIN: 1,
   TEAMS_MAX: 30,
   ROSTER_MIN: 8,
   ROSTER_MAX: 15,
@@ -72,7 +72,7 @@ export function LobbyPage() {
         // NOTE: rotationDepth removed - now set per-game in coaching decisions
       };
 
-      wsService.emit('lobby:create', { config, isPublic, displayName: displayName.trim() });
+      wsService.createLobby(config, { isPublic, displayName: displayName.trim() });
     } catch (err: any) {
       setError(err.message || 'Failed to create lobby');
     }
