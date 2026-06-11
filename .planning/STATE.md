@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Front-office transaction graph preview slice implemented; awaiting deeper CBA rule expansion
-stopped_at: Added preview-only transaction graph validation path and verified focused/full checks
-last_updated: "2026-06-11T10:00:00.000-04:00"
+status: Phase 10 browser acceptance passed locally; front-office transaction graph preview slice remains ready for deeper CBA rule expansion
+stopped_at: Verified offseason decision loop end-to-end in browser with reload boundaries and completion
+last_updated: "2026-06-11T10:08:00.000-04:00"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` fo
 
 ## Current Position
 
-Phase: 10 (offseason-simulator-decision-loop) — IMPLEMENTED (AWAITING HUMAN GATE)
+Phase: 10 (offseason-simulator-decision-loop) — BROWSER ACCEPTED LOCALLY (PRODUCT OWNER / LIVE SUPABASE SIGN-OFF REMAINS)
 Plan: 4 of 4
 
 Execution reality:
@@ -36,6 +36,7 @@ Execution reality:
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
 - Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
 - Phase 09 still needs browser-level human verification for GM discoverability and rollout-gate behavior.
+- Phase 10 passed local browser acceptance on 2026-06-11; remaining sign-off is product-owner recap quality review and live Supabase persistence verification.
 - Phase 03 has a separate player-model / calibration extension still in progress inside the repo.
 
 ## Snapshot
@@ -58,7 +59,7 @@ Execution reality:
 | 7. Draft Simulator Teaching Layer | 2/2 | Implemented | 2026-04-01 |
 | 8. User Profile and Account Upgrade | 2/2 | Implemented pending live Supabase verification | 2026-04-01 |
 | 9. Offseason Simulator - Foundation | 3/3 | Implemented pending final human verification gate | 2026-04-22 |
-| 10. Offseason Simulator - Decision Loop | 4/4 | Implemented pending final human verification gate | 2026-04-23 |
+| 10. Offseason Simulator - Decision Loop | 4/4 | Browser accepted locally; product-owner / live Supabase sign-off remains | 2026-06-11 |
 
 ## Accumulated Context
 
@@ -81,7 +82,7 @@ Execution reality:
 - Verify the feature-flag / SEO rollout checklist for public lesson and library surfaces.
 - Run live Supabase upgrade continuity and second-device sync checks for Phase 08.
 - Run Phase 09 human verification gate for GM entry discoverability, threshold recommendation, and disabled-flag behavior.
-- Run Phase 10 human verification gate for full-loop resume/completion and recap quality sign-off.
+- Complete product-owner qualitative sign-off for Phase 10 recap quality and run live Supabase persistence verification when env is available.
 - Decide whether to formally close Phases 04-09 after verification or keep the implementation/manual-QA split explicit.
 - Expand the front-office transaction preview validator into full salary matching, apron restrictions, aggregation rules, Stepien/protection logic, sign-and-trade checks, and rollback-safe execution before replacing the simplified offseason UI.
 
@@ -89,7 +90,7 @@ Execution reality:
 
 - Human/browser QA has not been recorded for the newly implemented Phase 04-08 surfaces.
 - Phase 09 still depends on a human discoverability/rollout verification checkpoint before formal close.
-- Phase 10 requires manual end-to-end acceptance execution using `docs/offseason/verification-checklist.md` before full rollout.
+- Phase 10 local browser acceptance passed using `docs/offseason/verification-checklist.md`; live Supabase persistence and product-owner recap quality sign-off remain.
 - Live account continuity cannot be fully guaranteed without Supabase env and a real auth session.
 - Phase 03 calibration/model changes continue in parallel and can affect draft-teaching outputs if not tracked carefully.
 
@@ -123,6 +124,13 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Normalized lobby display names consistently for create and join paths by trimming whitespace and falling back to `Team N` labels when needed.
 - Updated Playwright smoke startup to use pnpm and the reachable `http://localhost:3000` Vite host, then refreshed stale smoke route assertions to current accessible page copy.
 - Verified with `pnpm test`, package typechecks, focused lobby Vitest coverage, focused solo-draft Playwright coverage, and full `pnpm smoke`.
+
+## Phase 10 Acceptance Update (2026-06-11)
+
+- Executed the offseason simulator from Team Context through Complete in the browser using `docs/offseason/verification-checklist.md`.
+- Verified reload/resume boundaries for Team Context, Coaching Market, Scouting, Trade Market, Draft Night, Free Agency, Recap, and completed recap readability.
+- Fixed two acceptance failures: completed runs being reused from Team Context, and Free Agency signings being blocked by a simplified roster limit below current seeded roster sizes.
+- Updated `docs/offseason/verification-checklist.md` with pass/fail evidence and remaining human sign-off scope.
 
 ## Front-Office Transaction Preview Update (2026-06-11)
 

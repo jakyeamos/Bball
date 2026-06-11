@@ -56,9 +56,13 @@ export function useTeamContext(enabled = true): TeamContextHook {
         throw new ApiError('Offseason Team Context is disabled.', 404);
       }
 
-      const activeRun =
+      const currentRun =
         activeRunQuery.data ??
-        (await apiService.createOffseasonRun(defaultSeasonYear())).run;
+        (await apiService.getActiveOffseasonRun()).run;
+      const activeRun =
+        currentRun?.phase === 'team_context'
+          ? currentRun
+          : (await apiService.createOffseasonRun(defaultSeasonYear())).run;
 
       if (!activeRun) {
         throw new ApiError('Unable to initialize offseason run.', 500);
@@ -88,6 +92,13 @@ export function useTeamContext(enabled = true): TeamContextHook {
 
       if (!activeRun) {
         throw new ApiError('No active offseason run found.', 404);
+      }
+
+      if (activeRun.phase !== 'team_context') {
+        throw new ApiError(
+          `Cannot continue from ${activeRun.phase}. Select a team to start a new offseason run first.`,
+          409
+        );
       }
 
       const response = await apiService.transitionOffseasonRun(

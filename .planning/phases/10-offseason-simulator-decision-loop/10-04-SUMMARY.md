@@ -1,8 +1,9 @@
 ---
 phase: 10-offseason-simulator-decision-loop
 plan: "04"
-status: implemented_pending_human_verification
+status: accepted_pending_product_owner_signoff
 completed: 2026-04-23
+accepted: 2026-06-11
 ---
 
 # Phase 10 Plan 04 Summary
@@ -36,4 +37,10 @@ completed: 2026-04-23
 
 ## Remaining Gate
 
-- Human acceptance checkpoint is still required before final rollout: execute `docs/offseason/verification-checklist.md` end-to-end and record sign-off.
+- Browser acceptance checkpoint executed on 2026-06-11 using `docs/offseason/verification-checklist.md`.
+- Remaining sign-off is qualitative product-owner review of recap copy/design and live Supabase persistence verification outside local-first fallback.
+
+## Acceptance Follow-Up
+
+- Fixed Team Context run reuse so selecting a team after a completed run starts a fresh `team_context` run before continuing to Coaching Market.
+- Raised the simplified offseason roster limit to match seeded roster reality so the Free Agency signing path can complete during the MVP decision loop.

@@ -422,7 +422,7 @@ export function createEmptyFreeAgencyState(): OffseasonFreeAgencyState {
     stage: 'target_signings',
     salary_cap_millions: 136,
     cap_space_millions: 36,
-    roster_limit: 15,
+    roster_limit: 21,
     signings: [],
   };
 }
