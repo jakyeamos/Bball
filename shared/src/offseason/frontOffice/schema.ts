@@ -37,6 +37,11 @@ export type FrontOfficeTeamTimeline =
   | 'contending';
 export type FrontOfficeDraftAssetKind = 'pick' | 'swap';
 export type FrontOfficeDraftPickRound = 1 | 2;
+export type FrontOfficeTransactionMovementKind =
+  | 'player'
+  | 'draft_asset'
+  | 'cash'
+  | 'exception';
 
 export interface FrontOfficeRuleCitation {
   rule_id: string;
@@ -61,6 +66,74 @@ export interface FrontOfficeValidationReport {
   status: FrontOfficeValidationStatus;
   issues: FrontOfficeValidationIssue[];
   checked_at: string;
+}
+
+export interface FrontOfficeTransactionPlayerMovement {
+  kind: 'player';
+  from_team_id: number;
+  to_team_id: number;
+  player_id: number;
+}
+
+export interface FrontOfficeTransactionDraftAssetMovement {
+  kind: 'draft_asset';
+  from_team_id: number;
+  to_team_id: number;
+  asset_id: string;
+}
+
+export interface FrontOfficeTransactionCashMovement {
+  kind: 'cash';
+  from_team_id: number;
+  to_team_id: number;
+  amount_millions: number;
+}
+
+export interface FrontOfficeTransactionExceptionMovement {
+  kind: 'exception';
+  from_team_id: number;
+  to_team_id: number;
+  exception_id: string;
+  amount_millions: number;
+}
+
+export type FrontOfficeTransactionMovement =
+  | FrontOfficeTransactionPlayerMovement
+  | FrontOfficeTransactionDraftAssetMovement
+  | FrontOfficeTransactionCashMovement
+  | FrontOfficeTransactionExceptionMovement;
+
+export interface FrontOfficeTransactionGraph {
+  id: string;
+  league_date: string;
+  created_by_team_id: number;
+  team_ids: number[];
+  movements: FrontOfficeTransactionMovement[];
+}
+
+export interface FrontOfficeTransactionTeamDelta {
+  team_id: number;
+  outgoing_player_ids: number[];
+  incoming_player_ids: number[];
+  outgoing_draft_asset_ids: string[];
+  incoming_draft_asset_ids: string[];
+  outgoing_exception_ids: string[];
+  incoming_exception_ids: string[];
+  outgoing_cash_millions: number;
+  incoming_cash_millions: number;
+  salary_out_millions: number;
+  salary_in_millions: number;
+  salary_delta_millions: number;
+  tax_salary_after_millions: number;
+  standard_roster_count_after: number;
+}
+
+export interface FrontOfficeTransactionPreview {
+  graph_id: string;
+  validation_report: FrontOfficeValidationReport;
+  team_deltas: FrontOfficeTransactionTeamDelta[];
+  citations: FrontOfficeRuleCitation[];
+  suggested_fixes: string[];
 }
 
 export interface FrontOfficeTeamIdentity {

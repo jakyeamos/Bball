@@ -57,6 +57,35 @@ export const CBA_2026_CITATIONS: FrontOfficeRuleCitation[] = [
     summary:
       'Teams above apron thresholds face transaction restrictions that validators must consider.',
   },
+  {
+    rule_id: 'transaction-graph-shape',
+    title: 'Transaction graph participants and directed assets',
+    source: 'nba_cba',
+    locator:
+      'CBA trade framework; exact article/section to be attached when graph validators are expanded',
+    url: 'https://nbpa.com/cba',
+    summary:
+      'A trade preview must identify every participating team and each asset movement before legality can be evaluated.',
+  },
+  {
+    rule_id: 'trade-player-eligibility',
+    title: 'Player trade eligibility restrictions',
+    source: 'nba_cba',
+    locator:
+      'CBA player transaction restrictions; exact article/section to be attached when date validators are expanded',
+    url: 'https://nbpa.com/cba',
+    summary:
+      'Players can be restricted from trade before eligibility dates or during recently traded restriction windows.',
+  },
+  {
+    rule_id: 'trade-cash-limit',
+    title: 'Annual trade cash limits',
+    source: 'nba_cba_101',
+    locator: 'NBA CBA 101: trade cash and team transaction rules',
+    url: 'https://cms.nba.com/wp-content/uploads/sites/4/2024/11/2024-25-CBA-101.pdf',
+    summary:
+      'Trade cash sent or received by a team cannot exceed the season cash limit tracked by CBA constants.',
+  },
 ];
 
 export function findCbaCitation(
