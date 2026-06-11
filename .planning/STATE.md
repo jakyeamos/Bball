@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Solo draft lobby readiness hardening complete; awaiting Phase 10 human acceptance gate
-stopped_at: Verified one-team lobby creation, readiness, draft completion, and smoke coverage
-last_updated: "2026-06-11T02:00:00.000-04:00"
+status: Front-office transaction graph preview slice implemented; awaiting deeper CBA rule expansion
+stopped_at: Added preview-only transaction graph validation path and verified focused/full checks
+last_updated: "2026-06-11T10:00:00.000-04:00"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -20,7 +20,7 @@ progress:
 See: `.planning/PROJECT.md` for product definition and `.planning/ROADMAP.md` for the execution-truth snapshot synced on 2026-04-22.
 
 **Core value:** The platform only succeeds if users' basketball IQ genuinely improves - education comes before surface polish.
-**Current focus:** Phase 10 — offseason-simulator-decision-loop
+**Current focus:** Front-office offseason simulator rules-engine expansion after Phase 10
 
 ## Current Position
 
@@ -31,6 +31,7 @@ Execution reality:
 
 - Runtime hardening on 2026-04-30 fixed the shared package format regression that caused `exports is not defined`, restored built-server startup against canonical NBA seed artifacts, and cleaned local browser QA startup on alternate Vite ports.
 - Solo draft lobby hardening on 2026-06-11 confirmed one-team lobbies start ready with assigned team IDs, normalized create/join display names, and Playwright smoke coverage through draft recap.
+- Front-office rules-engine work on 2026-06-11 added the first transaction-graph legality preview path with directed shared graph types, server-owned validation, CBA citations, team deltas, suggested fixes, and `/api/front-office/transactions/preview`.
 - Implementation is landed through Phase 09.
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
 - Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
@@ -82,6 +83,7 @@ Execution reality:
 - Run Phase 09 human verification gate for GM entry discoverability, threshold recommendation, and disabled-flag behavior.
 - Run Phase 10 human verification gate for full-loop resume/completion and recap quality sign-off.
 - Decide whether to formally close Phases 04-09 after verification or keep the implementation/manual-QA split explicit.
+- Expand the front-office transaction preview validator into full salary matching, apron restrictions, aggregation rules, Stepien/protection logic, sign-and-trade checks, and rollback-safe execution before replacing the simplified offseason UI.
 
 ### Blockers/Concerns
 
@@ -121,3 +123,12 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Normalized lobby display names consistently for create and join paths by trimming whitespace and falling back to `Team N` labels when needed.
 - Updated Playwright smoke startup to use pnpm and the reachable `http://localhost:3000` Vite host, then refreshed stale smoke route assertions to current accessible page copy.
 - Verified with `pnpm test`, package typechecks, focused lobby Vitest coverage, focused solo-draft Playwright coverage, and full `pnpm smoke`.
+
+## Front-Office Transaction Preview Update (2026-06-11)
+
+- Extended `shared/src/offseason/frontOffice/schema.ts` with directed transaction graph movement types and preview/team-delta output contracts.
+- Added `server/src/offseason/cba/validateTransactionGraph.ts`, which validates the supplied front-office dataset first and then fails closed on graph shape, references, trade-date eligibility, draft asset ownership/encumbrance, cash limits, exception availability, and post-trade standard roster limit.
+- Added CBA citation ids for transaction graph shape, player trade eligibility, and trade cash limits.
+- Mounted preview-only `POST /api/front-office/transactions/preview`; it returns validation output and does not execute or persist transaction state.
+- Added focused shared/server tests and documented the slice in `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md`.
+- Verified with `pnpm typecheck`, `pnpm test`, `pnpm --dir server lint`, and `pnpm build`; Vite still reports the known client chunk-size warning.

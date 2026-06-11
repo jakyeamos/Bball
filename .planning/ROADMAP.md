@@ -21,6 +21,7 @@ The roadmap below reflects the code that is actually present in the repo as of 2
 - **Phase 8 now includes** profile metrics/recommendations plus login/account-upgrade surfaces with guest fallback when Supabase admin env is absent.
 - **Phase 9 foundation implementation is now in repo** (schema-versioned run state, Team Context, GM entry/recommendation), with one remaining human verification gate for discoverability/rollout safety.
 - **Phase 10 implementation is now complete through 10-04** (coaching market, scouting uncertainty, trade fit explanations, draft night, free agency, and recap), with a final human acceptance gate pending before full rollout.
+- **Front-office rules-engine expansion has started beyond the simplified Phase 10 loop.** The first transaction-graph legality preview path is implemented with directed shared graph types, dataset-first CBA validation, structured preview deltas/citations/suggested fixes, and `POST /api/front-office/transactions/preview`; execution, full salary matching, apron restrictions, aggregation, Stepien/protection logic, sign-and-trades, and UI replacement remain follow-up slices.
 - **The working tree also contains in-flight data/model work beyond the original Phase 3 close-out**: calibration artifacts/scripts, role inference, advanced player-model tests, and richer player valuation logic are present but were never folded back into the roadmap.
 
 ## Phases
