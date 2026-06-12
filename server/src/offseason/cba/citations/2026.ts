@@ -58,6 +58,15 @@ export const CBA_2026_CITATIONS: FrontOfficeRuleCitation[] = [
       'Teams above apron thresholds face transaction restrictions that validators must consider.',
   },
   {
+    rule_id: 'trade-salary-matching',
+    title: 'Trade salary matching',
+    source: 'nba_cba_101',
+    locator: 'NBA CBA 101: Traded Player Exceptions',
+    url: 'https://cms.nba.com/wp-content/uploads/sites/4/2024/11/2024-25-CBA-101.pdf',
+    summary:
+      'Over-cap teams must fit incoming player salary within the applicable traded-player exception amount.',
+  },
+  {
     rule_id: 'transaction-graph-shape',
     title: 'Transaction graph participants and directed assets',
     source: 'nba_cba',
@@ -85,6 +94,16 @@ export const CBA_2026_CITATIONS: FrontOfficeRuleCitation[] = [
     url: 'https://cms.nba.com/wp-content/uploads/sites/4/2024/11/2024-25-CBA-101.pdf',
     summary:
       'Trade cash sent or received by a team cannot exceed the season cash limit tracked by CBA constants.',
+  },
+  {
+    rule_id: 'draft-stepien',
+    title: 'Stepien and future first-round pick restrictions',
+    source: 'nba_cba',
+    locator:
+      'CBA draft-pick trade restrictions; exact article/section to be attached when pick ledger is expanded',
+    url: 'https://nbpa.com/cba',
+    summary:
+      'Teams cannot trade future first-round picks in a way that leaves consecutive future drafts without a first-round pick.',
   },
 ];
 

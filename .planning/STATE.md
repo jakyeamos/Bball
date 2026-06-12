@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 10 browser acceptance passed locally; front-office transaction graph preview slice remains ready for deeper CBA rule expansion
-stopped_at: Verified offseason decision loop end-to-end in browser with reload boundaries and completion
-last_updated: "2026-06-11T10:08:00.000-04:00"
+status: Phase 10 browser acceptance passed locally; front-office transaction preview now covers salary matching, apron restrictions, and Stepien/protection checks before execution
+stopped_at: Expanded transaction legality preview and verified repo lint/type/test/build gates
+last_updated: "2026-06-12T17:45:00.000-04:00"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -32,6 +32,7 @@ Execution reality:
 - Runtime hardening on 2026-04-30 fixed the shared package format regression that caused `exports is not defined`, restored built-server startup against canonical NBA seed artifacts, and cleaned local browser QA startup on alternate Vite ports.
 - Solo draft lobby hardening on 2026-06-11 confirmed one-team lobbies start ready with assigned team IDs, normalized create/join display names, and Playwright smoke coverage through draft recap.
 - Front-office rules-engine work on 2026-06-11 added the first transaction-graph legality preview path with directed shared graph types, server-owned validation, CBA citations, team deltas, suggested fixes, and `/api/front-office/transactions/preview`.
+- Front-office rules-engine work on 2026-06-12 expanded that preview validator with over-cap salary matching, first/second-apron restrictions, hard-cap checks, Stepien rolling future-first coverage, and protected-pick conversion fallback validation.
 - Implementation is landed through Phase 09.
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
 - Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
@@ -84,7 +85,7 @@ Execution reality:
 - Run Phase 09 human verification gate for GM entry discoverability, threshold recommendation, and disabled-flag behavior.
 - Complete product-owner qualitative sign-off for Phase 10 recap quality and run live Supabase persistence verification when env is available.
 - Decide whether to formally close Phases 04-09 after verification or keep the implementation/manual-QA split explicit.
-- Expand the front-office transaction preview validator into full salary matching, apron restrictions, aggregation rules, Stepien/protection logic, sign-and-trade checks, and rollback-safe execution before replacing the simplified offseason UI.
+- Expand the front-office transaction preview validator into sign-and-trade/base-year/minimum-salary special cases, generated/consumed trade exception accounting, swap-right conveyance validation, and rollback-safe execution before replacing the simplified offseason UI.
 
 ### Blockers/Concerns
 
@@ -140,3 +141,10 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Mounted preview-only `POST /api/front-office/transactions/preview`; it returns validation output and does not execute or persist transaction state.
 - Added focused shared/server tests and documented the slice in `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md`.
 - Verified with `pnpm typecheck`, `pnpm test`, `pnpm --dir server lint`, and `pnpm build`; Vite still reports the known client chunk-size warning.
+
+## Front-Office Transaction Legality Expansion (2026-06-12)
+
+- Extended `validateTransactionGraph` with 2026 trade salary matching constants, over-cap incoming salary limits, first-apron no-added-salary checks, second-apron cash/aggregation restrictions, and first/second-apron hard-cap checks.
+- Added Stepien validation for rolling two-year future first-round coverage and protected-pick conversion fallback ownership/tradeability checks before execution.
+- Added focused Vitest coverage for salary matching, first-apron salary, second-apron cash, second-apron aggregation, Stepien, and protected-pick conversion failures.
+- Verified with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`; `pnpm audit:dead-code` still fails on the known broad Knip backlog.

@@ -10,6 +10,8 @@ export interface CbaSeasonConstants {
   two_way_roster_limit: number;
   max_cash_received_millions: number;
   trade_cash_limit_millions: number;
+  trade_matching_allowance_millions: number;
+  expanded_trade_exception_fixed_millions: number;
 }
 
 export const CBA_2026_CONSTANTS: CbaSeasonConstants = {
@@ -24,4 +26,6 @@ export const CBA_2026_CONSTANTS: CbaSeasonConstants = {
   two_way_roster_limit: 3,
   max_cash_received_millions: 7.6,
   trade_cash_limit_millions: 7.6,
+  trade_matching_allowance_millions: 0.25,
+  expanded_trade_exception_fixed_millions: 8.525,
 };

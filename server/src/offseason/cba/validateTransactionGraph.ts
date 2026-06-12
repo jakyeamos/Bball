@@ -71,8 +71,78 @@ function firstSeasonSalary(
   );
 }
 
+function salaryMatchingAllowance(postTradeSalaryMillions: number): number {
+  return postTradeSalaryMillions > CBA_2026_CONSTANTS.first_apron_millions
+    ? 0
+    : CBA_2026_CONSTANTS.trade_matching_allowance_millions;
+}
+
+function salaryMatchLimit(
+  salaryOutMillions: number,
+  postTradeSalaryMillions: number
+): number {
+  const allowance = salaryMatchingAllowance(postTradeSalaryMillions);
+  const expandedExceptionLimit = Math.max(
+    Math.min(
+      salaryOutMillions * 2 + allowance,
+      salaryOutMillions +
+        CBA_2026_CONSTANTS.expanded_trade_exception_fixed_millions
+    ),
+    salaryOutMillions * 1.25 + allowance
+  );
+
+  if (postTradeSalaryMillions > CBA_2026_CONSTANTS.first_apron_millions) {
+    return salaryOutMillions;
+  }
+
+  return expandedExceptionLimit;
+}
+
+function usesAggregatedSalary(delta: FrontOfficeTransactionTeamDelta): boolean {
+  return (
+    delta.outgoing_player_ids.length > 1 && delta.incoming_player_ids.length > 0
+  );
+}
+
 function isAfter(date: string | null, leagueDate: string): boolean {
   return typeof date === 'string' && Date.parse(date) > Date.parse(leagueDate);
+}
+
+function hasFutureFirstAfterTrade(
+  dataset: FrontOfficeLeagueDataset,
+  teamId: number,
+  year: number,
+  outgoingDraftAssetIds: Set<string>
+): boolean {
+  return dataset.draft_assets.some(
+    (asset) =>
+      asset.kind === 'pick' &&
+      asset.round === 1 &&
+      asset.year === year &&
+      asset.current_owner_team_id === teamId &&
+      !asset.encumbered &&
+      !outgoingDraftAssetIds.has(asset.id)
+  );
+}
+
+function validateStepienWindows(
+  dataset: FrontOfficeLeagueDataset,
+  teamId: number,
+  outgoingDraftAssetIds: Set<string>
+): boolean {
+  const firstFutureYear = dataset.season_year;
+  const lastFutureYear = dataset.season_year + 7;
+
+  for (let year = firstFutureYear; year < lastFutureYear; year += 1) {
+    if (
+      !hasFutureFirstAfterTrade(dataset, teamId, year, outgoingDraftAssetIds) &&
+      !hasFutureFirstAfterTrade(dataset, teamId, year + 1, outgoingDraftAssetIds)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function collectCitations(
@@ -121,6 +191,27 @@ function buildSuggestedFixes(
     fixes.push('Balance incoming and outgoing standard roster players before execution.');
   }
 
+  if (issueIds.has('salary-matching')) {
+    fixes.push('Add outgoing salary, remove incoming salary, or create cap room before execution.');
+  }
+
+  if (
+    issueIds.has('first-apron-incoming-salary') ||
+    issueIds.has('second-apron-cash') ||
+    issueIds.has('second-apron-aggregation') ||
+    issueIds.has('hard-cap-first-apron') ||
+    issueIds.has('hard-cap-second-apron')
+  ) {
+    fixes.push('Rework the trade so apron teams do not add restricted salary, cash, or aggregation.');
+  }
+
+  if (
+    issueIds.has('draft-asset-protection-conveyance') ||
+    issueIds.has('draft-stepien')
+  ) {
+    fixes.push('Replace the pick package with draft assets that preserve legal future first-round coverage.');
+  }
+
   return fixes;
 }
 
@@ -141,6 +232,7 @@ export function validateTransactionGraph(
   const indexes = buildIndexes(dataset);
   const deltas = new Map<number, FrontOfficeTransactionTeamDelta>();
   const graphTeamIds = new Set(graph.team_ids);
+  const outgoingDraftAssetIdsByTeam = new Map<number, Set<string>>();
 
   for (const teamId of graph.team_ids) {
     const team = indexes.teams.get(teamId);
@@ -310,8 +402,41 @@ export function validateTransactionGraph(
         });
       }
 
+      for (const protection of asset.protections) {
+        if (protection.converts_to_asset_ids.length === 0) {
+          addIssue(issues, {
+            id: 'draft-asset-protection-conveyance',
+            message: `Draft asset ${movement.asset_id} has protection terms without conversion fallback assets.`,
+            team_id: movement.from_team_id,
+            asset_id: movement.asset_id,
+            rule_ids: ['draft-pick-ledger', 'draft-stepien'],
+          });
+        }
+
+        for (const conversionAssetId of protection.converts_to_asset_ids) {
+          const conversionAsset = indexes.draftAssets.get(conversionAssetId);
+          if (
+            !conversionAsset ||
+            conversionAsset.current_owner_team_id !== movement.from_team_id ||
+            conversionAsset.encumbered
+          ) {
+            addIssue(issues, {
+              id: 'draft-asset-protection-conveyance',
+              message: `Draft asset ${movement.asset_id} has protection conversion ${conversionAssetId} that is not controlled as a tradeable fallback by sending team ${movement.from_team_id}.`,
+              team_id: movement.from_team_id,
+              asset_id: movement.asset_id,
+              rule_ids: ['draft-pick-ledger', 'draft-stepien'],
+            });
+          }
+        }
+      }
+
       fromDelta.outgoing_draft_asset_ids.push(movement.asset_id);
       toDelta.incoming_draft_asset_ids.push(movement.asset_id);
+      const outgoingDraftAssetIds =
+        outgoingDraftAssetIdsByTeam.get(movement.from_team_id) ?? new Set<string>();
+      outgoingDraftAssetIds.add(movement.asset_id);
+      outgoingDraftAssetIdsByTeam.set(movement.from_team_id, outgoingDraftAssetIds);
       continue;
     }
 
@@ -393,6 +518,109 @@ export function validateTransactionGraph(
     delta.tax_salary_after_millions = money(
       delta.tax_salary_after_millions + delta.salary_delta_millions
     );
+
+    const team = indexes.teams.get(delta.team_id);
+    if (!team) {
+      continue;
+    }
+
+    if (
+      delta.incoming_player_ids.length > 0 &&
+      delta.salary_in_millions > 0 &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.salary_cap_millions
+    ) {
+      const allowedIncomingSalary = money(
+        salaryMatchLimit(delta.salary_out_millions, delta.tax_salary_after_millions)
+      );
+
+      if (delta.salary_in_millions > allowedIncomingSalary) {
+        addIssue(issues, {
+          id: 'salary-matching',
+          message: `Team ${delta.team_id} receives ${delta.salary_in_millions}M in salary but can match only ${allowedIncomingSalary}M.`,
+          team_id: delta.team_id,
+          rule_ids: ['trade-salary-matching', 'salary-cap-system'],
+        });
+      }
+    }
+
+    if (
+      delta.salary_in_millions > delta.salary_out_millions &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.first_apron_millions
+    ) {
+      addIssue(issues, {
+        id: 'first-apron-incoming-salary',
+        message: `Team ${delta.team_id} would finish above the first apron while taking back more salary than it sends out.`,
+        team_id: delta.team_id,
+        rule_ids: ['apron-system', 'trade-salary-matching'],
+      });
+    }
+
+    if (
+      delta.outgoing_cash_millions > 0 &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.second_apron_millions
+    ) {
+      addIssue(issues, {
+        id: 'second-apron-cash',
+        message: `Team ${delta.team_id} would finish above the second apron and cannot send cash in a trade.`,
+        team_id: delta.team_id,
+        rule_ids: ['apron-system', 'trade-cash-limit'],
+      });
+    }
+
+    if (
+      usesAggregatedSalary(delta) &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.second_apron_millions
+    ) {
+      addIssue(issues, {
+        id: 'second-apron-aggregation',
+        message: `Team ${delta.team_id} would finish above the second apron and cannot aggregate outgoing salaries.`,
+        team_id: delta.team_id,
+        rule_ids: ['apron-system', 'trade-salary-matching'],
+      });
+    }
+
+    if (
+      team.hard_capped_at_first_apron &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.first_apron_millions
+    ) {
+      addIssue(issues, {
+        id: 'hard-cap-first-apron',
+        message: `Team ${delta.team_id} is hard-capped at the first apron and would exceed it after the transaction.`,
+        team_id: delta.team_id,
+        rule_ids: ['apron-system'],
+      });
+    }
+
+    if (
+      team.hard_capped_at_second_apron &&
+      delta.tax_salary_after_millions > CBA_2026_CONSTANTS.second_apron_millions
+    ) {
+      addIssue(issues, {
+        id: 'hard-cap-second-apron',
+        message: `Team ${delta.team_id} is hard-capped at the second apron and would exceed it after the transaction.`,
+        team_id: delta.team_id,
+        rule_ids: ['apron-system'],
+      });
+    }
+  }
+
+  for (const [teamId, outgoingDraftAssetIds] of outgoingDraftAssetIdsByTeam) {
+    const outgoingFirstRoundPick = [...outgoingDraftAssetIds].some((assetId) => {
+      const asset = indexes.draftAssets.get(assetId);
+      return asset?.kind === 'pick' && asset.round === 1;
+    });
+
+    if (
+      outgoingFirstRoundPick &&
+      !validateStepienWindows(dataset, teamId, outgoingDraftAssetIds)
+    ) {
+      addIssue(issues, {
+        id: 'draft-stepien',
+        message: `Team ${teamId} would not retain first-round coverage in every rolling two-year future draft window after the pick trade.`,
+        team_id: teamId,
+        rule_ids: ['draft-stepien', 'draft-pick-ledger'],
+      });
+    }
   }
 
   const report = buildValidationReport(issues, checkedAt);
