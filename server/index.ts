@@ -30,6 +30,7 @@ import adminLessonsRouter from './src/routes/adminLessons';
 import adminDailyChallengeRouter from './src/routes/adminDailyChallenge';
 import adminTagsRouter from './src/routes/adminTags';
 import accountUpgradeRouter from './src/routes/internal/accountUpgrade';
+import rlsProbeRouter from './src/routes/internal/rlsProbe';
 import { aggregateTeam } from './services/aggregation';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, cleanupOldSessions } from './managers/sessionManager';
 import { validateSupabaseAdminEnv } from './src/lib/supabaseAdmin';
@@ -88,6 +89,9 @@ app.use('/api/admin/lessons', adminLessonsRouter);
 app.use('/api/admin/daily-challenge', adminDailyChallengeRouter);
 app.use('/api/admin/tags', adminTagsRouter);
 app.use('/internal', accountUpgradeRouter);
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/internal', rlsProbeRouter);
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {

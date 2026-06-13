@@ -20,12 +20,22 @@ completed: 2026-04-01
 - `client/src/context/AuthContext.tsx`
 - `client/src/lib/supabaseClient.ts`
 - `server/src/routes/internal/accountUpgrade.ts`
+- `server/src/routes/internal/rlsProbe.ts`
+- `server/scripts/smokeSupabaseAccountUpgrade.ts`
+- `docs/supabase-phase8-smoke.md`
 
 ## Verification
 
 - `npm run build --workspace=client`
 - `npm run build --workspace=server`
+- `pnpm --filter nba-draft-sim-server typecheck`
+
+## Live Supabase Smoke Workflow
+
+- Added `pnpm --filter nba-draft-sim-server smoke:supabase:phase8`.
+- The smoke creates a real anonymous Supabase user, seeds proof rows in `lesson_progress`, `daily_challenge_attempts`, and `offseason_runs`, runs `/internal/rls-probe`, calls `/internal/account-upgrade`, signs in from a fresh second session, and asserts the same rows are visible through RLS.
+- Exact operator setup and pass/fail criteria are documented in `docs/supabase-phase8-smoke.md`.
 
 ## Outstanding
 
-- True anonymous-to-account continuity and cross-device sync still require live Supabase env vars plus manual verification in multiple sessions/devices.
+- Rollout sign-off now requires running `pnpm --filter nba-draft-sim-server smoke:supabase:phase8` against the target Supabase project and recording the PASS output plus project/ref, timestamp, and commit SHA.

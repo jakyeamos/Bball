@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 10 browser acceptance passed locally; front-office transaction preview now covers salary matching, apron restrictions, and Stepien/protection checks before execution
-stopped_at: Expanded transaction legality preview and verified repo lint/type/test/build gates
-last_updated: "2026-06-12T17:45:00.000-04:00"
+status: Phase 8 live Supabase verification now has a repeatable smoke workflow; execution against target project remains for rollout sign-off
+stopped_at: Added Phase 8 Supabase smoke harness and operator documentation
+last_updated: "2026-06-13T00:00:00.000-04:00"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -35,7 +35,7 @@ Execution reality:
 - Front-office rules-engine work on 2026-06-12 expanded that preview validator with over-cap salary matching, first/second-apron restrictions, hard-cap checks, Stepien rolling future-first coverage, and protected-pick conversion fallback validation.
 - Implementation is landed through Phase 09.
 - Phase 04 still has release-oriented follow-up: feature-flag, SEO, and browser/manual verification.
-- Phase 08 still needs live Supabase verification for anonymous upgrade continuity and second-device sync.
+- Phase 08 now has a repeatable live Supabase smoke workflow for anonymous upgrade continuity and second-device sync; rollout sign-off still requires running it against the target Supabase project and recording PASS evidence.
 - Phase 09 still needs browser-level human verification for GM discoverability and rollout-gate behavior.
 - Phase 10 passed local browser acceptance on 2026-06-11; remaining sign-off is product-owner recap quality review and live Supabase persistence verification.
 - Phase 03 has a separate player-model / calibration extension still in progress inside the repo.
@@ -81,7 +81,7 @@ Execution reality:
 - Continue bug-hunting/product hardening from a now-booting baseline; client/server builds and server tests pass after the shared-package/runtime fixes.
 - Execute browser/manual QA for lesson runtimes, admin flows, library/discussion surfaces, and daily challenge loops.
 - Verify the feature-flag / SEO rollout checklist for public lesson and library surfaces.
-- Run live Supabase upgrade continuity and second-device sync checks for Phase 08.
+- Run `pnpm --filter nba-draft-sim-server smoke:supabase:phase8` against the target Supabase project and record PASS evidence using `docs/supabase-phase8-smoke.md`.
 - Run Phase 09 human verification gate for GM entry discoverability, threshold recommendation, and disabled-flag behavior.
 - Complete product-owner qualitative sign-off for Phase 10 recap quality and run live Supabase persistence verification when env is available.
 - Decide whether to formally close Phases 04-09 after verification or keep the implementation/manual-QA split explicit.
@@ -92,7 +92,7 @@ Execution reality:
 - Human/browser QA has not been recorded for the newly implemented Phase 04-08 surfaces.
 - Phase 09 still depends on a human discoverability/rollout verification checkpoint before formal close.
 - Phase 10 local browser acceptance passed using `docs/offseason/verification-checklist.md`; live Supabase persistence and product-owner recap quality sign-off remain.
-- Live account continuity cannot be fully guaranteed without Supabase env and a real auth session.
+- Live account continuity cannot be signed off until the Phase 8 smoke workflow passes against the target Supabase project with real auth sessions.
 - Phase 03 calibration/model changes continue in parallel and can affect draft-teaching outputs if not tracked carefully.
 
 ## Session Continuity
@@ -148,3 +148,11 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Added Stepien validation for rolling two-year future first-round coverage and protected-pick conversion fallback ownership/tradeability checks before execution.
 - Added focused Vitest coverage for salary matching, first-apron salary, second-apron cash, second-apron aggregation, Stepien, and protected-pick conversion failures.
 - Verified with `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`; `pnpm audit:dead-code` still fails on the known broad Knip backlog.
+
+## Phase 8 Supabase Smoke Workflow Update (2026-06-13)
+
+- Mounted the existing `/internal/rls-probe` route in non-production runtimes so the documented RLS probe can run through the local smoke server.
+- Added `server/scripts/smokeSupabaseAccountUpgrade.ts` and `pnpm --filter nba-draft-sim-server smoke:supabase:phase8`.
+- The smoke creates an anonymous Supabase user, seeds proof rows in `lesson_progress`, `daily_challenge_attempts`, and `offseason_runs`, verifies RLS scenarios, upgrades through `/internal/account-upgrade`, then signs in from a fresh second session and verifies the rows are visible through RLS under the same user id.
+- Added `docs/supabase-phase8-smoke.md` with Supabase setup, command sequence, pass/fail criteria, common failure causes, and evidence to record.
+- Local verification so far: `pnpm --filter nba-draft-sim-server typecheck`. Live PASS still requires target Supabase env.

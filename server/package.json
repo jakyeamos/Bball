@@ -11,6 +11,7 @@
     "calibrate:sim": "tsx scripts/calibrateDraftSim.ts",
     "seed:nba": "tsx scripts/seedNbaIdentity.ts",
     "seed:nba:offline": "tsx scripts/seedNbaIdentity.ts --offline",
+    "smoke:supabase:phase8": "tsx scripts/smokeSupabaseAccountUpgrade.ts",
     "refresh:nba-cache": "tsx scripts/refreshNbaIdentityCache.ts",
     "test": "vitest run",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
