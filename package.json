@@ -10,7 +10,10 @@
     "typecheck": "pnpm --filter @nba-draft-sim/shared typecheck && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client typecheck && pnpm --filter nba-draft-sim-server typecheck",
     "test": "pnpm --filter @nba-draft-sim/shared test -- --run && pnpm --filter nba-draft-sim-server test",
     "smoke": "pnpm exec playwright test",
-    "audit:dead-code": "knip"
+    "audit:dead-code": "knip",
+    "env:check": "node scripts/validate-env.mjs",
+    "secret:scan": "node scripts/secret-scan.mjs",
+    "dependency:security": "pnpm audit --audit-level high"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
