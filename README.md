@@ -8,13 +8,42 @@ Court Vision is a free, web-first basketball IQ training platform that helps use
 
 The product blends structured lessons, daily challenges, and simulation-based capstones (draft + offseason) into a single learning loop: **learn -> apply -> reflect -> improve**.
 
-## Why This Exists
+![Court Vision product snapshot](docs/assets/readme-snapshot.png)
 
-Most basketball products optimize for entertainment, hot takes, or fantasy outcomes. Court Vision is built for practical understanding:
+## Why This Matters
 
-- explanation-first learning instead of debate-first content
-- process quality over single outcome results
-- realistic uncertainty in decisions (especially for scouting, drafting, and team building)
+### Problem
+
+Most basketball products optimize for entertainment, hot takes, or fantasy outcomes. They rarely teach the process behind spacing reads, lineup tradeoffs, scouting uncertainty, or cap/roster decisions.
+
+### Who It Helps
+
+Court Vision is for fans, players, students, and early-career analysts who want to understand why basketball decisions are good or bad, not just whether the final result worked.
+
+### What I Built
+
+I built a TypeScript monorepo for a basketball IQ learning platform with lessons, daily challenges, progress tracking, an admin CMS, draft simulation, and offseason simulation. The product teaches Player IQ, Coach IQ, and GM IQ through a loop of short instruction, applied decisions, and post-decision reflection.
+
+### Technical Decisions
+
+- React, Vite, TypeScript, and Tailwind power the web client.
+- Express and Socket.io support API-backed and real-time learning/simulation flows.
+- A shared package keeps client/server contracts and reusable schemas aligned.
+- The app stays guest-first and local-first where possible, with Supabase-backed paths available when configured.
+- The same player-feature vocabulary is reused across lessons, draft decisions, and offseason team-building surfaces.
+
+### How To Run It
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm test
+```
+
+### What I Would Improve Next
+
+The next work is deeper visual consistency across library, track, profile, draft, and offseason screens, plus live Supabase verification for account upgrade and second-device continuity.
 
 ## Monorepo Structure
 
