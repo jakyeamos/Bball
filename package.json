@@ -6,11 +6,13 @@
     "dev": "pnpm -r --parallel --filter nba-draft-sim-client --filter nba-draft-sim-server dev",
     "build": "pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build && pnpm --filter nba-draft-sim-server build",
     "start": "pnpm --filter nba-draft-sim-server start",
+    "format": "pnpm --filter nba-draft-sim-client lint -- --fix-dry-run && pnpm --filter nba-draft-sim-server lint -- --fix-dry-run",
     "lint": "pnpm --filter nba-draft-sim-client lint && pnpm --filter nba-draft-sim-server lint",
     "typecheck": "pnpm --filter @nba-draft-sim/shared typecheck && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client typecheck && pnpm --filter nba-draft-sim-server typecheck",
     "test": "pnpm --filter @nba-draft-sim/shared test -- --run && pnpm --filter nba-draft-sim-server test",
     "smoke": "pnpm exec playwright test",
     "audit:dead-code": "knip",
+    "pre-pr": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "env:check": "node scripts/validate-env.mjs",
     "secret:scan": "node scripts/secret-scan.mjs",
     "dependency:security": "pnpm audit --audit-level high"

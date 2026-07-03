@@ -1,0 +1,2 @@
+[quality_runner]
+scan_exclusions = [".venv-nba"]
