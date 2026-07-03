@@ -5,7 +5,7 @@ statusLabel: "front-office rules engine expanding"
 nextStep: "Add sign-and-trade/base-year/minimum-salary special cases, generated/consumed trade exception accounting, swap conveyance validation, and rollback-safe execution."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
-lastUpdated: "2026-06-12"
+lastUpdated: "2026-07-02"
 quality:
   format: unknown
   lint: pass
@@ -49,6 +49,8 @@ On 2026-06-11, the transaction graph preview slice passed `pnpm typecheck`, `pnp
 
 On 2026-06-12, the transaction legality expansion passed `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`; the build still reports the existing Vite chunk-size warning. `pnpm audit:dead-code` still fails on the known broad Knip backlog. No formatter or browser smoke command was run for this backend-only slice.
 
+On 2026-07-02, QR triage added root `format` and `pre-pr` scripts plus `.quality-runner.toml` to exclude the local `.venv-nba` dependency environment from QR structural scans. Quality Runner 0.2.1 run `triage-20260702-Bballedu` reports no missing repo-owned capabilities and remains `planned` because broad structural findings remain. Direct `pnpm format` verification was blocked by pnpm dependency build approval for `esbuild` after dependency restoration.
+
 ## Recent Documentation Updates
 
 - 2026-05-18: Added or expanded README coverage for project and subproject roots so workspace documentation inventory is complete.
@@ -56,3 +58,4 @@ On 2026-06-12, the transaction legality expansion passed `pnpm lint`, `pnpm type
 - 2026-05-19: Ported the refreshed Court Vision shell and token-backed simulator panels into `/draft-sim` plus all offseason simulator phase pages, including shared notices, action styles, controls, and phase navigation. Verified `pnpm --dir client typecheck`, `pnpm --dir client lint`, `pnpm --dir client build`, and in-app browser smoke checks for `/draft-sim` and `/offseason/team-context`.
 - 2026-06-11: Added `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md` to record the preview-only transaction graph slice and its current boundaries.
 - 2026-06-12: Updated the front-office transaction preview plan, roadmap, and state files for salary matching, apron, Stepien, and protected-pick validation coverage.
+- 2026-07-02: Recorded QR triage gate coverage and remaining broad structural-debt classification.
