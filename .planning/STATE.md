@@ -66,6 +66,7 @@ Execution reality:
 
 ### Roadmap Evolution
 
+- 2026-07-04: Phase 15 planned: QR remediation: bballedu from QR run qr-fleet-continue-20260704-bballedu.
 - Phase 11 added: NBA Big Board Creator — private-first prospect evaluation platform with modular scoring, historical comps, film workflow, and auditable big board generation
 
 ### Decisions
@@ -117,7 +118,7 @@ Resume file: .planning/phases/10-offseason-simulator-decision-loop/10-04-SUMMARY
 - Fixed NBA data cache resolution so partial `dist/server/data` JSON output cannot shadow canonical `server/data/nba-seed.json`.
 - Centralized API/WebSocket CORS origin checks and allowed loopback localhost/127.0.0.1 dev ports for browser QA.
 - Hid the debug overlay by default; it remains available with `?debug`.
-- Verified `npm run build --workspace=client`, `npm run build --workspace=server`, `npm run test --workspace=server`, and browser reload at `http://localhost:3002/` with no fresh console errors/warnings.
+- Verified `pnpm build --workspace=client`, `pnpm build --workspace=server`, `pnpm test --workspace=server`, and browser reload at `http://localhost:3002/` with no fresh console errors/warnings.
 
 ## Solo Draft Lobby Update (2026-06-11)
 

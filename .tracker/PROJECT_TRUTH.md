@@ -59,3 +59,9 @@ On 2026-07-02, QR triage added root `format` and `pre-pr` scripts plus `.quality
 - 2026-06-11: Added `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md` to record the preview-only transaction graph slice and its current boundaries.
 - 2026-06-12: Updated the front-office transaction preview plan, roadmap, and state files for salary matching, apron, Stepien, and protected-pick validation coverage.
 - 2026-07-02: Recorded QR triage gate coverage and remaining broad structural-debt classification.
+
+## QR Remediation Planning
+
+## QR Remediation Planning
+
+- 2026-07-04: Added GSD Phase 15 for QR remediation from qr-fleet-continue-20260704-bballedu; 2 plan(s) created from bballedu.md. Execution has not started.

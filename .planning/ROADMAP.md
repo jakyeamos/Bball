@@ -310,3 +310,19 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 14 to break down)
+
+### Phase 15: QR remediation: bballedu
+
+
+
+**Goal:** Resolve Quality Runner findings for bballedu using cluster-oriented, behavior-preserving remediation from run qr-fleet-continue-20260704-bballedu.
+**Requirements**: QR-BBALLEDU
+**Depends on:** Phase 14
+**Plans:** 2 plans
+
+Plans:
+- [ ] 15-01-PLAN.md - Primary QR cluster remediation
+- [ ] 15-02-PLAN.md - Additional QR cluster remediation
+
+**Cross-cutting constraints:**
+- The post-remediation QR run records no unresolved regression for this plan scope.

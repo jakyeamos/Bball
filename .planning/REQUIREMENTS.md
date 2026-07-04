@@ -26,7 +26,7 @@
 ### Data Layer
 
 - [x] **DATA-01**: Build-time seed (`nba_api` Python + TS driver) fetches active NBA teams and roster players and writes to `server/data/nba-seed.json` — never called at runtime
-- [x] **DATA-02**: NBA identity disk cache is implemented with warm-up on server start and a seasonal refresh mechanism (`npm run refresh:nba-cache`)
+- [x] **DATA-02**: NBA identity disk cache is implemented with warm-up on server start and a seasonal refresh mechanism (`pnpm refresh:nba-cache`)
 - [x] **DATA-03**: Static coach profiles seed file (`server/data/coaches-seed.json`) contains real NBA head coaches with tendency tags: pace, scheme, youth development flag, driver-friendly flag, shooter-friendly flag
 - [x] **DATA-04**: Existing Python `nba_api` scraper is retained and extended to pull player season averages and map them to the existing 30-feature `PlayerFeatures` schema
 - [x] **DATA-05**: nba_api / scrape pipeline stats fields are mapped to the existing 30-feature `PlayerFeatures` schema with explicit field-by-field documentation (`docs/data/player-feature-mapping.md`)
@@ -220,3 +220,6 @@
 ---
 *Requirements defined: 2026-03-09*
 *Last updated: 2026-03-24 — DATA-06 unified stat utilization + DRAFT-02/03 stat alignment*
+## QR Remediation Requirements
+
+- [ ] **QR-BBALLEDU**: Resolve the Quality Runner advisory clusters from run qr-fleet-continue-20260704-bballedu for bballedu without changing intended behavior, then verify with focused repo checks and a post-remediation QR comparison.
