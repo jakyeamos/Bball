@@ -14,6 +14,7 @@
     "smoke:supabase:phase8": "tsx scripts/smokeSupabaseAccountUpgrade.ts",
     "refresh:nba-cache": "tsx scripts/refreshNbaIdentityCache.ts",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
@@ -35,6 +36,7 @@
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "4.1.6",
     "@vitest/runner": "^4.0.18",
     "eslint": "^8.57.1",
     "tsx": "4.21.0",

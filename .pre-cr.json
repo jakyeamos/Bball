@@ -15,5 +15,5 @@
     "security": true,
     "checklist": true
   },
-  "testCommand": "pnpm test"
+  "testCommand": "pnpm test:coverage"
 }

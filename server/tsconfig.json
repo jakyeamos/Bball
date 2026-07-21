@@ -4,6 +4,10 @@
     "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@nba-draft-sim/shared": ["../shared/index.ts"]
+    },
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
