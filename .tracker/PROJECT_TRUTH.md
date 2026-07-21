@@ -2,7 +2,7 @@
 schemaVersion: 1
 healthScore: 84
 statusLabel: "front-office rules engine expanding"
-nextStep: "Add sign-and-trade/base-year/minimum-salary special cases, generated/consumed trade exception accounting, swap conveyance validation, and rollback-safe execution."
+nextStep: "Extend the trade engine with advanced CBA edge cases, trade-exception accounting, pick-swap validation, and rollback-safe execution."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
 lastUpdated: "2026-07-02"
@@ -39,7 +39,6 @@ The transaction preview path deliberately does not yet implement sign-and-trade/
 
 ## Quality Ladder Notes
 
-For the corrected visual refresh slice, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test` passed on 2026-04-30. A production preview screenshot smoke check passed and confirmed Tailwind now compiles into a normal CSS bundle (`41.66 kB`, up from the broken `1.29 kB` output). A follow-up browser screenshot reproduced the bad giant-icon render on a stale `localhost:3000` Vite process; restarting that dev server and re-screenshotting `localhost:3000` showed the corrected shell/homepage render. The build reports the existing Vite chunk-size warning for the client bundle. `pnpm audit:dead-code` failed with the known broad Knip backlog, including the intentionally unintegrated `UI-Refresh/` reference export, so dead-code status remains warning. On 2026-05-13, `pnpm dev` was corrected to run both client and server, Vite was locked to port 3000 so it cannot steal the API port, and the Offseason Team Context teams API was verified locally.
 
 On 2026-05-14, the near-real front-office offseason simulator design and first foundation implementation plan were committed. No code execution was required for the plan-only update.
 
