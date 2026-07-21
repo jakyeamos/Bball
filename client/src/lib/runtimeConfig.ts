@@ -4,7 +4,7 @@ function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, '');
 }
 
-export function getApiBaseUrl(): string {
+function getApiBaseUrl(): string {
   const configuredUrl = import.meta.env.VITE_API_URL;
   return trimTrailingSlash(configuredUrl || DEFAULT_API_BASE_URL);
 }

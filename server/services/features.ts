@@ -232,7 +232,7 @@ function normalizePublicPriors(priors?: PublicMetricPriors): { offense: number; 
   return { offense, defense, overall };
 }
 
-export function calculateReliabilityFactor(gp: number, mpTotal: number): number {
+function calculateReliabilityFactor(gp: number, mpTotal: number): number {
   const minGames = 30;
   const minMinutes = 900;
   const gpFactor = Math.min(gp / minGames, 1.0);
@@ -484,7 +484,7 @@ function deriveFitVectors(profile: PlayerAdvancedProfile): FitVectors {
   };
 }
 
-export function buildPlayerValueModel(
+function buildPlayerValueModel(
   rawStats: PlayerRawStats,
   advancedProfile: PlayerAdvancedProfile,
 ): PlayerValueModel {

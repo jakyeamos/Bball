@@ -12,7 +12,7 @@ import type {
   NbaSeedTeam,
 } from '../scripts/seedNbaIdentity';
 
-export type PacePreference = 'fast' | 'medium' | 'slow';
+type PacePreference = 'fast' | 'medium' | 'slow';
 
 export interface CoachProfile {
   teamAbbreviation: string;
@@ -24,7 +24,7 @@ export interface CoachProfile {
   shooterFriendly: boolean;
 }
 
-export interface CoachesSeedFile {
+interface CoachesSeedFile {
   schemaVersion: number;
   coaches: CoachProfile[];
 }

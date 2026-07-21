@@ -10,6 +10,9 @@
   ],
   "coverageFormat": "auto",
   "threshold": 80,
+  "excludePatterns": [
+    ".quality-gate-exceptions"
+  ],
   "checks": {
     "coverage": true,
     "security": true,

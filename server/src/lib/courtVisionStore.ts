@@ -211,7 +211,7 @@ export async function getStore(): Promise<CourtVisionStoreState> {
   }
 }
 
-export async function saveStore(state: CourtVisionStoreState): Promise<void> {
+async function saveStore(state: CourtVisionStoreState): Promise<void> {
   cachedStore = state;
   await fs.writeFile(STORE_PATH, JSON.stringify(state, null, 2), 'utf8');
 }

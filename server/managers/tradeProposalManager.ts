@@ -196,35 +196,6 @@ export function cancelTradeProposal(
 }
 
 /**
- * Expire old trade proposals
- */
-export function expireOldProposals(league: LeagueState): LeagueState {
-  const now = new Date();
-
-  return {
-    ...league,
-    tradeProposals: league.tradeProposals.map(p => {
-      if (p.status === 'pending' && new Date(p.expiresAt) < now) {
-        return { ...p, status: 'expired' as TradeProposalStatus };
-      }
-      return p;
-    }),
-  };
-}
-
-/**
- * Get active proposals for a team
- */
-export function getActiveProposals(
-  league: LeagueState,
-  teamId: string
-): TradeProposal[] {
-  return league.tradeProposals.filter(
-    p => p.status === 'pending' && (p.fromTeamId === teamId || p.toTeamId === teamId)
-  );
-}
-
-/**
  * Create notification for trade proposal
  * FIX: Match the TradeProposalNotification interface
  */

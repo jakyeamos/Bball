@@ -113,7 +113,7 @@ export type TeamArchetype = {
   description: string;
 };
 
-export type TraitEvaluation = {
+type TraitEvaluation = {
   name: keyof typeof TRAIT_THRESHOLDS;
   tier: 'Elite' | 'Good' | 'Average' | 'Poor' | 'N/A';
   value?: number; // Optional: display the actual value
@@ -226,57 +226,4 @@ export const evaluateTeamComposition = (roster: Player[]): TeamComposition => {
     primaryArchetype,
     secondaryArchetype,
   };
-};
-
-// ============================================================================
-// ADDITIONAL HELPER: Get Team Archetype Summary
-// ============================================================================
-
-export const getTeamArchetypeSummary = (composition: TeamComposition): string => {
-  if (!composition.primaryArchetype) {
-    return 'No clear team identity';
-  }
-
-  const primary = composition.primaryArchetype;
-  const secondary = composition.secondaryArchetype;
-
-  if (secondary && secondary.score > 50) {
-    return `${primary.name} / ${secondary.name}`;
-  }
-
-  return primary.name;
-};
-
-// ============================================================================
-// ADDITIONAL HELPER: Get Player Archetypes Breakdown
-// ============================================================================
-
-export const getPlayerArchetypesBreakdown = (roster: Player[]): Record<string, number> => {
-  const breakdown: Record<string, number> = {};
-
-  roster.forEach(player => {
-    Object.entries(player.archetypes).forEach(([archetype, percentage]) => {
-      const pct = percentage ?? 0;
-      if (!breakdown[archetype]) {
-        breakdown[archetype] = 0;
-      }
-      breakdown[archetype] += pct;
-    });
-  });
-
-  // Average by roster size
-  for (const archetype in breakdown) {
-    breakdown[archetype] /= roster.length;
-  }
-
-  return breakdown;
-};
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export {
-  ARCHETYPE_DEFINITIONS,
-  TRAIT_THRESHOLDS,
 };

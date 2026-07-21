@@ -33,7 +33,6 @@ import {
 import {
   createLeague,
   transitionToDraftRecap,
-  executeTrade,
   startRegularSeason,
   startPlayoffs,
   completeLeague,
@@ -43,6 +42,10 @@ import { stopTradeWindowTimer } from '../managers/tradeTimerManager';
 import { rejoinManager } from '../managers/rejoinManager';
 import { handleStartRound } from './handlers-v2';
 import { PlayoffGameStartPayload } from '../services/playoffs';
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 /**
  * In-memory stores (for v1)
@@ -113,8 +116,8 @@ export function handleCreateLobby(
 
     // Send response
     socket.emit(WS_EVENTS.LOBBY_CREATED, { payload: lobby });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -154,8 +157,8 @@ export function handleJoinLobby(
       type: 'LOBBY_UPDATED',
       payload: updatedLobby
     });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -212,8 +215,8 @@ export function handleStartDraft(
 
     // Broadcast draft start
     emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_STARTED, { type: 'DRAFT_STARTED', payload: activeDraft });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -268,8 +271,8 @@ export function handleMakePick(
         emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, { type: 'LEAGUE_UPDATED', payload: updatedLeague });
       }
     }
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -305,8 +308,8 @@ export function handleUpdateQueue(
 
     // Only send update to the user (queue is private)
     socket.emit(WS_EVENTS.DRAFT_UPDATED, { payload: updatedDraft });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -338,8 +341,8 @@ export function handlePauseDraft(
     drafts.set(lobbyId, pausedDraft);
 
     emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: pausedDraft });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -371,59 +374,8 @@ export function handleUnpauseDraft(
     drafts.set(lobbyId, unpausedDraft);
 
     emitToLobby(io, lobbyId, WS_EVENTS.DRAFT_UPDATED, { type: 'DRAFT_UPDATED', payload: unpausedDraft });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
-  }
-}
-
-export function handleExecuteTrade(
-  io: SocketServer,
-  socket: Socket,
-  payload: { teamAId: string; teamBId: string; playerAIds: string[]; playerBIds: string[] },
-  userId: string
-) {
-  try {
-    console.log('📥 Server received EXECUTE_TRADE:', {
-      userId,
-      lobbyId: socket.data.lobbyId,
-      payload
-    });
-
-    const lobbyId = socket.data.lobbyId;
-    if (!lobbyId) {
-      throw new Error('Not in a lobby');
-    }
-
-    const lobby = lobbies.get(lobbyId);
-    if (!lobby) {
-      throw new Error('Lobby not found');
-    }
-
-    console.log('🔄 Executing trade in leagueManager...');
-    const updatedLeague = executeTrade(
-      lobbyId,
-      payload.teamAId,
-      payload.teamBId,
-      payload.playerAIds,
-      payload.playerBIds
-    );
-
-    if (!updatedLeague) {
-      throw new Error('Failed to execute trade');
-    }
-
-    console.log('✅ Trade executed successfully, broadcasting to lobby');
-    emitToLobby(io, lobbyId, WS_EVENTS.TRADE_EXECUTED, {
-      type: 'TRADE_EXECUTED',
-      payload: updatedLeague
-    });
-    emitToLobby(io, lobbyId, WS_EVENTS.LEAGUE_UPDATED, {
-      type: 'LEAGUE_UPDATED',
-      payload: updatedLeague
-    });
-  } catch (error: any) {
-    console.error('❌ Trade execution error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -474,9 +426,9 @@ export function handleStartRegularSeason(
       console.log(`🎮 Starting round-based season with format: ${seasonFormat}`);
       handleStartRound(io, socket, userId, allPlayers);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Start regular season error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -532,9 +484,9 @@ export function handleStartPlayoffs(
       type: 'LEAGUE_UPDATED',
       payload: updatedLeague
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Start playoffs error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -567,8 +519,8 @@ export function handleCompleteLeague(
       type: 'LEAGUE_UPDATED',
       payload: completedLeague
     });
-  } catch (error: any) {
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+  } catch (error: unknown) {
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 

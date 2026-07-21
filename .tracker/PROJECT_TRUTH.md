@@ -1,6 +1,6 @@
 ---
 schemaVersion: 1
-healthScore: 84
+healthScore: 86
 statusLabel: "front-office rules engine expanding"
 nextStep: "Extend the trade engine with advanced CBA edge cases, trade-exception accounting, pick-swap validation, and rollback-safe execution."
 blockers:
@@ -12,7 +12,7 @@ quality:
   typecheck: pass
   tests: pass
   smoke: unknown
-  deadCode: warning
+  deadCode: pass
 tags:
   - basketball
   - education
@@ -27,21 +27,21 @@ Bballedu is the Court Vision monorepo, now moving from a simplified offseason si
 
 ## Context
 
-The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is canonical `dev`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator. The live Court Vision UI refresh now includes the draft simulator entry flow and offseason simulator phase pages through a shared shell/token system.
+The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is canonical `dev`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator. The live Court Vision UI refresh now includes the draft simulator entry flow and offseason simulator phase pages through a shared shell/token system. Knip is clean for the active application surface; `UI-Refresh/**` remains an intentionally separate standalone Vite/React prototype.
 
-Canonical `dev` is stabilized through the documentation audit, approved esbuild build configuration, local lint-plugin lockfile refresh, and the new Pre-CR coverage path (`4a046eb`, `7314d4b`, `49991c1`). The dependency-security gate now has a bounded audit runner with focused behavior tests and narrow workspace overrides for patched transitive dependencies; `pnpm test:coverage` produces `coverage/lcov.info`, and Pre-CR checks changed-line coverage at 98.1%.
+Canonical `dev` is stabilized through the documentation audit, approved esbuild build configuration, local lint-plugin lockfile refresh, and the new Pre-CR coverage path (`4a046eb`, `7314d4b`, `49991c1`). The dependency-security gate now has a bounded audit runner with focused behavior tests and narrow workspace overrides for patched transitive dependencies; `pnpm test:coverage` produces `coverage/lcov.info` with 98.11% line coverage, and Pre-CR blocks uncovered changed lines.
 
 On 2026-06-11, the first transaction-graph legality preview path was added on top of the front-office foundation. Shared front-office contracts now include directed transaction graph movements and preview/delta output. The server owns `/api/front-office/transactions/preview`, backed by `validateTransactionGraph`, which validates the supplied league dataset first and then fails closed on malformed graph shape, missing references, player trade-date restrictions, encumbered or mis-owned draft assets, cash-limit violations, and post-trade standard roster overages. On 2026-06-12, that validator expanded to cover over-cap salary matching, first/second-apron restrictions, hard caps, Stepien rolling future-first coverage, and protected-pick conversion fallback validation. This is preview-only; it does not execute or persist league-state mutations.
 
 ## Risks
 
-The main remaining product risk is scope control: the near-real offseason simulator spans league data, CBA validation, transactions, draft, free agency, and UI. The completed foundation lowers risk by establishing shared types, CBA constants/citations, and strict dataset validation before transaction or UI work. Live Supabase verification for account upgrade and second-device sync is still pending, Knip reports a broad dead-code backlog that needs a separate cleanup pass, and `pnpm dependency:security` now passes its high-severity gate with 2 moderate and 3 low advisories remaining.
+The main remaining product risk is scope control: the near-real offseason simulator spans league data, CBA validation, transactions, draft, free agency, and UI. The completed foundation lowers risk by establishing shared types, CBA constants/citations, and strict dataset validation before transaction or UI work. Live Supabase verification for account upgrade and second-device sync is still pending; the active application surface is now Knip-clean, while the documented `UI-Refresh/**` prototype remains outside the canonical package boundary. `pnpm dependency:security` passes its high-severity gate with 2 moderate and 3 low advisories remaining.
 
 The transaction preview path deliberately does not yet implement sign-and-trade/base-year/minimum-salary special cases, generated/consumed trade exception accounting, swap-right conveyance validation, counterparty acceptance, or rollback-safe execution. Those remain the next CBA-rule slices before UI replacement.
 
 ## Quality Ladder Notes
 
-On 2026-07-21, the coverage infrastructure slice passed `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:coverage`, and `pnpm build`; Pre-CR passed at 98.1% changed-line coverage with 69 tests. `pnpm dependency:security` passes with 0 critical and 0 high advisories (2 moderate, 3 low); `pnpm audit:dead-code` still reports the known broad Knip backlog.
+On 2026-07-21, the coverage and active-surface cleanup slices passed `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:coverage`, and `pnpm build`; Pre-CR passed with no uncovered changed lines and 69 tests. `pnpm dependency:security` passes with 0 critical and 0 high advisories (2 moderate, 3 low); `pnpm audit:dead-code` passes with no unused files, exports, or dependencies and only non-blocking configuration hints.
 
 On 2026-05-14, the near-real front-office offseason simulator design and first foundation implementation plan were committed; the foundation implementation followed with shared domain types, versioned CBA constants/citations, validation helpers, a complete 30-team fixture builder, and strict dataset validation. Focused shared/server CBA tests passed, plus `pnpm typecheck` and `pnpm build`; the build still reports the existing Vite chunk-size warning.
 
@@ -59,7 +59,8 @@ On 2026-07-02, QR triage added root `format` and `pre-pr` scripts plus `.quality
 - 2026-06-11: Added `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md` to record the preview-only transaction graph slice and its current boundaries.
 - 2026-06-12: Updated the front-office transaction preview plan, roadmap, and state files for salary matching, apron, Stepien, and protected-pick validation coverage.
 - 2026-07-02: Recorded QR triage gate coverage and remaining broad structural-debt classification.
-- 2026-07-21: Canonical `dev` added the bounded dependency-security runner, focused behavior tests, Vitest V8/LCOV coverage, the Pre-CR `test:coverage` command, compiler/format command fixes, and narrow workspace overrides for reproducible repo gates. Pre-CR passed at 98.1% changed-line coverage; the dependency-security gate passes with no critical or high advisories.
+- 2026-07-21: Canonical `dev` added the bounded dependency-security runner, focused behavior tests, Vitest V8/LCOV coverage, the Pre-CR `test:coverage` command, compiler/format command fixes, and narrow workspace overrides for reproducible repo gates. Repository line coverage is 98.11%; the dependency-security gate passes with no critical or high advisories.
+- 2026-07-21: Cleared the active Knip backlog by removing 10 stale files, orphaned helpers/exports, and unused direct dependencies; preserved the documented standalone `UI-Refresh/**` prototype boundary. `pnpm audit:dead-code` passes with no unused items.
 
 ## QR Remediation Planning
 

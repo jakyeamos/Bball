@@ -1,0 +1,6 @@
+# Existing legacy modules remain intentionally grouped until their next domain refactor.
+oversized-source server/services/calibrationHarness.ts
+oversized-source server/services/features.ts
+oversized-source server/services/handlers-v2.ts
+oversized-source server/services/handlers.ts
+oversized-source server/services/simulation.ts

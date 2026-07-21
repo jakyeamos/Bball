@@ -134,7 +134,7 @@ function decisionSummary(
   return `Trade ${action} with ${proposal.verdict} fit impact (${proposal.fit_score}).`;
 }
 
-export function buildTradeProposal(
+function buildTradeProposal(
   run: OffseasonRunState,
   payload: TradeProposalPayload,
   nowIso: string
@@ -189,4 +189,3 @@ export function applyTradeProposalToRun(
     },
   };
 }
-

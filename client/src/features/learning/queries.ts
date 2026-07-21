@@ -8,8 +8,6 @@
  * Hooks exported:
  *   useLessons(roleLens?)      — list of lesson cards (optional filter by lens)
  *   useLesson(id)              — single lesson detail
- *   useWriteProgress()         — mutation that records/updates lesson progress
- *                                and invalidates the lesson list cache on success
  *
  * Error normalisation:
  *   ApiError instances surface their `.status` and `.issues` so consuming
@@ -17,16 +15,16 @@
  *   "not found" from "server error" without parsing error message strings.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
-import { LessonRecord, ProgressWritePayload } from '@nba-draft-sim/shared';
-import { apiService, ApiError, ProgressResponse } from '../../services/api';
+import { useQuery } from '@tanstack/react-query';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { LessonRecord } from '@nba-draft-sim/shared';
+import { apiService, ApiError } from '../../services/api';
 
 // ---------------------------------------------------------------------------
 // Query key factory — keeps cache key shapes consistent across the codebase
 // ---------------------------------------------------------------------------
 
-export const learningKeys = {
+const learningKeys = {
   all: ['learning'] as const,
   lessons: () => [...learningKeys.all, 'lessons'] as const,
   lessonsList: (roleLens?: string) =>
@@ -66,35 +64,5 @@ export function useLesson(
       return res.lesson;
     },
     enabled: Boolean(id),
-  });
-}
-
-// ---------------------------------------------------------------------------
-// useWriteProgress — mutation for recording lesson completion
-// ---------------------------------------------------------------------------
-
-export type ProgressMutationVariables = ProgressWritePayload & {
-  user_id?: string;
-};
-
-export function useWriteProgress(): UseMutationResult<
-  ProgressResponse,
-  ApiError,
-  ProgressMutationVariables
-> {
-  const qc = useQueryClient();
-
-  return useMutation<ProgressResponse, ApiError, ProgressMutationVariables>({
-    mutationFn: (variables) => apiService.writeProgress(variables),
-    onSuccess: (_data, variables) => {
-      // Invalidate the lesson detail so the next open shows updated progress
-      if (variables.lesson_id) {
-        qc.invalidateQueries({
-          queryKey: learningKeys.lessonDetail(variables.lesson_id),
-        });
-      }
-      // Invalidate all lesson lists — completion state may affect ordering later
-      qc.invalidateQueries({ queryKey: learningKeys.lessons() });
-    },
   });
 }

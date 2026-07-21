@@ -1,6 +1,6 @@
 import { DailyChallengeRecord, DailyChallengeResult } from '@nba-draft-sim/shared';
 
-export function buildShareCardText(
+function buildShareCardText(
   challenge: DailyChallengeRecord,
   result: DailyChallengeResult
 ): string {

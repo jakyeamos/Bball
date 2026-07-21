@@ -412,38 +412,3 @@ export function aggregateTeam(roster: Player[], teamId: string): TeamAggregation
     })),
   };
 }
-
-export function calculateImpactRating(features: PlayerFeatures): number {
-  const scoring = (features.TS ?? 0) * 28;
-  const playmaking = (features.AST ?? 0) * 2.1;
-  const defense = ((features.STL ?? 0) + (features.BLK ?? 0)) * 3.1;
-  const efficiency = (features.PAR ?? 0) * 18;
-  const usage = (features.USG ?? 0) * 15;
-  return clamp(20, 99, scoring + playmaking + defense + efficiency + usage);
-}
-
-export function debugTeamAggregation(team: TeamAggregation): void {
-  console.log(`\n📊 Team Aggregation: ${team.teamId}`);
-  console.log(`Overall Rating: ${team.overallRating.toFixed(2)}`);
-  console.log(`Rotation (${team.rotation.length} players):`);
-
-  team.rotation.forEach((player, index) => {
-    console.log(`  ${index + 1}. ${player.name} (${player.impactRating.toFixed(2)})`);
-  });
-
-  console.log('\nTeam Model:');
-  console.log(`  Primary Creation: ${team.teamModel.primaryCreation.toFixed(3)}`);
-  console.log(`  Spacing: ${team.teamModel.spacing.toFixed(3)}`);
-  console.log(`  Rim Pressure: ${team.teamModel.rimPressure.toFixed(3)}`);
-  console.log(`  Perimeter Defense: ${team.teamModel.perimeterDefense.toFixed(3)}`);
-  console.log(`  Rim Defense: ${team.teamModel.rimDefense.toFixed(3)}`);
-  console.log(`  Ball Pressure: ${team.teamModel.ballPressure.toFixed(3)}`);
-  console.log(`  Paint Packing: ${team.teamModel.paintPacking.toFixed(3)}`);
-  console.log(`  Rim Contest: ${team.teamModel.rimContest.toFixed(3)}`);
-  console.log(`  Closeout Integrity: ${team.teamModel.closeoutIntegrity.toFixed(3)}`);
-  console.log(`  Rebound Positioning: ${team.teamModel.reboundPositioning.toFixed(3)}`);
-  console.log(`  Transition Containment: ${team.teamModel.transitionContainment.toFixed(3)}`);
-  console.log(`  Bench Depth: ${team.teamModel.benchDepth.toFixed(3)}`);
-  console.log(`  Volatility: ${team.teamModel.volatility.toFixed(3)}`);
-  console.log('');
-}

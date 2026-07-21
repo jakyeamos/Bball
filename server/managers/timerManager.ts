@@ -76,23 +76,6 @@ export function stopDraftTimer(lobbyId: string) {
 }
 
 /**
- * Pause draft timer (keeps interval running but won't decrement)
- * Handled by draft status check in the interval
- */
-export function pauseDraftTimer(_lobbyId: string) {
-  // Timer will automatically pause when status is 'paused'
-  // No action needed here - handled by status check in interval
-}
-
-/**
- * Resume draft timer
- */
-export function resumeDraftTimer(_lobbyId: string) {
-  // Timer will automatically resume when status is 'active'
-  // No action needed here - handled by status check in interval
-}
-
-/**
  * Stop all timers (cleanup on server shutdown)
  */
 export function stopAllTimers() {
@@ -100,11 +83,4 @@ export function stopAllTimers() {
     clearInterval(interval);
   }
   activeTimers.clear();
-}
-
-/**
- * Get active timer count (for debugging)
- */
-export function getActiveTimerCount(): number {
-  return activeTimers.size;
 }

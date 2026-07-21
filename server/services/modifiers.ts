@@ -104,18 +104,6 @@ export function computeTeamModifiers(team: TeamAggregation, roster: Player[]): T
   };
 }
 
-export function debugTeamModifiers(teamId: string, modifiers: TeamModifiers): void {
-  console.log(`\n🎯 Team Modifiers for ${teamId}:`);
-  console.log(`  Total: ${modifiers.total.toFixed(3)}`);
-  console.log(`  Spacing Bonus: ${modifiers.shootBonus.toFixed(3)}`);
-  console.log(`  Creator Penalty: ${modifiers.creatorPen.toFixed(3)}`);
-  console.log(`  Rim Penalty: ${modifiers.rimPen.toFixed(3)}`);
-  console.log(`  Variance Penalty: ${modifiers.variancePenalty.toFixed(3)}`);
-  console.log(`  Offense Bonus: ${modifiers.offenseBonus.toFixed(3)}`);
-  console.log(`  Defense Bonus: ${modifiers.defenseBonus.toFixed(3)}`);
-  console.log('');
-}
-
 function average(values: number[]): number {
   const finite = values.filter(Number.isFinite);
   if (finite.length === 0) return 0;

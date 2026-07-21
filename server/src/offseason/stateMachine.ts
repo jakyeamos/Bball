@@ -4,7 +4,7 @@ function phaseIndex(phase: OffseasonPhase): number {
   return OFFSEASON_PHASE_ORDER.indexOf(phase);
 }
 
-export function assertValidPhaseTransition(
+function assertValidPhaseTransition(
   current: OffseasonPhase,
   next: OffseasonPhase
 ): void {

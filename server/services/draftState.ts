@@ -35,7 +35,7 @@ interface TeamNeedVector {
  * Round 2: 4, 3, 2, 1
  * Round 3: 1, 2, 3, 4
  */
-export function generateSnakeDraftOrder(teamIds: string[], rosterSize: number): DraftOrder[] {
+function generateSnakeDraftOrder(teamIds: string[], rosterSize: number): DraftOrder[] {
   const order: DraftOrder[] = [];
   let pickNumber = 1;
 
@@ -59,7 +59,7 @@ export function generateSnakeDraftOrder(teamIds: string[], rosterSize: number): 
 /**
  * Randomize team order for draft
  */
-export function randomizeTeamOrder(teamIds: string[]): string[] {
+function randomizeTeamOrder(teamIds: string[]): string[] {
   const shuffled = [...teamIds];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -101,7 +101,7 @@ export function createDraftState(
 /**
  * Get current pick info
  */
-export function getCurrentPick(state: DraftState): DraftOrder | null {
+function getCurrentPick(state: DraftState): DraftOrder | null {
   if (state.currentPickIndex >= state.draftOrder.length) {
     return null;
   }
@@ -121,7 +121,7 @@ export function getCurrentTeam(state: DraftState): DraftTeam | null {
 /**
  * Check if draft is complete
  */
-export function isDraftComplete(state: DraftState): boolean {
+function isDraftComplete(state: DraftState): boolean {
   return state.currentPickIndex >= state.draftOrder.length;
 }
 
@@ -259,16 +259,6 @@ export function updateTimer(state: DraftState): DraftState {
  */
 export function isTimerExpired(state: DraftState): boolean {
   return state.status === 'active' && state.timeRemaining === 0;
-}
-
-/**
- * Reset timer to full time
- */
-export function resetTimer(state: DraftState): DraftState {
-  return {
-    ...state,
-    timeRemaining: state.config.pickTimer,
-  };
 }
 
 /**
@@ -442,46 +432,5 @@ function calculateTeamNeedVector(players: Player[]): TeamNeedVector {
     ballSecurity: Math.max(0, target - averageFit.ballSecurity / divisor),
     roleNeed,
     roleSurplus,
-  };
-}
-
-/**
- * Validate draft state integrity
- */
-export function validateDraftState(state: DraftState): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-
-  // Check team count
-  if (state.teams.length < DRAFT_CONSTRAINTS.TEAMS_MIN || state.teams.length > DRAFT_CONSTRAINTS.TEAMS_MAX) {
-    errors.push(`Invalid team count: ${state.teams.length}`);
-  }
-
-  // Check roster size
-  if (state.config.rosterSize < DRAFT_CONSTRAINTS.ROSTER_MIN || state.config.rosterSize > DRAFT_CONSTRAINTS.ROSTER_MAX) {
-    errors.push(`Invalid roster size: ${state.config.rosterSize}`);
-  }
-
-  // Check draft order length
-  const expectedPicks = state.teams.length * state.config.rosterSize;
-  if (state.draftOrder.length !== expectedPicks) {
-    errors.push(`Draft order length mismatch: expected ${expectedPicks}, got ${state.draftOrder.length}`);
-  }
-
-  // Check for duplicate picks
-  const pickedPlayers = state.picks.map(p => p.playerId);
-  const uniquePicks = new Set(pickedPlayers);
-  if (pickedPlayers.length !== uniquePicks.size) {
-    errors.push('Duplicate picks detected');
-  }
-
-  // Check all picked players are not in available pool
-  const intersection = pickedPlayers.filter(p => p !== null && state.availablePlayers.includes(p));
-  if (intersection.length > 0) {
-    errors.push('Picked players still in available pool');
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
   };
 }

@@ -233,14 +233,3 @@ export async function createLeagueSnapshot(
     advancedRoleAverages,
   };
 }
-
-export function getPlayerById(snapshot: LeagueSnapshot, playerId: string): Player | undefined {
-  return snapshot.players.find((player) => player.playerId === playerId);
-}
-
-export function getPlayersByIds(snapshot: LeagueSnapshot, playerIds: string[]): Player[] {
-  const playerMap = new Map(snapshot.players.map((player) => [player.playerId, player]));
-  return playerIds
-    .map((playerId) => playerMap.get(playerId))
-    .filter((player): player is Player => player !== undefined);
-}

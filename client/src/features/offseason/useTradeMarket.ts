@@ -13,7 +13,7 @@ const offseasonKeys = {
   activeRun: () => [...offseasonKeys.all, 'active-run'] as const,
 };
 
-export interface TradeProposalInput {
+interface TradeProposalInput {
   runId: string;
   offered_player_ids: number[];
   offered_pick_ids: string[];
@@ -99,4 +99,3 @@ export function useTradeMarket(enabled = true): TradeMarketHook {
     continueToDraftNight,
   };
 }
-

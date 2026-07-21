@@ -72,7 +72,7 @@ class SessionStore {
 }
 
 // Singleton instance
-export const sessionStore = new SessionStore();
+const sessionStore = new SessionStore();
 
 /**
  * Create or retrieve session
@@ -92,34 +92,6 @@ export function getOrCreateSession(userId: string | null, displayName?: string):
   }
 
   return sessionStore.create(displayName);
-}
-
-/**
- * Validate session exists
- */
-export function validateSession(userId: string): boolean {
-  return sessionStore.exists(userId);
-}
-
-/**
- * Update session display name
- */
-export function updateSessionName(userId: string, displayName: string): UserSession | undefined {
-  return sessionStore.update(userId, { displayName });
-}
-
-/**
- * Delete session
- */
-export function deleteSession(userId: string): boolean {
-  return sessionStore.delete(userId);
-}
-
-/**
- * Get all active sessions (for debugging)
- */
-export function getAllSessions(): UserSession[] {
-  return sessionStore.getAll();
 }
 
 /**

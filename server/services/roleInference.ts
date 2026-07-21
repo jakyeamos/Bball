@@ -142,7 +142,7 @@ function computeCoreSignals(
   };
 }
 
-export function inferRosterRole(
+function inferRosterRole(
   rawStats: PlayerRawStats,
   advancedProfile?: PlayerAdvancedProfile,
   features?: PlayerFeatures,
@@ -196,7 +196,7 @@ export function inferRosterRole(
   return 'wing';
 }
 
-export function inferFunctionalRole(
+function inferFunctionalRole(
   rawStats: PlayerRawStats,
   advancedProfile?: PlayerAdvancedProfile,
   features?: PlayerFeatures,
@@ -251,18 +251,6 @@ export function inferPlayerRoles(
     functionalRole,
     roleCategory: ROSTER_ROLE_TO_ROLE_CATEGORY[rosterRole],
   };
-}
-
-export function inferRoleCategory(
-  rawStats: PlayerRawStats,
-  advancedProfile?: PlayerAdvancedProfile,
-  features?: PlayerFeatures,
-): RoleCategory {
-  return inferPlayerRoles(rawStats, advancedProfile, features).roleCategory;
-}
-
-export function inferRoleCategoryForPlayer(player: Pick<Player, 'rawStats' | 'advancedProfile' | 'features'>): RoleCategory {
-  return inferRoleCategory(player.rawStats, player.advancedProfile, player.features);
 }
 
 export function inferRosterRoleForPlayer(player: Pick<Player, 'rawStats' | 'advancedProfile' | 'features' | 'rosterRole'>): RosterRole {

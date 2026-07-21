@@ -21,7 +21,7 @@ export function readOnboardingState(): StoredOnboardingState {
   }
 }
 
-export function writeOnboardingState(nextState: StoredOnboardingState): void {
+function writeOnboardingState(nextState: StoredOnboardingState): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
 }

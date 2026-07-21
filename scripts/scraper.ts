@@ -29,7 +29,7 @@ function serverPackageRoot(): string {
     : path.join(__dirname, '..', 'server');
 }
 
-export interface NBAPlayerData {
+interface NBAPlayerData {
   playerId: string;
   name: string;
   team: string;
@@ -99,7 +99,7 @@ function legacyNbaPlayerDataToSeasonRow(d: NBAPlayerData): NbaScraperSeasonStats
 /**
  * Operator helper: scrape current season stats using the Python batch script.
  */
-export async function scrapeNBAStats(season: string = '2025-26'): Promise<PlayerRawStats[]> {
+async function scrapeNBAStats(season: string = '2025-26'): Promise<PlayerRawStats[]> {
   try {
     const pkgRoot = serverPackageRoot();
     const pythonScriptPath = path.join(pkgRoot, 'scripts', 'scrape_nba_stats.py');
@@ -172,7 +172,7 @@ async function loadFallbackData(): Promise<PlayerRawStats[]> {
 /**
  * Filter players by minimum games and minutes played
  */
-export function filterPlayers(
+function filterPlayers(
   players: PlayerRawStats[],
   minGames: number = 10,
   minMinutes: number = 100

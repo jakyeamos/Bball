@@ -48,8 +48,3 @@ export function upsertGuestProgress(
   writeGuestProgressMap(map);
   return next;
 }
-
-export function clearGuestProgress(): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(GUEST_PROGRESS_KEY);
-}

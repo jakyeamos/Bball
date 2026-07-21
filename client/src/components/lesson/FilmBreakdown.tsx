@@ -1,8 +1,37 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 
+interface YouTubePlayer {
+  destroy: () => void;
+  getCurrentTime: () => number;
+  pauseVideo: () => void;
+  playVideo: () => void;
+  seekTo: (time: number, allowSeekAhead: boolean) => void;
+}
+
+interface YouTubePlayerEvent {
+  data: number;
+}
+
+interface YouTubePlayerOptions {
+  videoId: string;
+  playerVars: Record<string, number>;
+  events: {
+    onError: () => void;
+    onReady: () => void;
+    onStateChange: (event: YouTubePlayerEvent) => void;
+  };
+}
+
+interface YouTubeApi {
+  Player: new (container: HTMLElement, options: YouTubePlayerOptions) => YouTubePlayer;
+  PlayerState: {
+    PLAYING: number;
+  };
+}
+
 declare global {
   interface Window {
-    YT: any;
+    YT: YouTubeApi;
     onYouTubeIframeAPIReady: () => void;
   }
 }
@@ -20,7 +49,7 @@ interface FilmBreakdownProps {
   onError?: () => void;
 }
 
-export function extractVideoId(url: string): string {
+function extractVideoId(url: string): string {
   try {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes('youtube.com')) {
@@ -43,7 +72,7 @@ export function extractVideoId(url: string): string {
 export const FilmBreakdown = forwardRef<FilmBreakdownRef, FilmBreakdownProps>(
   ({ contentUrl, onTimeUpdate, onReady, onError }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const playerRef = useRef<any>(null);
+    const playerRef = useRef<YouTubePlayer | null>(null);
     const [isReady, setIsReady] = useState(false);
 
     const videoId = extractVideoId(contentUrl);
@@ -86,7 +115,7 @@ export const FilmBreakdown = forwardRef<FilmBreakdownRef, FilmBreakdownProps>(
           onReady: () => {
             onReady?.();
           },
-          onStateChange: (event: any) => {
+          onStateChange: (event: YouTubePlayerEvent) => {
             if (event.data === window.YT.PlayerState.PLAYING) {
               startPolling();
             } else {

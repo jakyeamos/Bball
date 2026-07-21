@@ -175,14 +175,6 @@ function generateDoubleRoundRobinSchedule(
 }
 
 // ============================================================================
-// GET TOP TEAMS
-// ============================================================================
-
-export function getTopTeams(standings: TeamRecord[], n: number): string[] {
-  return standings.slice(0, Math.min(n, standings.length)).map(r => r.teamId);
-}
-
-// ============================================================================
 // GET TOP 4 WITH TIEBREAKER
 // ============================================================================
 

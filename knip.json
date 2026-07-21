@@ -3,7 +3,14 @@
   "ignore": [
     "client/dist/**",
     "server/dist/**",
-    "shared/dist/**"
+    "shared/dist/**",
+    "UI-Refresh/**"
+  ],
+  "ignoreBinaries": [
+    "python3"
+  ],
+  "ignoreDependencies": [
+    "eslint-plugin-anti-slop"
   ],
   "workspaces": {
     ".": {

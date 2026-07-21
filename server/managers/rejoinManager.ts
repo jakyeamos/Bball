@@ -3,12 +3,6 @@
  * Handles user reconnection to existing lobbies/drafts/leagues
  */
 
-export interface UserLobbyMapping {
-  userId: string;
-  lobbyId: string;
-  lastSeen: string;
-}
-
 class RejoinManager {
   private userToLobby: Map<string, string> = new Map();
   private lobbyUsers: Map<string, Set<string>> = new Map();

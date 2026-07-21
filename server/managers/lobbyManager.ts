@@ -12,7 +12,7 @@ import {
 import { DRAFT_CONSTRAINTS } from '@nba-draft-sim/shared';
 import { v4 as uuidv4 } from 'uuid';
 
-export function generateInviteCode(): string {
+function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 6; i++) {
@@ -107,43 +107,6 @@ function normalizeDisplayName(displayName: string, fallback: string): string {
   return displayName.trim() || fallback;
 }
 
-export function removeUserFromLobby(
-  lobby: LobbyState,
-  userId: string
-): LobbyState {
-  if (userId === lobby.commissionerId) {
-    throw new Error('Cannot remove commissioner from lobby');
-  }
-
-  const newUsers = lobby.users.filter(u => u.userId !== userId);
-  const wasFull = lobby.users.length === lobby.config.teamCount;
-  const canStart = newUsers.length === lobby.config.teamCount;
-
-  let usersWithTeams = newUsers;
-  if (wasFull && !canStart) {
-    usersWithTeams = newUsers.map(u => ({ ...u, teamId: null }));
-  }
-
-  return {
-    ...lobby,
-    users: usersWithTeams,
-    canStart,
-  };
-}
-
-export function updateUserConnection(
-  lobby: LobbyState,
-  userId: string,
-  isConnected: boolean
-): LobbyState {
-  return {
-    ...lobby,
-    users: lobby.users.map(u =>
-      u.userId === userId ? { ...u, isConnected } : u
-    ),
-  };
-}
-
 export function createDraftTeamsFromLobby(lobby: LobbyState): DraftTeam[] {
   if (!lobby.canStart) {
     throw new Error('Lobby is not ready to start draft');
@@ -164,16 +127,6 @@ function requireTeamId(user: LobbyUser): string {
   }
 
   return user.teamId;
-}
-
-/**
- * Mark lobby as draft started - Phase 1A
- */
-export function markDraftStarted(lobby: LobbyState): LobbyState {
-  return {
-    ...lobby,
-    draftStarted: true,
-  };
 }
 
 function validateLobbyConfig(config: LobbyConfig): void {
@@ -200,38 +153,4 @@ function validateLobbyConfig(config: LobbyConfig): void {
   if (errors.length > 0) {
     throw new Error(`Invalid lobby config: ${errors.join(', ')}`);
   }
-}
-
-export function isCommissioner(lobby: LobbyState, userId: string): boolean {
-  return lobby.commissionerId === userId;
-}
-
-export function getUserById(lobby: LobbyState, userId: string): LobbyUser | undefined {
-  return lobby.users.find(u => u.userId === userId);
-}
-
-export function updateLobbyConfig(
-  lobby: LobbyState,
-  config: Partial<LobbyConfig>
-): LobbyState {
-  const newConfig = { ...lobby.config, ...config };
-  validateLobbyConfig(newConfig);
-
-  const teamCountChanged = config.teamCount !== undefined && config.teamCount !== lobby.config.teamCount;
-
-  let newUsers = lobby.users;
-  if (teamCountChanged) {
-    newUsers = lobby.users.map(u => ({ ...u, teamId: null }));
-
-    if (config.teamCount === lobby.users.length) {
-      newUsers = assignTeamsToUsers(newUsers);
-    }
-  }
-
-  return {
-    ...lobby,
-    config: newConfig,
-    users: newUsers,
-    canStart: newUsers.length === newConfig.teamCount,
-  };
 }

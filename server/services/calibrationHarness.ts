@@ -29,7 +29,7 @@ export interface CalibrationHarnessOptions {
   focusPlayers?: string[];
 }
 
-export interface PlayerCalibrationCard {
+interface PlayerCalibrationCard {
   playerId: string;
   name: string;
   team: string;
@@ -45,12 +45,12 @@ export interface PlayerCalibrationCard {
   advancedProfile: Player['advancedProfile'];
 }
 
-export interface PlayerOutlierEntry {
+interface PlayerOutlierEntry {
   player: PlayerCalibrationCard;
   delta: number;
 }
 
-export interface SyntheticTeamReport {
+interface SyntheticTeamReport {
   key: string;
   label: string;
   focus: string;
@@ -73,7 +73,7 @@ export interface SyntheticTeamReport {
   modifiers: TeamAggregation['modifiers'];
 }
 
-export interface MatchupSensitivityReport {
+interface MatchupSensitivityReport {
   key: string;
   label: string;
   subjectTeam: string;
@@ -90,7 +90,7 @@ export interface MatchupSensitivityReport {
   strongDrivers: MatchupDriver[];
 }
 
-export interface CoachingSensitivityVariant {
+interface CoachingSensitivityVariant {
   label: string;
   strategyType: 'lineup' | 'offense' | 'defense';
   team: string;
@@ -104,7 +104,7 @@ export interface CoachingSensitivityVariant {
   stable: boolean;
 }
 
-export interface CoachingSensitivityReport {
+interface CoachingSensitivityReport {
   baselineTeam: string;
   peerTeam: string;
   baselineWinPctA: number;

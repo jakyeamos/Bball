@@ -76,10 +76,3 @@ export function getSupabaseAdmin(): SupabaseClient {
 
   return _supabaseAdmin;
 }
-
-/**
- * Convenience re-export for code that wants to import the client directly.
- * This is a function call rather than a top-level constant so it only runs
- * after the module is imported (post env validation in startServer).
- */
-export default getSupabaseAdmin;

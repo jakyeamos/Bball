@@ -22,8 +22,3 @@ export function getGuestUserId(): string {
   window.localStorage.setItem(GUEST_USER_ID_KEY, nextId);
   return nextId;
 }
-
-export function clearGuestUserId(): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(GUEST_USER_ID_KEY);
-}

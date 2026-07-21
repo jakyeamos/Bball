@@ -6,7 +6,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
   RoundState,
-  RoundPhase,
   RoundMatchup,
   RoundResult,
   CoachingDecision,
@@ -179,14 +178,6 @@ export function allDecisionsSubmitted(
 }
 
 /**
- * Check if coaching window has expired
- */
-export function isCoachingWindowExpired(round: RoundState): boolean {
-  if (!round.coachingWindowEndsAt) return true;  // FIX: Handle null case
-  return new Date().getTime() >= new Date(round.coachingWindowEndsAt).getTime();
-}
-
-/**
  * Simulate all matchups in a round
  */
 export function simulateRound(
@@ -305,27 +296,4 @@ function generateGameEditorial(
   } else {
     return `${winner} edged out ${loser} in a tight contest.`;
   }
-}
-
-/**
- * Transition round to next phase
- */
-export function transitionRoundPhase(
-  round: RoundState,
-  newPhase: RoundPhase
-): RoundState {
-  return {
-    ...round,
-    phase: newPhase,
-  };
-}
-
-/**
- * Get time remaining in coaching window (seconds)
- */
-export function getCoachingTimeRemaining(round: RoundState): number {
-  if (!round.coachingWindowEndsAt) return 0;  // FIX: Handle null case
-  const now = Date.now();
-  const endsAt = new Date(round.coachingWindowEndsAt).getTime();
-  return Math.max(0, Math.floor((endsAt - now) / 1000));
 }

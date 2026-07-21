@@ -5,19 +5,9 @@ import {
   createEmptyCoachingMarketState,
 } from '@nba-draft-sim/shared';
 import {
-  CoachValuationInputs,
-  applyTendencyToValuation,
   buildCoachHiringNotes,
   buildCoachTendencyProfile,
 } from './coachTendencyEffects';
-
-const BASELINE_VALUATION: CoachValuationInputs = {
-  pace: 0,
-  spacing: 0,
-  rim_pressure: 0,
-  defense: 0,
-  development: 0,
-};
 
 function buildDecisionId(
   runId: string,
@@ -50,31 +40,6 @@ function getCoachingMarketState(run: OffseasonRunState): OffseasonRunState['coac
   return run.coaching_market;
 }
 
-export interface CoachValuationContext {
-  baseline: CoachValuationInputs;
-  adjusted: CoachValuationInputs;
-}
-
-export function buildValuationContextFromRun(
-  run: OffseasonRunState
-): CoachValuationContext {
-  const coachingState = getCoachingMarketState(run);
-  if (!coachingState.tendency_profile) {
-    return {
-      baseline: BASELINE_VALUATION,
-      adjusted: BASELINE_VALUATION,
-    };
-  }
-
-  return {
-    baseline: BASELINE_VALUATION,
-    adjusted: applyTendencyToValuation(
-      BASELINE_VALUATION,
-      coachingState.tendency_profile
-    ),
-  };
-}
-
 export function hireCoachForRun(
   run: OffseasonRunState,
   coach: OffseasonCoachProfile,
@@ -105,4 +70,3 @@ export function hireCoachForRun(
     created_at: nowIso,
   });
 }
-

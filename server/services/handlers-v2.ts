@@ -6,7 +6,15 @@
  */
 
 import { Server as SocketServer, Socket } from 'socket.io';
-import { WS_EVENTS, Player, CoachingDecision, TeamAggregation } from '@nba-draft-sim/shared';
+import {
+  ArchetypeProfile,
+  CoachingDecision,
+  LeagueState,
+  Player,
+  PlayerFeatures,
+  TeamAggregation,
+  WS_EVENTS,
+} from '@nba-draft-sim/shared';
 import {
   createRoundState,
   generateRoundSchedule,
@@ -31,6 +39,10 @@ import { generateScoutingReport } from '../services/scoutingReport';
 import { simulateQuarter } from '../services/simulation';
 import { lobbies } from './handlers'; // Import existing lobbies store
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Module-level ready flags for READY_FOR_QUARTER tracking.
  * Maps lobbyId -> Set of teamIds that have signalled ready.
@@ -51,19 +63,6 @@ let _allPlayers: Player[] = [];
  */
 export function initHandlersV2(players: Player[]): void {
   _allPlayers = players;
-}
-
-export function getDefaultCoachingDecision(teamId: string, roundNumber: number): CoachingDecision {
-  return {
-    teamId,
-    roundNumber,
-    rotation: [], // Rotation will be filled in by the logic that uses this.
-    rotationDepth: 8,
-    lineupStrategy: 'balanced',
-    defensiveStrategy: 'standard',
-    offensiveStrategy: 'balanced_attack',
-    submittedAt: new Date().toISOString(),
-  };
 }
 
 /**
@@ -121,7 +120,7 @@ export function handleStartRound(
     const roundState = createRoundState(currentRound, matchups);
 
     // Update league - set phase to regular_season on first round
-    const updateData: any = {
+    const updateData: Partial<LeagueState> = {
       currentRound,
       roundState,
     };
@@ -193,9 +192,9 @@ export function handleStartRound(
     }
 
     console.log(`✅ Started round ${currentRound} for league ${lobbyId}`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Start round error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -251,9 +250,9 @@ export function handleSubmitCoaching(
     }
 
     console.log(`✅ Coaching decision submitted for team ${team.teamId}`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Submit coaching error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -280,56 +279,6 @@ function handleSimulateRoundInternal(
       const roster = team.roster
         .map(pid => _allPlayers.find(p => p.playerId === pid))
         .filter((p): p is Player => p !== undefined);
-      if (roster.length > 0) {
-        const aggregation = aggregateTeam(roster, team.teamId);
-        teamAggregations.set(team.teamId, aggregation);
-        teamNames.set(team.teamId, team.displayName);
-      }
-    }
-
-    // Simulate round
-    const simulatedRound = simulateRound(
-      league.roundState,
-      teamAggregations,
-      teamNames
-    );
-
-    leagueStore.update(lobbyId, { roundState: simulatedRound });
-
-    // Broadcast results
-    io.to(`lobby:${lobbyId}`).emit(WS_EVENTS.ROUND_SIMULATED, {
-      type: 'ROUND_SIMULATED',
-      payload: { roundResults: simulatedRound.roundResults },
-    });
-
-    console.log(`✅ Round ${league.currentRound} simulated for league ${lobbyId}`);
-  } catch (error) {
-    console.error('Simulate round error:', error);
-  }
-}
-
-/**
- * Public version of simulate round with allPlayers parameter
- */
-export function handleSimulateRound(
-  io: SocketServer,
-  lobbyId: string,
-  teamIds: string[],
-  allPlayers: Player[]
-) {
-  try {
-    const league = getLeague(lobbyId);
-    if (!league || !league.roundState || !league.draftState) return;
-
-    // Build team aggregations
-    const teamAggregations = new Map();
-    const teamNames = new Map();
-
-    for (const team of league.draftState.teams) {
-      const roster = team.roster
-        .map(pid => allPlayers.find(p => p.playerId === pid))
-        .filter((p): p is Player => p !== undefined);
-
       if (roster.length > 0) {
         const aggregation = aggregateTeam(roster, team.teamId);
         teamAggregations.set(team.teamId, aggregation);
@@ -427,9 +376,9 @@ export function handleProposeTrade(
     }
 
     console.log(`✅ Trade proposed from ${fromTeam.teamId} to ${payload.toTeamId}`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Propose trade error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -505,9 +454,9 @@ export function handleRespondToTrade(
 
       console.log(`✅ Trade rejected: ${proposal.proposalId}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Respond to trade error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -552,9 +501,9 @@ export function handleCancelTrade(
     } else {
       throw new Error(result.error);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Cancel trade error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -624,7 +573,7 @@ export function handleSubmitQuarterCoaching(
     const DEFAULT_RATING = 50;
     const makeNeutralAgg = (tid: string) => ({
       teamId: tid,
-      features: {} as any,
+      features: {} as PlayerFeatures,
       teamModel: {
         possessionVolume: 0.5,
         transitionShare: 0.5,
@@ -684,7 +633,7 @@ export function handleSubmitQuarterCoaching(
           rim_big: 0,
         },
       },
-      archetypes: {} as any,
+      archetypes: {} as ArchetypeProfile,
       modifiers: {
         total: 0, shootBonus: 0, creatorPen: 0, rimPen: 0,
         offenseBonus: 0, offensePenalty: 0, defenseBonus: 0,
@@ -829,9 +778,9 @@ export function handleSubmitQuarterCoaching(
 
       console.log(`✅ Quarter ${currentQuarter} simulated, advancing to Q${nextQuarter} coaching window in lobby ${lobbyId}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Submit quarter coaching error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }
 
@@ -918,8 +867,8 @@ export function handleReadyForQuarter(
 
       console.log(`✅ Both teams ready — opened Q${currentQuarter} coaching window in lobby ${lobbyId}`);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Ready for quarter error:', error);
-    socket.emit(WS_EVENTS.ERROR, { payload: { message: error.message } });
+    socket.emit(WS_EVENTS.ERROR, { payload: { message: getErrorMessage(error) } });
   }
 }

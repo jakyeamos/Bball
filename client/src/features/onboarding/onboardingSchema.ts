@@ -1,7 +1,7 @@
 import { OnboardingResponse, RoleLens } from '@nba-draft-sim/shared';
 
-export const KNOWLEDGE_LEVELS = ['new', 'growing', 'advanced'] as const;
-export const IMPROVEMENT_GOALS: RoleLens[] = ['player', 'coach', 'gm'];
+const KNOWLEDGE_LEVELS = ['new', 'growing', 'advanced'] as const;
+const IMPROVEMENT_GOALS: RoleLens[] = ['player', 'coach', 'gm'];
 
 export function isValidOnboardingResponse(value: Partial<OnboardingResponse>): value is OnboardingResponse {
   return (
