@@ -5,7 +5,7 @@ statusLabel: "front-office rules engine expanding"
 nextStep: "Extend the trade engine with advanced CBA edge cases, trade-exception accounting, pick-swap validation, and rollback-safe execution."
 blockers:
   - "Live Supabase verification for account-upgrade continuity and second-device sync is still pending."
-lastUpdated: "2026-07-02"
+lastUpdated: "2026-07-21"
 quality:
   format: unknown
   lint: pass
@@ -27,7 +27,9 @@ Bballedu is the Court Vision monorepo, now moving from a simplified offseason si
 
 ## Context
 
-The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is `codex/live-ui-refresh-shell-port`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator. The live Court Vision UI refresh now includes the draft simulator entry flow and offseason simulator phase pages through a shared shell/token system.
+The repo has active planning in `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md`. Current branch is canonical `dev`. The stack is a React frontend plus Express/Socket.io backend with shared TypeScript types. The front-office offseason simulator direction is captured in `docs/superpowers/specs/2026-05-14-front-office-offseason-simulator-design.md`. The first executable foundation plan in `docs/superpowers/plans/2026-05-14-front-office-foundation.md` is implemented through shared domain types, 2026 CBA constants/citations, validation result helpers, complete dataset fixtures, and a strict league dataset validator. The live Court Vision UI refresh now includes the draft simulator entry flow and offseason simulator phase pages through a shared shell/token system.
+
+Canonical `dev` is stabilized through the documentation audit, approved esbuild build configuration, and local lint-plugin lockfile refresh (`4a046eb`, `7314d4b`, `49991c1`). The remaining dependency-security script slice is intentionally uncommitted: the repo test suite passes with pinned pnpm 11.7, but the required Pre-CR gate still has no coverage artifact/provider.
 
 On 2026-06-11, the first transaction-graph legality preview path was added on top of the front-office foundation. Shared front-office contracts now include directed transaction graph movements and preview/delta output. The server owns `/api/front-office/transactions/preview`, backed by `validateTransactionGraph`, which validates the supplied league dataset first and then fails closed on malformed graph shape, missing references, player trade-date restrictions, encumbered or mis-owned draft assets, cash-limit violations, and post-trade standard roster overages. On 2026-06-12, that validator expanded to cover over-cap salary matching, first/second-apron restrictions, hard caps, Stepien rolling future-first coverage, and protected-pick conversion fallback validation. This is preview-only; it does not execute or persist league-state mutations.
 
@@ -58,6 +60,7 @@ On 2026-07-02, QR triage added root `format` and `pre-pr` scripts plus `.quality
 - 2026-06-11: Added `docs/superpowers/plans/2026-06-11-front-office-transaction-preview.md` to record the preview-only transaction graph slice and its current boundaries.
 - 2026-06-12: Updated the front-office transaction preview plan, roadmap, and state files for salary matching, apron, Stepien, and protected-pick validation coverage.
 - 2026-07-02: Recorded QR triage gate coverage and remaining broad structural-debt classification.
+- 2026-07-21: Stabilized canonical `dev` with the TypeScript 7 deferral audit, valid esbuild build approval, and a lockfile refresh for the local anti-slop plugin; the active dependency-security source slice remains blocked by the repository's missing coverage provider.
 
 ## QR Remediation Planning
 
