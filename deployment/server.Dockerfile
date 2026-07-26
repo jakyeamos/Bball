@@ -1,29 +1,42 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18-alpine
+# syntax=docker/dockerfile:1.7
 
-# Set the working directory to /app
+FROM node:20-alpine AS build
+
 WORKDIR /app
+ENV PNPM_HOME=/pnpm
+ENV PATH="${PNPM_HOME}:${PATH}"
 
-# Copy root package.json and package-lock.json
-COPY package*.json ./
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 
-# Copy server package.json
-COPY server/package*.json ./server/
+# Keep dependency resolution independent from application source changes.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY client/package.json client/package.json
+COPY server/package.json server/package.json
+COPY shared/package.json shared/package.json
+RUN --mount=type=cache,id=bballedu-pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store \
+    && pnpm install --filter nba-draft-sim-server... --frozen-lockfile
 
-# Copy shared package.json
-COPY shared/package*.json ./shared/
+COPY shared ./shared
+COPY server ./server
+COPY scripts ./scripts
 
-# Install all dependencies
-RUN npm install
+RUN pnpm --filter @nba-draft-sim/shared build \
+    && pnpm --filter nba-draft-sim-server build
+RUN pnpm --filter nba-draft-sim-server deploy --prod --legacy /prod
 
-# Copy the rest of the application's code
-COPY . .
+FROM node:20-alpine AS runtime
 
-# Build the TypeScript code
-RUN npm run build --workspace=server
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3001
 
-# Make port 8080 available to the world outside this container
-EXPOSE 8080
+COPY --from=build /prod ./
 
-# Run the app when the container launches
-CMD ["npm", "start", "--workspace=server"]
+USER node
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
+CMD ["node", "dist/server/index.js"]

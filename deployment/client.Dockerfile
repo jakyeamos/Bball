@@ -1,63 +1,51 @@
-# Multi-stage build for React frontend
+# syntax=docker/dockerfile:1.7
 
-# Stage 1: Build shared types
-FROM node:18-alpine AS shared-builder
-WORKDIR /app/shared
-COPY shared/package*.json ./
-RUN npm ci
-COPY shared/ ./
-RUN npm run build
+FROM node:20-alpine AS build
 
-# Stage 2: Build client
-FROM node:18-alpine AS client-builder
-WORKDIR /app/client
+WORKDIR /app
+ENV PNPM_HOME=/pnpm
+ENV PATH="${PNPM_HOME}:${PATH}"
 
-# Copy shared types from previous stage
-COPY --from=shared-builder /app/shared /app/shared
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 
-# Install client dependencies
-COPY client/package*.json ./
-RUN npm ci
+# Keep dependency resolution independent from application source changes.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY client/package.json client/package.json
+COPY server/package.json server/package.json
+COPY shared/package.json shared/package.json
+RUN --mount=type=cache,id=bballedu-pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store \
+    && pnpm install --filter nba-draft-sim-client... --frozen-lockfile
 
-# Copy client source
-COPY client/ ./
+COPY shared ./shared
+COPY client ./client
 
-# Build for production
-ARG VITE_SERVER_URL=http://localhost:3001
-ENV VITE_SERVER_URL=$VITE_SERVER_URL
-RUN npm run build
+ARG VITE_API_URL=http://localhost:3001
+ENV VITE_API_URL="${VITE_API_URL}"
+RUN pnpm --filter @nba-draft-sim/shared build \
+    && pnpm --filter nba-draft-sim-client build
 
-# Stage 3: Production runtime with nginx
-FROM nginx:alpine
+FROM nginx:alpine AS runtime
+
 WORKDIR /usr/share/nginx/html
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY deployment/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/client/dist ./
 
-# Copy custom nginx config
-COPY client/nginx.conf /etc/nginx/conf.d/
-
-# Copy built files from previous stage
-COPY --from=client-builder /app/client/dist .
-
-# Create non-root user
-RUN addgroup -g 1001 -S nginx-user && \
-    adduser -S nginx-user -u 1001 && \
-    chown -R nginx-user:nginx-user /usr/share/nginx/html && \
-    chown -R nginx-user:nginx-user /var/cache/nginx && \
-    chown -R nginx-user:nginx-user /var/log/nginx && \
-    chown -R nginx-user:nginx-user /etc/nginx/conf.d && \
-    touch /var/run/nginx.pid && \
-    chown -R nginx-user:nginx-user /var/run/nginx.pid
+RUN addgroup -g 1001 -S nginx-user \
+    && adduser -S nginx-user -u 1001 \
+    && chown -R nginx-user:nginx-user /usr/share/nginx/html \
+    && chown -R nginx-user:nginx-user /var/cache/nginx \
+    && chown -R nginx-user:nginx-user /var/log/nginx \
+    && chown -R nginx-user:nginx-user /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown nginx-user:nginx-user /var/run/nginx.pid
 
 USER nginx-user
 
-# Expose port
 EXPOSE 80
-
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]

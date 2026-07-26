@@ -1,0 +1,34 @@
+.git
+.gitignore
+.DS_Store
+
+# Dependency and build output
+**/node_modules
+**/dist
+**/coverage
+**/test-results
+**/.vite
+**/.turbo
+**/*.tsbuildinfo
+
+# Tests, local tooling, logs, and secrets
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*.log
+**/.env
+**/.env.*
+!.env.example
+.planning
+.agents
+.aios
+.quality-runner
+.venv-nba
+UI-Refresh
+docs
+tests
+
+# Only the nginx config is a Docker input from deployment/
+deployment/*
+!deployment/nginx.conf
