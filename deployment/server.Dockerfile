@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 ENV PNPM_HOME=/pnpm
@@ -9,7 +9,7 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 
 # Keep dependency resolution independent from application source changes.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY client/package.json client/package.json
 COPY server/package.json server/package.json
 COPY shared/package.json shared/package.json
@@ -25,7 +25,7 @@ RUN pnpm --filter @nba-draft-sim/shared build \
     && pnpm --filter nba-draft-sim-server build
 RUN pnpm --filter nba-draft-sim-server deploy --prod --legacy /prod
 
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
