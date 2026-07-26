@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: Phase 8 live Supabase verification now has a repeatable smoke workflow; execution against target project remains for rollout sign-off
 stopped_at: Added Phase 8 Supabase smoke harness and operator documentation
-last_updated: "2026-06-13T00:00:00.000-04:00"
+last_updated: "2026-07-26T12:08:53-0400"
 progress:
   total_phases: 14
   completed_phases: 10
@@ -39,6 +39,7 @@ Execution reality:
 - Phase 09 still needs browser-level human verification for GM discoverability and rollout-gate behavior.
 - Phase 10 passed local browser acceptance on 2026-06-11; remaining sign-off is product-owner recap quality review and live Supabase persistence verification.
 - Phase 03 has a separate player-model / calibration extension still in progress inside the repo.
+- Docker cache prevention is committed in `1508ba0` and `cbfd458`: root-context Compose paths, actual deployment Dockerfiles, frozen pnpm installs with BuildKit cache mounts, filtered builds, pruned server runtime, client API build argument, and aligned port 3001 health checks. Clean server/client builds and `docker compose up --build --wait` passed.
 
 ## Snapshot
 
