@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "project": {
+    "name": "Bballedu",
+    "identity": "Court Vision, a free web-first basketball IQ training platform that teaches users through Player, Coach, and GM lenses.",
+    "audience": "Casual basketball fans first, with a path for players, coaches, analysts, and front-office-minded learners.",
+    "core_loop": "Learn a concept, apply it in film or simulation, reflect on the process and uncertainty, and choose the next lesson.",
+    "north_star": "Users genuinely improve their basketball understanding through explanation-first practice rather than surface entertainment.",
+    "not_this": [
+      "A fantasy basketball or debate-first social product",
+      "A native mobile app in the current release boundary",
+      "A claim that open browser and live-account verification are complete"
+    ]
+  },
+  "targets": {
+    "mvp": {"definition": "The web learning loop offers structured lessons, representative interactions, and an explanation-first simulator capstone across the three role lenses."},
+    "complete_product": {"definition": "Learning, daily engagement, progress, draft and offseason capstones, persistence, and admin content operations are usable and verified in the intended web environment."}
+  },
+  "pillars": [
+    {
+      "id": "learning-loop",
+      "name": "Learning loop",
+      "outcomes": [
+        {
+          "id": "learn-apply-reflect",
+          "name": "A learner can move from a structured lesson into an interaction or simulation and receive an explanation-oriented result.",
+          "targets": ["mvp", "complete_product"],
+          "maturity": 50,
+          "confidence": "medium",
+          "layers": {
+            "intended": "Court Vision prioritizes basketball IQ education across Player, Coach, and GM lenses.",
+            "planned": "The project plan defines lessons, film, pause-and-predict interactions, scenarios, and capstones.",
+            "implemented": "The repository records implementation through Phase 08 with existing simulator foundations.",
+            "verified": "Browser/manual verification for the lesson and admin rollout remains open."
+          },
+          "evidence": [
+            {"ref": ".planning/PROJECT.md", "note": "Product vision, learning loop, and implementation snapshot.", "observed_at": "2026-08-08T22:01:35Z"},
+            {"ref": "README.md", "note": "Current product areas and learning loop.", "observed_at": "2026-08-08T22:01:35Z"}
+          ],
+          "blockers": [
+            {"kind": "verification", "summary": "Browser/manual QA for the lesson and admin rollout is still required."}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capstone-continuity",
+      "name": "Capstone continuity",
+      "outcomes": [
+        {
+          "id": "offseason-run-continuity",
+          "name": "A learner can complete and resume an explanation-first draft or offseason capstone without losing the intended process evidence.",
+          "targets": ["complete_product"],
+          "maturity": 25,
+          "confidence": "medium",
+          "layers": {
+            "intended": "Draft and offseason simulations are planned as final-exam capstones for the learning system.",
+            "planned": "The project plan requires save/resume, shared stat pipelines, and post-run explanation.",
+            "implemented": "The repository contains simulator foundations and in-flight data/model work.",
+            "verified": "Live Supabase validation for account-upgrade continuity and second-device sync remains open."
+          },
+          "evidence": [
+            {"ref": ".planning/PROJECT.md", "note": "Capstone and persistence requirements.", "observed_at": "2026-08-08T22:01:35Z"},
+            {"ref": ".planning/ROADMAP.md", "note": "Phased execution record and remaining gates.", "observed_at": "2026-08-08T22:01:35Z"}
+          ],
+          "blockers": [
+            {"kind": "verification", "summary": "Live persistence and second-device continuity are not yet established as verified product behavior."}
+          ]
+        }
+      ]
+    }
+  ],
+  "source_layers": {
+    "intended": [{"ref": ".planning/PROJECT.md", "note": "Product vision and constraints.", "observed_at": "2026-08-08T22:01:35Z"}],
+    "planned": [{"ref": ".planning/ROADMAP.md", "note": "Current phase and release record.", "observed_at": "2026-08-08T22:01:35Z"}],
+    "implemented": [{"ref": "README.md", "note": "Architecture and current product areas.", "observed_at": "2026-08-08T22:01:35Z"}],
+    "verified": []
+  },
+  "drift": [{
+    "kind": "verification-gap",
+    "summary": "The implementation snapshot is advanced, but lesson/admin browser QA and live persistence continuity remain open product evidence gaps.",
+    "status": "open",
+    "observed_at": "2026-08-08T22:01:35Z",
+    "evidence": [{"ref": ".planning/PROJECT.md", "note": "Open items are explicitly described as verification-oriented.", "observed_at": "2026-08-08T22:01:35Z"}]
+  }],
+  "updated_at": "2026-08-08T22:01:35Z"
+}
