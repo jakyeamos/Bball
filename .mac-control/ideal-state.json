@@ -1,0 +1,245 @@
+{
+  "schema": "mac-control-task-manifest/v1",
+  "repository_id": "repo-fe07641fbcd87085",
+  "repository_name": "Bballedu",
+  "applicability": "applicable",
+  "applicability_reason": "Bballedu exposes runnable React/Vite client UI; this manifest records its supported user-facing workflow catalog while live and measured evidence remain outstanding.",
+  "app": {
+    "name": "Bballedu web application"
+  },
+  "criteria": {
+    "stable_identity": true,
+    "correct_semantics": true,
+    "observable_state": true,
+    "useful_hierarchy": true,
+    "efficient_navigation": true,
+    "verifiable_outcomes": true,
+    "route_flexibility": true,
+    "stable_change_behavior": true
+  },
+  "tasks": [
+    {
+      "task_id": "create-lobby",
+      "stable_target_id": "bballedu.lobby.create",
+      "hierarchy": "bballedu > lobby > create",
+      "semantic_action": "press Create Lobby",
+      "observable_postcondition": "The created lobby and join details are visible",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.lobby.create",
+        "label": "Create Lobby",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    },
+    {
+      "task_id": "browse-public-lobbies",
+      "stable_target_id": "bballedu.lobby.browse",
+      "hierarchy": "bballedu > lobby > browse",
+      "semantic_action": "press Browse Public Lobbies",
+      "observable_postcondition": "The Public Lobbies loading, empty, or populated state is readable",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.lobby.browse",
+        "label": "Browse Public Lobbies",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    },
+    {
+      "task_id": "join-lobby",
+      "stable_target_id": "bballedu.lobby.join",
+      "hierarchy": "bballedu > lobby > join",
+      "semantic_action": "press Join Lobby",
+      "observable_postcondition": "The joined lobby or explicit validation/error state is visible",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.lobby.join",
+        "label": "Join Lobby",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    },
+    {
+      "task_id": "search-draft-players",
+      "stable_target_id": "bballedu.draft.player-search",
+      "hierarchy": "bballedu > draft > player-search",
+      "semantic_action": "set Search players by name",
+      "observable_postcondition": "Matching players or explicit no-match state is visible",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.draft.player-search",
+        "label": "Search players by name",
+        "role": "AXTextField",
+        "required_actions": [
+          "AXFocus",
+          "AXSetValue"
+        ]
+      }
+    },
+    {
+      "task_id": "make-draft-pick",
+      "stable_target_id": "bballedu.draft.pick",
+      "hierarchy": "bballedu > draft > pick",
+      "semantic_action": "press Pick",
+      "observable_postcondition": "The player is added to the roster and draft state updates",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.draft.pick",
+        "label": "Pick",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    },
+    {
+      "task_id": "submit-coaching-decision",
+      "stable_target_id": "bballedu.coaching.submit",
+      "hierarchy": "bballedu > coaching > submit",
+      "semantic_action": "press Submit Decisions",
+      "observable_postcondition": "Submitted decision or readable validation state is visible",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "selected",
+        "expanded",
+        "visible",
+        "loading",
+        "completed"
+      ],
+      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
+      "eligible_routes": [
+        "accessibility",
+        "keyboard",
+        "scrolling"
+      ],
+      "selected_route": "accessibility",
+      "change_states": [
+        "loading",
+        "modal",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "accessibility": {
+        "identifier": "bballedu.coaching.submit",
+        "label": "Submit Decisions",
+        "role": "AXButton",
+        "required_actions": [
+          "AXPress"
+        ]
+      }
+    }
+  ]
+}
