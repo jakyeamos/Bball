@@ -310,6 +310,9 @@ export function DraftPage() {
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <Input
+                  label="Search players by name"
+                  data-mac-control-id="bballedu.draft.player-search"
+                  aria-controls="bballedu-draft-player-results"
                   placeholder="Search players by name"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -334,7 +337,15 @@ export function DraftPage() {
 
           {/* Player Table */}
           <Card padding="md">
-            <div className="overflow-x-auto">
+            <div
+              id="bballedu-draft-player-results"
+              className="overflow-x-auto"
+              role="region"
+              aria-label="Draft player results"
+              aria-live="polite"
+              data-task-state={availablePlayers.length === 0 ? 'players_empty' : 'players_ready'}
+              data-player-count={availablePlayers.length}
+            >
               <table className="w-full">
                 <thead className="bg-gray-50 sticky top-0">
                   <tr>
@@ -416,6 +427,8 @@ export function DraftPage() {
                         <td className="px-4 py-3 text-sm text-right font-medium">{(player.rawStats.BLK / player.rawStats.GP).toFixed(1)}</td>
                         <td className="px-4 py-3 text-right">
                           <Button
+                            data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}
+                            data-task-state={!isMyPick || draft.status !== 'active' ? 'pick_disabled' : 'pick_ready'}
                             size="sm"
                             onClick={() => handleMakePick(player.playerId)}
                             disabled={!isMyPick || draft.status !== 'active'}
@@ -441,7 +454,13 @@ export function DraftPage() {
           opacity: showRoster ? 1 : 0
         }}
       >
-        <div className="h-full overflow-y-auto w-[350px]"> {/* Fixed width inner container prevents content squishing during transition */}
+        <div
+          className="h-full overflow-y-auto w-[350px]"
+          data-mac-control-id="bballedu.draft.roster"
+          data-task-state={myRoster.length === 0 ? 'roster_empty' : 'roster_updated'}
+          data-roster-count={myRoster.length}
+          data-last-player-id={myRoster[myRoster.length - 1]?.playerId}
+        > {/* Fixed width inner container prevents content squishing during transition */}
           <div className="p-4">
             <div className="sticky top-0 bg-white pb-4 border-b z-10">
               <h2 className="text-xl font-bold text-gray-900">{myTeam?.displayName || 'My Team'}</h2>

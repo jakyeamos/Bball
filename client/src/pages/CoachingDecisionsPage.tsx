@@ -24,6 +24,18 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { getTopArchetypes, formatArchetypeName, getArchetypeColor } from '../archetypes';
 
+type CoachingTickEvent = {
+  payload: {
+    timeRemaining: number | null;
+  };
+};
+
+type ScoutingReportEvent = {
+  payload: {
+    scoutingReport: ScoutingReport;
+  };
+};
+
 // Defensive fallback
 const CONSTRAINTS = DRAFT_CONSTRAINTS || {
   ROTATION_MIN: 5,
@@ -174,7 +186,7 @@ export function CoachingDecisionsPage() {
 
   // Listen for coaching window timer
   useEffect(() => {
-    const unsubscribe = wsService.on('round:coaching_tick', (data: any) => {
+    const unsubscribe = wsService.on('round:coaching_tick', (data: CoachingTickEvent) => {
       setTimeRemaining(data.payload.timeRemaining);
     });
     return unsubscribe;
@@ -182,7 +194,7 @@ export function CoachingDecisionsPage() {
 
   // V3: Listen for scouting report
   useEffect(() => {
-    const unsubscribe = wsService.on('game:scouting_report', (data: any) => {
+    const unsubscribe = wsService.on('game:scouting_report', (data: ScoutingReportEvent) => {
       setScoutingReport(data.payload.scoutingReport);
       setShowScoutingReport(true);
     });
@@ -258,7 +270,13 @@ export function CoachingDecisionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col relative">
+    <div
+      className="min-h-screen bg-gray-100 p-4 sm:p-8 overflow-hidden h-screen flex flex-col relative"
+      data-mac-control-id="bballedu.coaching.status"
+      data-task-state={`coaching_${submitStatus}`}
+      data-submit-message={submitMessage || undefined}
+      aria-live="polite"
+    >
       {/* SUCCESS TOAST */}
       {submitStatus === 'success' && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-[100] animate-bounce flex items-center gap-2">
@@ -589,6 +607,8 @@ export function CoachingDecisionsPage() {
             {/* Submit Button */}
             <div className="sticky bottom-0 bg-gray-100 pt-2 pb-1">
               <Button
+                data-mac-control-id="bballedu.coaching.submit"
+                data-task-state={submitStatus === 'submitting' ? 'coaching_submitting' : canSubmit ? 'coaching_ready' : 'coaching_disabled'}
                 variant="primary"
                 size="lg"
                 fullWidth

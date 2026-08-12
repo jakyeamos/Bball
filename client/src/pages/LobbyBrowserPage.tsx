@@ -12,6 +12,9 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { buildApiUrl } from '../lib/runtimeConfig';
 
+const errorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
 export function LobbyBrowserPage() {
   const navigate = useNavigate();
   const [lobbies, setLobbies] = useState<PublicLobbyInfo[]>([]);
@@ -27,8 +30,8 @@ export function LobbyBrowserPage() {
       const data = await response.json();
       setLobbies(data.lobbies || []);
       setLoading(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load lobbies');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to load lobbies'));
       setLoading(false);
     }
   };
@@ -49,8 +52,8 @@ export function LobbyBrowserPage() {
     try {
       wsService.joinLobby(inviteCode, displayName);
       navigate('/waiting-room');
-    } catch (err: any) {
-      setError(err.message || 'Failed to join lobby');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to join lobby'));
     }
   };
 
@@ -64,7 +67,13 @@ export function LobbyBrowserPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cv-navy p-4 sm:p-8">
+    <div
+      className="min-h-screen bg-cv-navy p-4 sm:p-8"
+      data-mac-control-id="bballedu.lobby.public-results"
+      data-task-state={loading ? 'lobbies_loading' : error ? 'lobbies_failed' : lobbies.length === 0 ? 'lobbies_empty' : 'lobbies_ready'}
+      data-lobby-count={lobbies.length}
+      aria-busy={loading}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

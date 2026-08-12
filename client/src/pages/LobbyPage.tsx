@@ -16,6 +16,9 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 
+const errorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
 // Defensive fallback in case shared library import fails in production
 const CONSTRAINTS = DRAFT_CONSTRAINTS || {
   TEAMS_MIN: 1,
@@ -73,8 +76,8 @@ export function LobbyPage() {
       };
 
       wsService.createLobby(config, { isPublic, displayName: displayName.trim() });
-    } catch (err: any) {
-      setError(err.message || 'Failed to create lobby');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to create lobby'));
     }
   };
 
@@ -89,8 +92,8 @@ export function LobbyPage() {
 
     try {
       wsService.joinLobby(inviteCode.toUpperCase(), displayName || 'Player');
-    } catch (err: any) {
-      setError(err.message || 'Failed to join lobby');
+    } catch (err: unknown) {
+      setError(errorMessage(err, 'Failed to join lobby'));
     }
   };
 
@@ -141,7 +144,7 @@ export function LobbyPage() {
           </div>
 
           {visibleError && (
-            <div className={errorClass}>
+            <div className={errorClass} role="alert" data-task-state="lobby_error">
               {visibleError}
             </div>
           )}
@@ -180,6 +183,8 @@ export function LobbyPage() {
             </Button>
 
             <Button
+              data-mac-control-id="bballedu.lobby.browse"
+              data-task-state={isConnected && displayName.trim() ? 'browse_ready' : 'browse_disabled'}
               variant="secondary"
               size="lg"
               fullWidth
@@ -322,6 +327,9 @@ export function LobbyPage() {
             </div>
             <div className="pt-4">
               <Button
+                data-mac-control-id="bballedu.lobby.create"
+                data-task-state={isConnected ? 'create_ready' : 'create_disabled'}
+                data-error-state={visibleError ? 'lobby_error' : undefined}
                 type="submit"
                 variant="primary"
                 size="lg"
@@ -383,6 +391,9 @@ export function LobbyPage() {
 
           <div className="pt-4">
             <Button
+              data-mac-control-id="bballedu.lobby.join"
+              data-task-state={isConnected && inviteCode.length === 6 ? 'join_ready' : 'join_disabled'}
+              data-error-state={visibleError ? 'lobby_error' : undefined}
               type="submit"
               variant="primary"
               size="lg"

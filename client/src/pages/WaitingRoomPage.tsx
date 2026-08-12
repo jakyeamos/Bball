@@ -80,7 +80,12 @@ export function WaitingRoomPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 p-8">
+    <div
+      className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 p-8"
+      data-mac-control-id="bballedu.lobby.waiting-room"
+      data-task-state="lobby_joined"
+      data-player-count={lobby.users?.length || 0}
+    >
       <div className="max-w-4xl mx-auto">
         <Card padding="lg">
           <div className="text-center mb-8">
