@@ -1,244 +1,1248 @@
 {
-  "schema": "mac-control-task-manifest/v1",
+  "schema": "mac-control-task-manifest/v4",
   "repository_id": "repo-fe07641fbcd87085",
   "repository_name": "Bballedu",
   "applicability": "applicable",
-  "applicability_reason": "Bballedu exposes runnable React/Vite client UI; this manifest records its supported user-facing workflow catalog while live and measured evidence remain outstanding.",
+  "applicability_reason": "The Court Vision client exposes app-owned semantic controls, stable task identities, explicit disabled, loading, empty, failed, joined, updated, and submitted states, and independent readbacks for its lobby, draft, and coaching workflows.",
   "app": {
-    "name": "Bballedu web application"
+    "name": "Court Vision web application",
+    "launch": "pnpm dev",
+    "url": "http://localhost:5173"
   },
-  "criteria": {
-    "stable_identity": true,
-    "correct_semantics": true,
-    "observable_state": true,
-    "useful_hierarchy": true,
-    "efficient_navigation": true,
-    "verifiable_outcomes": true,
-    "route_flexibility": true,
-    "stable_change_behavior": true
-  },
+  "criteria": {},
   "tasks": [
     {
-      "task_id": "create-lobby",
-      "stable_target_id": "bballedu.lobby.create",
-      "hierarchy": "bballedu > lobby > create",
-      "semantic_action": "press Create Lobby",
-      "observable_postcondition": "The created lobby and join details are visible",
-      "observable_states": [
-        "enabled",
-        "focused",
-        "selected",
-        "expanded",
-        "visible",
-        "loading",
-        "completed"
-      ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
       "change_states": [
-        "loading",
-        "modal",
         "disabled",
         "permission_unavailable"
       ],
+      "change_state_exemptions": {
+        "loading": "The socket API does not expose a pending acknowledgement state.",
+        "modal": "Creation uses an inline form."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
+      "task_id": "create-lobby",
+      "stable_target_id": "bballedu.lobby.create",
+      "hierarchy": "Court Vision > Draft Sim > Create Lobby form > Create Lobby",
+      "semantic_action": "press",
+      "observable_postcondition": "The waiting room reports lobby_joined and exposes the current player count",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "visible",
+        "completed"
+      ],
+      "state_exemptions": {
+        "selected": "The create button is momentary.",
+        "expanded": "The waiting room is a separate route.",
+        "loading": "The socket API does not expose a pending acknowledgement state."
+      },
       "accessibility": {
         "identifier": "bballedu.lobby.create",
         "label": "Create Lobby",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "create-lobby.task-state",
+        "kind": "task_state",
+        "expected_state": "lobby_joined",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.lobby.create",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.create\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Create Lobby"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Create Lobby",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.create\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Create Lobby"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-task-state={isConnected ? 'create_ready' : 'create_disabled'}",
+              "evidence_tokens": [
+                "disabled={!isConnected}",
+                "lobby_error"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Draft Sim > Create Lobby form > Create Lobby",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.create\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Create Lobby"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.lobby.create"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.create\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Create Lobby"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "lobby_joined"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/WaitingRoomPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.waiting-room\"",
+              "evidence_tokens": [
+                "lobby_joined",
+                "data-player-count={lobby.users?.length || 0}"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.create\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Create Lobby"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-task-state={isConnected ? 'create_ready' : 'create_disabled'}",
+              "evidence_tokens": [
+                "disabled={!isConnected}",
+                "lobby_error"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "loading",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "modal": "Browsing uses a page."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "browse-public-lobbies",
       "stable_target_id": "bballedu.lobby.browse",
-      "hierarchy": "bballedu > lobby > browse",
-      "semantic_action": "press Browse Public Lobbies",
-      "observable_postcondition": "The Public Lobbies loading, empty, or populated state is readable",
+      "hierarchy": "Court Vision > Draft Sim Lobby > Browse Public Lobbies",
+      "semantic_action": "press",
+      "observable_postcondition": "The public lobby surface reports loading, failed, empty, or ready and exposes the lobby count",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
         "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "The browse button is momentary.",
+        "expanded": "Results are a separate route."
+      },
       "accessibility": {
         "identifier": "bballedu.lobby.browse",
         "label": "Browse Public Lobbies",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "browse-public-lobbies.task-state",
+        "kind": "task_state",
+        "expected_state": "lobbies_ready",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.lobby.browse",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.browse\"",
+              "evidence_tokens": [
+                "Browse Public Lobbies",
+                "navigate('/browse')"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Browse Public Lobbies",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.browse\"",
+              "evidence_tokens": [
+                "Browse Public Lobbies",
+                "navigate('/browse')"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyBrowserPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.public-results\"",
+              "evidence_tokens": [
+                "lobbies_loading",
+                "lobbies_failed",
+                "lobbies_empty",
+                "lobbies_ready"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Draft Sim Lobby > Browse Public Lobbies",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.browse\"",
+              "evidence_tokens": [
+                "Browse Public Lobbies",
+                "navigate('/browse')"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.lobby.browse"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.browse\"",
+              "evidence_tokens": [
+                "Browse Public Lobbies",
+                "navigate('/browse')"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "lobbies_ready"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyBrowserPage.tsx",
+              "anchor": "data-lobby-count={lobbies.length}",
+              "evidence_tokens": [
+                "aria-busy={loading}",
+                "lobbies.length"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.browse\"",
+              "evidence_tokens": [
+                "Browse Public Lobbies",
+                "navigate('/browse')"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyBrowserPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.public-results\"",
+              "evidence_tokens": [
+                "lobbies_loading",
+                "lobbies_failed",
+                "lobbies_empty",
+                "lobbies_ready"
+              ]
+            }
+          ]
+        }
       }
     },
     {
-      "task_id": "join-lobby",
-      "stable_target_id": "bballedu.lobby.join",
-      "hierarchy": "bballedu > lobby > join",
-      "semantic_action": "press Join Lobby",
-      "observable_postcondition": "The joined lobby or explicit validation/error state is visible",
-      "observable_states": [
-        "enabled",
-        "focused",
-        "selected",
-        "expanded",
-        "visible",
-        "loading",
-        "completed"
-      ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
       "change_states": [
-        "loading",
-        "modal",
         "disabled",
         "permission_unavailable"
       ],
+      "change_state_exemptions": {
+        "loading": "The socket API does not expose a pending acknowledgement state.",
+        "modal": "Joining uses an inline form."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
+      "task_id": "join-lobby",
+      "stable_target_id": "bballedu.lobby.join",
+      "hierarchy": "Court Vision > Draft Sim Lobby > Join Lobby form > Join Lobby",
+      "semantic_action": "press",
+      "observable_postcondition": "The waiting room reports lobby_joined or the lobby form reports lobby_error",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "visible",
+        "completed"
+      ],
+      "state_exemptions": {
+        "selected": "The join button is momentary.",
+        "expanded": "The waiting room is a separate route.",
+        "loading": "The socket API does not expose a pending acknowledgement state."
+      },
       "accessibility": {
         "identifier": "bballedu.lobby.join",
         "label": "Join Lobby",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "join-lobby.task-state",
+        "kind": "task_state",
+        "expected_state": "lobby_joined",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.lobby.join",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.join\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Join Lobby"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Join Lobby",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.join\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Join Lobby"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-task-state={isConnected && inviteCode.length === 6 ? 'join_ready' : 'join_disabled'}",
+              "evidence_tokens": [
+                "disabled={!isConnected}",
+                "lobby_error"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Draft Sim Lobby > Join Lobby form > Join Lobby",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.join\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Join Lobby"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.lobby.join"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.join\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Join Lobby"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "lobby_joined"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/WaitingRoomPage.tsx",
+              "anchor": "data-task-state=\"lobby_joined\"",
+              "evidence_tokens": [
+                "Waiting Room",
+                "data-player-count={lobby.users?.length || 0}"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.lobby.join\"",
+              "evidence_tokens": [
+                "type=\"submit\"",
+                "Join Lobby"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/LobbyPage.tsx",
+              "anchor": "data-task-state={isConnected && inviteCode.length === 6 ? 'join_ready' : 'join_disabled'}",
+              "evidence_tokens": [
+                "disabled={!isConnected}",
+                "lobby_error"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [],
+      "change_state_exemptions": {
+        "loading": "Filtering is synchronous.",
+        "modal": "Search is inline.",
+        "disabled": "The input remains enabled while the draft exists.",
+        "permission_unavailable": "The task is available once the draft route is active."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "search-draft-players",
       "stable_target_id": "bballedu.draft.player-search",
-      "hierarchy": "bballedu > draft > player-search",
-      "semantic_action": "set Search players by name",
-      "observable_postcondition": "Matching players or explicit no-match state is visible",
+      "hierarchy": "Court Vision > Draft Room > Search players by name",
+      "semantic_action": "set_value",
+      "observable_postcondition": "The player results region reports players_empty or players_ready and exposes the result count",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
-        "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "Text selection is native input behavior.",
+        "expanded": "Results update inline.",
+        "loading": "Player filtering is synchronous local state."
+      },
       "accessibility": {
         "identifier": "bballedu.draft.player-search",
         "label": "Search players by name",
-        "role": "AXTextField",
-        "required_actions": [
-          "AXFocus",
-          "AXSetValue"
-        ]
+        "role": "searchbox"
+      },
+      "verification_oracle": {
+        "oracle_id": "search-draft-players.task-state",
+        "kind": "task_state",
+        "expected_state": "players_ready",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.draft.player-search",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.player-search\"",
+              "evidence_tokens": [
+                "label=\"Search players by name\"",
+                "aria-controls=\"bballedu-draft-player-results\""
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "searchbox",
+            "accessible_name": "Search players by name",
+            "action": "set_value"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.player-search\"",
+              "evidence_tokens": [
+                "label=\"Search players by name\"",
+                "aria-controls=\"bballedu-draft-player-results\""
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-task-state={availablePlayers.length === 0 ? 'players_empty' : 'players_ready'}",
+              "evidence_tokens": [
+                "data-player-count={availablePlayers.length}",
+                "availablePlayers.map"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Draft Room > Search players by name",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.player-search\"",
+              "evidence_tokens": [
+                "label=\"Search players by name\"",
+                "aria-controls=\"bballedu-draft-player-results\""
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.draft.player-search"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.player-search\"",
+              "evidence_tokens": [
+                "label=\"Search players by name\"",
+                "aria-controls=\"bballedu-draft-player-results\""
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "players_ready"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "id=\"bballedu-draft-player-results\"",
+              "evidence_tokens": [
+                "role=\"region\"",
+                "aria-live=\"polite\""
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.player-search\"",
+              "evidence_tokens": [
+                "label=\"Search players by name\"",
+                "aria-controls=\"bballedu-draft-player-results\""
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-task-state={availablePlayers.length === 0 ? 'players_empty' : 'players_ready'}",
+              "evidence_tokens": [
+                "data-player-count={availablePlayers.length}",
+                "availablePlayers.map"
+              ]
+            }
+          ]
+        }
       }
     },
     {
-      "task_id": "make-draft-pick",
-      "stable_target_id": "bballedu.draft.pick",
-      "hierarchy": "bballedu > draft > pick",
-      "semantic_action": "press Pick",
-      "observable_postcondition": "The player is added to the roster and draft state updates",
-      "observable_states": [
-        "enabled",
-        "focused",
-        "selected",
-        "expanded",
-        "visible",
-        "loading",
-        "completed"
-      ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
       "change_states": [
-        "loading",
-        "modal",
         "disabled",
         "permission_unavailable"
       ],
+      "change_state_exemptions": {
+        "loading": "The socket API does not expose per-pick pending acknowledgement.",
+        "modal": "Picks are inline."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
+      "task_id": "make-draft-pick",
+      "stable_target_id": "bballedu.draft.pick.dynamic",
+      "hierarchy": "Court Vision > Draft Room > Player results > Pick",
+      "semantic_action": "press",
+      "observable_postcondition": "The roster reports roster_updated, a larger roster count, and the latest player id",
+      "observable_states": [
+        "enabled",
+        "focused",
+        "visible",
+        "completed"
+      ],
+      "state_exemptions": {
+        "selected": "Pick is a momentary action.",
+        "expanded": "The roster readback is a separate region.",
+        "loading": "The socket API does not expose per-pick pending acknowledgement."
+      },
       "accessibility": {
-        "identifier": "bballedu.draft.pick",
+        "identifier": "bballedu.draft.pick.dynamic",
         "label": "Pick",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "make-draft-pick.task-state",
+        "kind": "task_state",
+        "expected_state": "roster_updated",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.draft.pick.dynamic",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}",
+              "evidence_tokens": [
+                "Pick",
+                "handleMakePick(player.playerId)"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Pick",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}",
+              "evidence_tokens": [
+                "Pick",
+                "handleMakePick(player.playerId)"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-task-state={!isMyPick || draft.status !== 'active' ? 'pick_disabled' : 'pick_ready'}",
+              "evidence_tokens": [
+                "disabled={!isMyPick || draft.status !== 'active'}",
+                "pick_ready"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Draft Room > Player results > Pick",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}",
+              "evidence_tokens": [
+                "Pick",
+                "handleMakePick(player.playerId)"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.draft.pick.dynamic"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}",
+              "evidence_tokens": [
+                "Pick",
+                "handleMakePick(player.playerId)"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "roster_updated"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.draft.roster\"",
+              "evidence_tokens": [
+                "roster_updated",
+                "data-roster-count={myRoster.length}",
+                "data-last-player-id"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-mac-control-id={`bballedu.draft.pick.${player.playerId}`}",
+              "evidence_tokens": [
+                "Pick",
+                "handleMakePick(player.playerId)"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/DraftPage.tsx",
+              "anchor": "data-task-state={!isMyPick || draft.status !== 'active' ? 'pick_disabled' : 'pick_ready'}",
+              "evidence_tokens": [
+                "disabled={!isMyPick || draft.status !== 'active'}",
+                "pick_ready"
+              ]
+            }
+          ]
+        }
       }
     },
     {
+      "surface_kind": "web_content",
+      "focus_policy": "foreground",
+      "foreground_postcondition": "target_foreground",
+      "fallback_policy": "fresh_state_handoff",
+      "change_states": [
+        "loading",
+        "disabled",
+        "permission_unavailable"
+      ],
+      "change_state_exemptions": {
+        "modal": "Submission occurs inline."
+      },
+      "navigation_strategy": "direct_semantic",
+      "route_candidates": [
+        {
+          "id": "browser-dom",
+          "provider": "browser_connector",
+          "method": "adapter",
+          "interaction_mode": "semantic"
+        },
+        {
+          "id": "computer-pointer",
+          "provider": "computer_use",
+          "method": "pointer",
+          "interaction_mode": "pointer"
+        }
+      ],
+      "shortcut_acceleration": {
+        "disposition": "not_applicable",
+        "reason": "No task-specific direct shortcut or reversible shortcut assignment surface is implemented."
+      },
       "task_id": "submit-coaching-decision",
       "stable_target_id": "bballedu.coaching.submit",
-      "hierarchy": "bballedu > coaching > submit",
-      "semantic_action": "press Submit Decisions",
-      "observable_postcondition": "Submitted decision or readable validation state is visible",
+      "hierarchy": "Court Vision > Coaching Decisions > Submit Decisions",
+      "semantic_action": "press",
+      "observable_postcondition": "The coaching status reports coaching_success or coaching_error and exposes the submit message",
       "observable_states": [
         "enabled",
         "focused",
-        "selected",
-        "expanded",
         "visible",
         "loading",
         "completed"
       ],
-      "navigation_strategy": "semantic target lookup by stable identifier, accessible role, and label; use semantic scrolling when the target is offscreen",
-      "eligible_routes": [
-        "accessibility",
-        "keyboard",
-        "scrolling"
-      ],
-      "selected_route": "accessibility",
-      "change_states": [
-        "loading",
-        "modal",
-        "disabled",
-        "permission_unavailable"
-      ],
+      "state_exemptions": {
+        "selected": "Submit is a momentary action.",
+        "expanded": "Status is rendered on the page."
+      },
       "accessibility": {
         "identifier": "bballedu.coaching.submit",
         "label": "Submit Decisions",
-        "role": "AXButton",
-        "required_actions": [
-          "AXPress"
-        ]
+        "role": "button"
+      },
+      "verification_oracle": {
+        "oracle_id": "submit-coaching-decision.task-state",
+        "kind": "task_state",
+        "expected_state": "coaching_success",
+        "independent_readback": true
+      },
+      "semantic_evidence": {
+        "stable_identity": {
+          "level": "source_grounded",
+          "claims": {
+            "selector_kind": "data_attribute",
+            "selector_value": "bballedu.coaching.submit",
+            "scope": "court-vision-client",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.submit\"",
+              "evidence_tokens": [
+                "Submit Decisions",
+                "onClick={handleSubmit}"
+              ]
+            }
+          ]
+        },
+        "correct_semantics": {
+          "level": "source_grounded",
+          "claims": {
+            "role": "button",
+            "accessible_name": "Submit Decisions",
+            "action": "press"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.submit\"",
+              "evidence_tokens": [
+                "Submit Decisions",
+                "onClick={handleSubmit}"
+              ]
+            }
+          ]
+        },
+        "observable_state": {
+          "level": "source_grounded",
+          "claims": {
+            "property": "data-task-state",
+            "unavailable_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-task-state={submitStatus === 'submitting' ? 'coaching_submitting' : canSubmit ? 'coaching_ready' : 'coaching_disabled'}",
+              "evidence_tokens": [
+                "disabled={!canSubmit || submitStatus === 'submitting'}",
+                "coaching_submitting"
+              ]
+            }
+          ]
+        },
+        "useful_hierarchy": {
+          "level": "source_grounded",
+          "claims": {
+            "container": "court-vision-client",
+            "relationship": "Court Vision > Coaching Decisions > Submit Decisions",
+            "uniqueness": "exactly_one"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.submit\"",
+              "evidence_tokens": [
+                "Submit Decisions",
+                "onClick={handleSubmit}"
+              ]
+            }
+          ]
+        },
+        "efficient_navigation": {
+          "level": "source_grounded",
+          "claims": {
+            "strategy": "direct_semantic",
+            "entry_point": "bballedu.coaching.submit"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.submit\"",
+              "evidence_tokens": [
+                "Submit Decisions",
+                "onClick={handleSubmit}"
+              ]
+            }
+          ]
+        },
+        "verifiable_outcomes": {
+          "level": "source_grounded",
+          "claims": {
+            "readback_provider": "browser_connector",
+            "property": "data-task-state",
+            "operator": "equals",
+            "expected": "coaching_success"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.status\"",
+              "evidence_tokens": [
+                "coaching_${submitStatus}",
+                "data-submit-message={submitMessage || undefined}"
+              ]
+            }
+          ]
+        },
+        "route_flexibility": {
+          "level": "source_grounded",
+          "claims": {
+            "primary_provider": "browser_connector",
+            "secondary_provider": "computer_use",
+            "fallback_policy": "fresh_state_handoff"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-mac-control-id=\"bballedu.coaching.submit\"",
+              "evidence_tokens": [
+                "Submit Decisions",
+                "onClick={handleSubmit}"
+              ]
+            }
+          ]
+        },
+        "stable_change_behavior": {
+          "level": "source_grounded",
+          "claims": {
+            "scenarios": "loading,modal,disabled,permission_unavailable",
+            "failure_behavior": "block_and_explain"
+          },
+          "source_refs": [
+            {
+              "path": "client/src/pages/CoachingDecisionsPage.tsx",
+              "anchor": "data-task-state={submitStatus === 'submitting' ? 'coaching_submitting' : canSubmit ? 'coaching_ready' : 'coaching_disabled'}",
+              "evidence_tokens": [
+                "disabled={!canSubmit || submitStatus === 'submitting'}",
+                "coaching_submitting"
+              ]
+            }
+          ]
+        }
       }
     }
   ]
