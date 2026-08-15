@@ -295,7 +295,7 @@ export function DraftPage() {
           </div>
 
           {/* 🆕 Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="mb-4 p-2 bg-gray-200 rounded text-xs font-mono">
               <div>userId: {userId || 'null'}</div>
               <div>myTeam: {myTeam?.displayName || 'null'} ({myTeam?.teamId})</div>
