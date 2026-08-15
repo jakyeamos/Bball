@@ -77,7 +77,7 @@ Run these from the repository root:
 - `pnpm start` - start server workspace
 - `pnpm lint` - lint client and server
 - `pnpm typecheck` - strict TypeScript checks across workspaces
-- `pnpm test` - run shared and server tests
+- `pnpm test` - run shared and server tests once in non-interactive mode
 - `pnpm smoke` - run Playwright smoke tests
 - `pnpm audit:dead-code` - run Knip dead-code scan
 
