@@ -155,6 +155,24 @@ See `.planning/ROADMAP.md` for the live phase-by-phase status and release gates.
 - Keep `main` deployable
 - Avoid introducing duplicated client/server types when a shared contract is appropriate
 
+## Assurance and Certification
+
+The repository-owned assurance contract is at .pronto/behavior-assurance.json. It describes the guest-first learning-loop behavior and the edge cases that must remain covered.
+
+The required evidence gates are declared in .quality-runner.toml and are mirrored by these commands:
+
+- pnpm format
+- pnpm lint
+- pnpm typecheck
+- pnpm test
+- pnpm build
+- pnpm smoke
+- pnpm audit:dead-code
+- pnpm secret:scan
+- pnpm dependency:security
+
+Run the full set before requesting certification evidence. Certification setup is distinct from a 4/4 maturity result; both the maturity evidence and the assurance gates must remain current.
+
 ## License
 
 No license has been declared in this repository yet.

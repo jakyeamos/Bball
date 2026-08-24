@@ -1,2 +1,12 @@
 [quality_runner]
 scan_exclusions = [".venv-nba"]
+
+[[quality_runner.gates]]
+id = "security_dependency_audit"
+command = "pnpm dependency:security"
+ecosystem = "pnpm"
+source = "package.json:scripts.dependency:security"
+owner = "repository"
+required = true
+severity = "blocker"
+mutating_risk = "safe"

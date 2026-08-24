@@ -1,0 +1,42 @@
+{
+  "schema": "pronto-behavior-assurance/v2",
+  "applicability": "applicable",
+  "approved_producers": [
+    "quality-runner"
+  ],
+  "behaviors": [
+    {
+      "id": "guest-first-learning-loop",
+      "title": "Guest users can enter the learning loop without a configured remote backend",
+      "tier": 0,
+      "automation": "on_demand",
+      "change_triggers": [
+        "client/**",
+        "server/**",
+        "shared/**",
+        "tests/**",
+        "package.json"
+      ],
+      "invariants": [
+        "A user can begin the learning loop without creating an account when Supabase is unavailable.",
+        "Shared client, server, and simulation payloads continue to use the repository's shared contracts."
+      ],
+      "scenarios": [
+        {
+          "id": "guest-entry-without-remote-config",
+          "title": "Guest entry remains available without remote configuration",
+          "oracle": "A browser or component test with Supabase unavailable reaches the guest learning entry point, reports the local fallback state, and does not require account creation.",
+          "verification_level": "automated",
+          "edge_profile": {
+            "categories": [
+              "environment_and_cross_surface",
+              "authorization_and_session"
+            ],
+            "risk": "routine",
+            "side_effects": "none"
+          }
+        }
+      ]
+    }
+  ]
+}

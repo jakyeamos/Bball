@@ -22,5 +22,6 @@ Read this index before non-trivial work in this repo. Load only the packet neede
 | External-facing strategy, launch, market, or audience research | [`market.md`](market.md) |
 | CLI/API/tool publishing or command-surface work | [`README.md`](../../README.md) |
 | Running checks or builds | [`README.md`](../../README.md) and the root `package.json` scripts |
+| Assurance or certification setup | The root README, .quality-runner.toml, and .pronto/behavior-assurance.json |
 
 This repository has no local `commands.md` or `printing-press.md`; do not infer either file. Keep stable repo detail here only when it helps agents avoid rediscovery.
