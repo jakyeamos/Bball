@@ -1,5 +1,7 @@
 [quality_runner]
 scan_exclusions = [".venv-nba"]
+default_profile = "default"
+required_capabilities = ["formatter", "lint", "typecheck", "tests", "build", "dead_code", "runtime_smoke", "pre_pr", "pre_cr"]
 
 [[quality_runner.gates]]
 id = "security_dependency_audit"
