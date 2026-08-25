@@ -58,7 +58,7 @@ git push -u origin main
      pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build
      ```
    - **Output Directory**: `client/dist`
-   - **Install Command**: `pnpm install --frozen-lockfile`
+   - **Install Command**: `pnpm install --filter nba-draft-sim-client... --frozen-lockfile`
 5. Add environment variable:
    - **Key**: `VITE_SERVER_URL`
    - **Value**: `https://YOUR-APP.railway.app` (your Railway URL from Step 2)

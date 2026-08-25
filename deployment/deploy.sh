@@ -29,7 +29,7 @@ deploy_to_vercel() {
     echo "3. Configure:"
     echo "   - Framework: Vite"
     echo "   - Root Directory: repo root"
-    echo "   - Install Command: pnpm install --frozen-lockfile"
+    echo "   - Install Command: pnpm install --filter nba-draft-sim-client... --frozen-lockfile"
     echo "   - Build Command: pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build"
     echo "   - Output Directory: client/dist"
     echo "4. Set Environment Variable: VITE_SERVER_URL (backend URL)"

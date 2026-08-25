@@ -78,7 +78,7 @@ VITE_SERVER_URL=https://your-backend-url.com
      - **Root Directory**: repo root
      - **Build Command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build`
      - **Output Directory**: `client/dist`
-     - **Install Command**: `pnpm install --frozen-lockfile`
+     - **Install Command**: `pnpm install --filter nba-draft-sim-client... --frozen-lockfile`
    - **Environment Variables**:
      - `VITE_SERVER_URL`: `https://your-backend-url.railway.app`
    - Click "Deploy"
@@ -132,7 +132,7 @@ VITE_SERVER_URL=https://your-backend-url.com
      - **Region**: Choose closest to users
      - **Branch**: main
      - **Root Directory**: repo root
-     - **Install Command**: `pnpm install --frozen-lockfile`
+     - **Install Command**: `pnpm install --filter nba-draft-sim-server... --frozen-lockfile`
      - **Build Command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-server build`
      - **Start Command**: `pnpm --filter nba-draft-sim-server start`
    - **Environment Variables**: Same as Railway
@@ -254,7 +254,7 @@ git clone https://github.com/yourusername/nba-draft-sim.git
 cd nba-draft-sim
 
 # Install dependencies and build shared types/backend
-pnpm install --frozen-lockfile
+pnpm install --filter nba-draft-sim-server... --filter nba-draft-sim-client... --frozen-lockfile
 pnpm --filter @nba-draft-sim/shared build
 pnpm --filter nba-draft-sim-server build
 

@@ -5,7 +5,7 @@ services:
     env: node
     region: oregon
     plan: starter
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-server build
+    buildCommand: pnpm install --filter nba-draft-sim-server... --frozen-lockfile && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-server build
     startCommand: pnpm --filter nba-draft-sim-server start
     healthCheckPath: /health
     envVars:
@@ -24,7 +24,7 @@ services:
     name: nba-draft-sim-frontend
     env: static
     region: oregon
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build
+    buildCommand: pnpm install --filter nba-draft-sim-client... --frozen-lockfile && pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build
     staticPublishPath: client/dist
     envVars:
       - key: VITE_SERVER_URL
