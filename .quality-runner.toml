@@ -12,3 +12,18 @@ owner = "repository"
 required = true
 severity = "blocker"
 mutating_risk = "safe"
+
+[[quality_runner.cache_design.paths]]
+path = "client/dist"
+class = "build_output"
+lifecycle = "rebuildable"
+
+[[quality_runner.cache_design.paths]]
+path = "server/dist"
+class = "build_output"
+lifecycle = "rebuildable"
+
+[[quality_runner.cache_design.paths]]
+path = "shared/dist"
+class = "build_output"
+lifecycle = "rebuildable"
