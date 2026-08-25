@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build",
+  "outputDirectory": "client/dist"
+}

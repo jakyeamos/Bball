@@ -11,7 +11,8 @@
   "coverageFormat": "auto",
   "threshold": 80,
   "excludePatterns": [
-    ".quality-gate-exceptions"
+    ".quality-gate-exceptions",
+    "vercel.json"
   ],
   "checks": {
     "coverage": true,

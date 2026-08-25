@@ -120,7 +120,7 @@ VITE_SERVER_URL=https://your-backend-url.com
 
 ### **Backend: Render** (Free tier available)
 
-1. **Create `render.yaml`** (already in project)
+1. **Use `deployment/render.yaml`** (already in project; set this as the Render Blueprint Path)
 
 2. **Deploy to Render**
    - Go to [render.com](https://render.com)
@@ -132,6 +132,7 @@ VITE_SERVER_URL=https://your-backend-url.com
      - **Region**: Choose closest to users
      - **Branch**: main
      - **Root Directory**: repo root
+     - **Install Command**: `pnpm install --frozen-lockfile`
      - **Build Command**: `pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-server build`
      - **Start Command**: `pnpm --filter nba-draft-sim-server start`
    - **Environment Variables**: Same as Railway

@@ -2,6 +2,9 @@
   "name": "nba-draft-sim",
   "private": true,
   "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "pnpm -r --parallel --filter nba-draft-sim-client --filter nba-draft-sim-server dev",
     "build": "pnpm --filter @nba-draft-sim/shared build && pnpm --filter nba-draft-sim-client build && pnpm --filter nba-draft-sim-server build",
