@@ -19,7 +19,8 @@
     "pre-pr": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "env:check": "node scripts/validate-env.mjs",
     "secret:scan": "node scripts/secret-scan.mjs",
-    "dependency:security": "node scripts/dependency-security.mjs"
+    "dependency:security": "node scripts/dependency-security.mjs",
+    "test:guest-coverage": "pnpm test:coverage && pnpm exec playwright test --config tests/guest-entry/playwright.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

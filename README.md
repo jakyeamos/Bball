@@ -108,6 +108,8 @@ Run these from the repository root:
 - `pnpm typecheck` - strict TypeScript checks across workspaces
 - `pnpm test` - run shared and server tests once in non-interactive mode
 - `pnpm smoke` - run Playwright smoke tests
+- `pnpm exec playwright test --config tests/guest-entry/playwright.config.ts` - verify unconfigured guest entry using an owned server on port 31236; requires `pnpm exec playwright install chromium`. This checks entry and local fallback, not lesson content or account continuity.
+- `pnpm test:guest-coverage` - required Pre-CR chain: existing coverage tests followed by the isolated guest-entry browser test
 - `pnpm audit:dead-code` - run Knip dead-code scan
 
 ## Quality Gate (Before Shipping)

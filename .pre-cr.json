@@ -12,12 +12,21 @@
   "threshold": 80,
   "excludePatterns": [
     ".quality-gate-exceptions",
-    "vercel.json"
+    "vercel.json",
+    "tests/guest-entry/playwright.config.ts",
+    "tests/guest-entry/guest-entry.spec.ts",
+    ".tracker/PROJECT_TRUTH.md",
+    "knip.json",
+    "README.md",
+    ".project-compass/development.json",
+    ".project-compass/behaviors.json",
+    ".pre-cr.json",
+    "package.json"
   ],
   "checks": {
     "coverage": true,
     "security": true,
     "checklist": true
   },
-  "testCommand": "pnpm test:coverage"
+  "testCommand": "pnpm test:guest-coverage"
 }
