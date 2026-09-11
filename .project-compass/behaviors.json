@@ -1,0 +1,17 @@
+{
+  "behaviors": [
+    {
+      "id": "guest-first-learning-loop",
+      "spec_ref": ".pronto/behavior-assurance.json#/behaviors/0",
+      "title": "Guest users can enter the learning loop without a configured remote backend",
+      "origin": "Existing repository assurance preserved; broader shared-contract obligation remains unbound."
+    },
+    {
+      "id": "guest-entry-unconfigured",
+      "spec_ref": ".pronto/behavior-assurance.json#/behaviors/0/scenarios/0",
+      "title": "Unconfigured guest entry exposes local fallback without account creation",
+      "authority": "accepted",
+      "scope_note": "Source-specific association of the existing canonical guest-entry scenario; does not establish the whole learning loop or shared-payload invariant."
+    }
+  ]
+}

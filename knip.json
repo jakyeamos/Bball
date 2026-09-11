@@ -16,7 +16,9 @@
     ".": {
       "entry": [
         "playwright.config.ts",
-        "tests/smoke/**/*.ts"
+        "tests/smoke/**/*.ts",
+        "tests/guest-entry/playwright.config.ts",
+        "tests/guest-entry/guest-entry.spec.ts"
       ]
     },
     "client": {
